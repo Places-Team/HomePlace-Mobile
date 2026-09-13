@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+*.iml
+.gradle/
+**/build/
+local.properties
+captures/
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+xcuserdata/
+DerivedData/
+*.xcresult
+Secrets.xcconfig

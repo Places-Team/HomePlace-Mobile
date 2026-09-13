@@ -1,0 +1,7 @@
+{
+  "serverId": "homeplace-test-server",
+  "serverName": "Test Home",
+  "protocolMin": 1,
+  "protocolMax": 1,
+  "serverTime": "2026-09-13T12:00:00Z"
+}

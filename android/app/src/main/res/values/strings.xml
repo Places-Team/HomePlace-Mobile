@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">HomePlace</string>
+    <string name="welcome_title">Your HomePlace, on your phone</string>
+    <string name="welcome_body">Connect securely to the HomePlace server you host.</string>
+    <string name="get_started">Get started</string>
+    <string name="connect_title">Connect to HomePlace</string>
+    <string name="connect_body">Enter your HTTPS domain, local hostname, or local IP address.</string>
+    <string name="server_address">Server address</string>
+    <string name="server_hint">home.example.net or 192.168.1.20:3200</string>
+    <string name="continue_action">Continue</string>
+    <string name="checking_server">Checking server…</string>
+    <string name="connection_secure">Secure HTTPS connection</string>
+    <string name="connection_local_http">Unencrypted local connection</string>
+    <string name="server_ready">Ready to pair</string>
+    <string name="pairing_waits">Pairing will be enabled when the HomePlace server Link API is available.</string>
+    <string name="use_another_address">Use another address</string>
+    <string name="server_url">Server URL</string>
+    <string name="server_id">Server ID</string>
+    <string name="security">Security</string>
+    <string name="protocol">Link protocol</string>
+</resources>
