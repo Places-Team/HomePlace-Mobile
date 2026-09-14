@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FLUTTER_VERSION: 3.47.4
+
 jobs:
   repository:
     runs-on: ubuntu-latest
@@ -18,7 +21,7 @@ jobs:
       - name: Check repository
         run: scripts/check.sh
 
-  android:
+  flutter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,18 +29,30 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
-      - name: Validate Android
-        working-directory: android
-        run: ./gradlew test lint assembleDebug
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Build Android
+        run: flutter build apk --debug
 
   ios:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build iOS
-        run: >-
-          xcodebuild -project ios/HomePlace.xcodeproj -scheme HomePlace
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO build
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Build iOS Simulator
+        run: flutter build ios --simulator --no-codesign

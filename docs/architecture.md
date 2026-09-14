@@ -1,38 +1,31 @@
 # Architecture
 
-HomePlace Mobile contains two native applications that follow the same product
-language and HomePlace Link contract without sharing UI code.
+HomePlace Mobile uses one Flutter application for Android and iOS. Shared Dart code owns product UI and Link behavior; Kotlin and Swift own security and system integration that cannot be represented faithfully as shared application logic.
 
-## Boundaries
+## Layers
 
-Each application is divided into four responsibilities:
+1. `lib/main.dart` and `lib/features/` own localized UI and the finite connection state machine.
+2. `lib/link/` owns client-side models, compatibility checks, pairing, heartbeat, and event transport.
+3. `lib/core/network/` owns address normalization and connection security classification.
+4. `lib/core/storage/` separates non-secret connection profile metadata from credentials.
+5. `android/` and `ios/` expose native identity keys and platform services through narrow Flutter channels and plugins.
 
-1. **UI and state** own onboarding, permission explanations, progress, and
-   actionable error presentation.
-2. **Protocol** owns versioned request and response models plus compatibility
-   checks. Canonical schemas remain in the HomePlace server repository.
-3. **Networking** owns URL normalization, TLS policy, redirects, timeouts, and
-   Link API transport.
-4. **Secure storage** owns device keys, tokens, and credential references using
-   the platform security APIs.
-
-Platform background behavior stays platform-specific. Android may offer a
-user-enabled foreground service. iOS reports foreground and background
-capabilities according to the APIs the operating system actually permits.
+The HomePlace server remains canonical for Link schemas and endpoint behavior. Mobile models intentionally validate only the subset required by the supported protocol version.
 
 ## Connection state
 
-The initial connection flow is a finite state machine:
+`welcome → address → validating → preview → pairing → connected`
 
-`welcome → address entry → validating → server preview → pairing → connected`
+Network requests have bounded timeouts and explicit error paths. Pairing secrets exist only for the short pairing session. A persisted profile records the server ID, URL, device ID, security state, and optional certificate fingerprint; its credential is stored separately.
 
-Every network state has a timeout and a recoverable error path. A successful
-server preview records no secret. Persisted connection profiles store server
-identity and URL metadata separately from credentials.
+On reconnect, the client requests `/api/link/info` before using the saved credential and stops if the server ID differs. Foreground heartbeat delivers allowlisted events and acknowledges their IDs on the next request.
 
-## Dependencies
+## Native boundaries
 
-Dependencies are injected at application boundaries. Android ViewModels accept
-repository interfaces and iOS observable models accept protocol-conforming
-clients. Tests can therefore use deterministic transports without weakening
-production TLS or secure-storage behavior.
+- Android generates a P-256 identity key in Android Keystore. Notification, QR camera, and future foreground-service work remain Android-specific.
+- iOS generates a P-256 identity key in Keychain. Notification, Share Extension, and permitted background behavior remain iOS-specific.
+- Shared code never claims unrestricted background execution, clipboard access, arbitrary app launching, or remote system control.
+
+## Migration policy
+
+The former native applications are preserved under `legacy/`. They are reference implementations, not build targets. Remove a legacy feature only after the Flutter equivalent has been implemented, covered by appropriate tests, and reviewed on its real platform.

@@ -1,7 +1,16 @@
 {
-  "serverId": "homeplace-test-server",
-  "serverName": "Test Home",
-  "protocolMin": 1,
-  "protocolMax": 1,
-  "serverTime": "2026-09-13T12:00:00Z"
+  "product": "HomePlace",
+  "server": {
+    "id": "9d55059f-5a47-4f23-a778-5714c6744907",
+    "name": "Test Home"
+  },
+  "protocol": {
+    "min": 1,
+    "max": 1
+  },
+  "serverTime": "2026-09-13T12:00:00Z",
+  "features": {
+    "pairing": true,
+    "realtime": false
+  }
 }

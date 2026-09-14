@@ -1,13 +1,30 @@
 # Development workflow
 
-Keep changes scoped to one platform or shared protocol documentation where
-possible. Before opening a pull request:
+Install Flutter, Android Studio with JDK 17 and Android SDK 36, Xcode, and CocoaPods. Run `flutter doctor -v` before platform work.
 
-1. Run `scripts/check.sh`.
-2. Run the platform build and unit tests.
-3. Confirm no signing files, tokens, local URLs, or credentials are staged.
-4. Describe any validation that could not run on the current machine.
+## Validation
 
-English and Russian user-facing strings belong in platform localization files
-from the first screen onward. Technical diagnostics should be concise, redacted,
-and separate from the primary recovery message.
+Run from the repository root:
+
+```sh
+scripts/check.sh
+flutter pub get
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+flutter build apk --debug
+flutter build ios --simulator --no-codesign
+```
+
+Android is the first validation target. iOS simulator validation follows once the shared slice is stable. Device-only functionality still requires a real-device check before release.
+
+## Localization and diagnostics
+
+English and Russian strings live in `lib/l10n/app_en.arb` and `lib/l10n/app_ru.arb`. Run `flutter gen-l10n` after changing either file. Primary errors should be actionable and localized; technical, redacted details belong in the troubleshooting view.
+
+## Native work
+
+Keep method channels small and typed at the Dart boundary. Do not move background execution, Keychain, Keystore, notification, QR camera, Share Sheet, file, or clipboard policy into a shared abstraction that hides platform restrictions.
+
+Before committing, inspect staged files for credentials, signing assets, local SDK paths, and generated build output. Preserve unrelated and uncommitted user changes.

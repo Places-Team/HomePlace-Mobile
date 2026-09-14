@@ -1,0 +1,429 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../core/network/server_address.dart';
+import '../../core/notifications/notification_service.dart';
+import '../../core/platform/platform_identity.dart';
+import '../../core/storage/connection_profile.dart';
+import '../../core/storage/credential_store.dart';
+import '../../link/link_client.dart';
+import '../../link/models.dart';
+
+enum ConnectionStage {
+  welcome,
+  address,
+  validating,
+  preview,
+  pairing,
+  connected,
+}
+
+abstract interface class DeviceDescriptionProvider {
+  Future<DeviceDescription> describe();
+}
+
+final class PlatformDeviceDescriptionProvider
+    implements DeviceDescriptionProvider {
+  @override
+  Future<DeviceDescription> describe() async {
+    final package = await PackageInfo.fromPlatform();
+    final deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final info = await deviceInfo.androidInfo;
+      return DeviceDescription(
+        name: info.model,
+        platform: 'android',
+        platformVersion: info.version.release,
+        appVersion: package.version,
+      );
+    }
+    final info = await deviceInfo.iosInfo;
+    return DeviceDescription(
+      name: info.name,
+      platform: 'ios',
+      platformVersion: info.systemVersion,
+      appVersion: package.version,
+    );
+  }
+}
+
+final class ConnectionController extends ChangeNotifier {
+  ConnectionController({
+    LinkService? linkService,
+    ProfileStore? profileStore,
+    CredentialStore? credentialStore,
+    DeviceIdentity? deviceIdentity,
+    NotificationService? notificationService,
+    DeviceDescriptionProvider? descriptionProvider,
+    Future<void> Function(Duration)? pollDelay,
+  }) : _link = linkService ?? const HttpLinkService(),
+       _profiles = profileStore ?? SharedPreferencesProfileStore(),
+       _credentials = credentialStore ?? const PlatformCredentialStore(),
+       _identity = deviceIdentity ?? const PlatformDeviceIdentity(),
+       _notifications = notificationService ?? LocalNotificationService(),
+       _description =
+           descriptionProvider ?? PlatformDeviceDescriptionProvider(),
+       _pollDelay = pollDelay ?? Future<void>.delayed;
+
+  final LinkService _link;
+  final ProfileStore _profiles;
+  final CredentialStore _credentials;
+  final DeviceIdentity _identity;
+  final NotificationService _notifications;
+  final DeviceDescriptionProvider _description;
+  final Future<void> Function(Duration) _pollDelay;
+
+  ConnectionStage stage = ConnectionStage.welcome;
+  String addressInput = '';
+  String? error;
+  String? diagnostics;
+  String? pendingCertificateFingerprint;
+  ServerAddress? serverAddress;
+  ServerInfo? serverInfo;
+  PairingSession? pairingSession;
+  ConnectionProfile? profile;
+  String? lastNotification;
+  Timer? _heartbeatTimer;
+  bool _polling = false;
+  List<String> _acknowledgedEventIds = const [];
+
+  Future<void> initialize() async {
+    await _notifications.initialize();
+    final saved = await _profiles.readAll();
+    if (saved.isEmpty) return;
+    final candidate = saved.first;
+    final normalized = ServerAddressNormalizer.normalize(
+      candidate.preferredUrl,
+    );
+    if (normalized is! ValidAddress) return;
+    var restored = normalized.address;
+    if (candidate.certificateFingerprint case final fingerprint?) {
+      restored = restored.trustFingerprint(fingerprint);
+    }
+    final credential = await _credentials.read(candidate.serverId);
+    if (credential == null) return;
+    final result = await _link.fetchInfo(restored);
+    if (result is! LinkSuccess<ServerInfo>) {
+      diagnostics = result is LinkFailure<ServerInfo> ? result.message : null;
+      return;
+    }
+    if (verifyServerIdentity(candidate.serverId, result.value)
+        is IdentityMismatch) {
+      error = 'The server at this address has a different identity.';
+      diagnostics =
+          'Expected ${candidate.serverId}; received ${result.value.server.id}.';
+      return;
+    }
+    serverAddress = restored;
+    serverInfo = result.value;
+    profile = candidate;
+    addressInput = candidate.preferredUrl;
+    stage = ConnectionStage.connected;
+    _startHeartbeat();
+    notifyListeners();
+  }
+
+  void continueFromWelcome() {
+    stage = ConnectionStage.address;
+    error = null;
+    notifyListeners();
+  }
+
+  void setAddress(String value) {
+    addressInput = value;
+    error = null;
+    pendingCertificateFingerprint = null;
+    notifyListeners();
+  }
+
+  Future<void> validateAddress() async {
+    final normalized = ServerAddressNormalizer.normalize(addressInput);
+    if (normalized is InvalidAddress) {
+      error = normalized.message;
+      stage = ConnectionStage.address;
+      notifyListeners();
+      return;
+    }
+    serverAddress = (normalized as ValidAddress).address;
+    await _fetchServerInfo();
+  }
+
+  Future<void> confirmCertificate() async {
+    final fingerprint = pendingCertificateFingerprint;
+    final address = serverAddress;
+    if (fingerprint == null || address == null) return;
+    serverAddress = address.trustFingerprint(fingerprint);
+    pendingCertificateFingerprint = null;
+    await _fetchServerInfo();
+  }
+
+  Future<void> _fetchServerInfo() async {
+    final address = serverAddress;
+    if (address == null) return;
+    stage = ConnectionStage.validating;
+    error = null;
+    diagnostics = null;
+    notifyListeners();
+    final result = await _link.fetchInfo(address);
+    switch (result) {
+      case LinkSuccess<ServerInfo>():
+        serverInfo = result.value;
+        stage = ConnectionStage.preview;
+      case LinkFailure<ServerInfo>():
+        error = result.message;
+        diagnostics = result.kind.name;
+        if (result.kind == LinkFailureKind.tls &&
+            result.certificateFingerprint != null) {
+          pendingCertificateFingerprint = result.certificateFingerprint;
+        }
+        stage = ConnectionStage.address;
+    }
+    notifyListeners();
+  }
+
+  Future<void> startPairing({required bool requestNotifications}) async {
+    final address = serverAddress;
+    final info = serverInfo;
+    if (address == null || info == null || !info.features.pairing) return;
+    stage = ConnectionStage.pairing;
+    error = null;
+    pairingSession = null;
+    notifyListeners();
+    try {
+      final notificationAvailable =
+          requestNotifications && await _notifications.requestPermission();
+      final capabilities = CapabilityNegotiator.available(
+        PlatformFeatures(
+          notificationReceive: notificationAvailable,
+          foregroundPresence: true,
+        ),
+      );
+      final result = await _link.startPairing(
+        address,
+        await _description.describe(),
+        await _identity.publicKey(info.server.id),
+        capabilities,
+      );
+      switch (result) {
+        case LinkSuccess<PairingSession>():
+          pairingSession = result.value;
+          notifyListeners();
+          unawaited(_pollPairing(result.value));
+        case LinkFailure<PairingSession>():
+          error = result.message;
+          diagnostics = result.kind.name;
+          stage = ConnectionStage.preview;
+          notifyListeners();
+      }
+    } on Object catch (exception) {
+      error = 'Secure device identity is unavailable.';
+      diagnostics = exception.runtimeType.toString();
+      stage = ConnectionStage.preview;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _pollPairing(PairingSession session) async {
+    if (_polling) return;
+    _polling = true;
+    try {
+      while (stage == ConnectionStage.pairing &&
+          DateTime.now().isBefore(session.expiresAt)) {
+        await _pollDelay(
+          Duration(seconds: session.pollAfterSeconds.clamp(1, 10)),
+        );
+        if (stage != ConnectionStage.pairing) return;
+        final address = serverAddress!;
+        final result = await _link.claimPairing(address, session);
+        if (result is LinkFailure<PairingClaim>) {
+          if (result.kind == LinkFailureKind.network) continue;
+          error = result.message;
+          diagnostics = result.kind.name;
+          stage = ConnectionStage.preview;
+          notifyListeners();
+          return;
+        }
+        final claim = (result as LinkSuccess<PairingClaim>).value;
+        switch (claim.status) {
+          case 'pending':
+            continue;
+          case 'approved':
+            await _completePairing(claim);
+            return;
+          case 'rejected':
+            error = 'Pairing was rejected in HomePlace.';
+          default:
+            error = 'The pairing session expired.';
+        }
+        stage = ConnectionStage.preview;
+        notifyListeners();
+        return;
+      }
+      if (stage == ConnectionStage.pairing) {
+        error = 'The pairing session expired.';
+        stage = ConnectionStage.preview;
+        notifyListeners();
+      }
+    } finally {
+      _polling = false;
+    }
+  }
+
+  Future<void> _completePairing(PairingClaim claim) async {
+    final info = serverInfo!;
+    final address = serverAddress!;
+    if (claim.serverId != info.server.id ||
+        claim.deviceId == null ||
+        claim.credential == null) {
+      error = 'HomePlace returned a different server identity.';
+      diagnostics = 'Pairing claim did not match ${info.server.id}.';
+      stage = ConnectionStage.preview;
+      notifyListeners();
+      return;
+    }
+    await _credentials.write(info.server.id, claim.credential!);
+    final connectedProfile = ConnectionProfile(
+      serverId: info.server.id,
+      serverName: info.server.name,
+      preferredUrl: address.uri.toString(),
+      deviceId: claim.deviceId!,
+      secure: address.security != ConnectionSecurity.localHttp,
+      certificateFingerprint: address.certificateFingerprint,
+    );
+    await _profiles.save(connectedProfile);
+    profile = connectedProfile;
+    pairingSession = null;
+    stage = ConnectionStage.connected;
+    notifyListeners();
+    _startHeartbeat();
+  }
+
+  void cancelPairing() {
+    pairingSession = null;
+    stage = ConnectionStage.preview;
+    notifyListeners();
+  }
+
+  Future<void> disconnect() async {
+    final connectedProfile = profile;
+    final address = serverAddress;
+    if (connectedProfile == null || address == null) return;
+    final credential = await _credentials.read(connectedProfile.serverId);
+    if (credential == null) {
+      await _forgetConnection(connectedProfile);
+      return;
+    }
+    final result = await _link.revoke(address, credential);
+    if (result is LinkFailure<void> &&
+        result.kind != LinkFailureKind.authentication) {
+      error = result.message;
+      diagnostics = result.kind.name;
+      notifyListeners();
+      return;
+    }
+    await _forgetConnection(connectedProfile);
+  }
+
+  Future<void> _forgetConnection(ConnectionProfile connectedProfile) async {
+    _heartbeatTimer?.cancel();
+    await _credentials.remove(connectedProfile.serverId);
+    await _profiles.remove(connectedProfile.serverId);
+    stage = ConnectionStage.welcome;
+    serverAddress = null;
+    serverInfo = null;
+    profile = null;
+    error = null;
+    diagnostics = null;
+    lastNotification = null;
+    notifyListeners();
+  }
+
+  void useAnotherAddress() {
+    _heartbeatTimer?.cancel();
+    stage = ConnectionStage.address;
+    serverAddress = null;
+    serverInfo = null;
+    pairingSession = null;
+    error = null;
+    notifyListeners();
+  }
+
+  void applyQrPayload(String value) {
+    try {
+      final decoded = Uri.tryParse(value);
+      if (decoded?.hasScheme == true) {
+        setAddress(value);
+        return;
+      }
+      final jsonUrl = RegExp(r'"serverUrl"\s*:\s*"([^"]+)"')
+          .firstMatch(value)
+          ?.group(1);
+      setAddress(jsonUrl ?? value);
+    } on Object {
+      setAddress(value);
+    }
+  }
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    unawaited(_heartbeat());
+    _heartbeatTimer = Timer.periodic(
+      const Duration(seconds: 25),
+      (_) => unawaited(_heartbeat()),
+    );
+  }
+
+  Future<void> _heartbeat() async {
+    final connectedProfile = profile;
+    final address = serverAddress;
+    if (stage != ConnectionStage.connected ||
+        connectedProfile == null ||
+        address == null) {
+      return;
+    }
+    final credential = await _credentials.read(connectedProfile.serverId);
+    if (credential == null) return;
+    final result = await _link.heartbeat(
+      address,
+      credential,
+      _acknowledgedEventIds,
+    );
+    if (result is LinkFailure<HeartbeatResponse>) {
+      diagnostics = result.message;
+      notifyListeners();
+      return;
+    }
+    final response = (result as LinkSuccess<HeartbeatResponse>).value;
+    if (response.serverId != connectedProfile.serverId) {
+      _heartbeatTimer?.cancel();
+      error = 'The server identity changed. Connection stopped.';
+      diagnostics =
+          'Expected ${connectedProfile.serverId}; received ${response.serverId}.';
+      notifyListeners();
+      return;
+    }
+    final acknowledged = <String>[];
+    for (final event in response.events) {
+      if (event.type != 'notification.deliver') continue;
+      final title = event.payload['title'];
+      final body = event.payload['body'];
+      if (title is! String || body is! String) continue;
+      await _notifications.show(event.id, title, body);
+      acknowledged.add(event.id);
+      lastNotification = '$title — $body';
+    }
+    _acknowledgedEventIds = acknowledged;
+    diagnostics = null;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _heartbeatTimer?.cancel();
+    super.dispose();
+  }
+}

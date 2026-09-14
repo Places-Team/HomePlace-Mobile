@@ -1,37 +1,24 @@
 # Security model
 
-HomePlace Mobile assumes that server addresses, local networks, QR payloads,
-and incoming Link messages may be hostile.
+HomePlace Mobile treats server addresses, QR payloads, local networks, certificates, and incoming Link events as untrusted input.
 
 ## Connection rules
 
 - Public DNS names require HTTPS.
-- HTTP is accepted only for loopback, RFC 1918 IPv4, link-local IPv4, `.local`
-  hostnames, and local or unique-local IPv6 addresses.
-- Credentials embedded in URLs are rejected.
-- Redirects are not followed during server identity validation.
-- Invalid public TLS certificates are never accepted silently.
-- Explicit self-signed certificate support must show and confirm a fingerprint
-  before any credential is sent.
-- A reconnect must prove the stored server ID before the client uses device
-  credentials.
+- HTTP is accepted only for loopback, RFC 1918 IPv4, IPv4 link-local, `.local` names, single-label local hostnames, and IPv6 loopback, link-local, or unique-local addresses.
+- URL credentials, paths, queries, fragments, invalid ports, and unsupported schemes are rejected.
+- Redirects are not followed during Link requests.
+- Invalid TLS certificates are rejected. A self-signed certificate is accepted only after the user confirms its SHA-256 fingerprint, which is pinned to the profile.
+- A reconnect verifies the stored server ID before sending the device credential.
 
 ## Secrets
 
-Android private keys are generated in Android Keystore. iOS private keys and
-tokens are stored in Keychain. Logs, analytics, crash metadata, exported
-diagnostics, and UI errors must redact tokens, private keys, pairing secrets,
-authorization headers, and full sensitive payloads.
+Android identity keys are generated in Android Keystore. iOS identity keys are generated in Keychain. Device credentials use secure platform storage. Pairing secrets, credentials, private keys, authorization headers, and full sensitive payloads must never enter logs, analytics, diagnostics, or UI errors.
 
-## Capabilities and commands
+Disconnect requests server-side revocation before deleting the local credential. An already-revoked credential is treated as safe to remove locally.
 
-The client advertises only implemented capabilities available in its current
-permission and OS state. Commands are allowlisted by capability, checked for
-protocol compatibility and expiry, and deduplicated by command ID. Revocation
-removes local credentials and ends active connectivity.
+## Capabilities and events
 
-## Current boundary
+The initial Flutter slice advertises `notification.receive` only after permission is available and `device.presence` with the `foreground` constraint. Unsupported capabilities are omitted. Incoming events are allowlisted, validated, and acknowledged by event ID; unknown or malformed events are ignored.
 
-This repository currently validates server identity metadata but does not yet
-submit pairing secrets. Pairing will be enabled only after the canonical server
-endpoints and schemas are implemented and released.
+Persistent background delivery is not implemented in this milestone and is not advertised.

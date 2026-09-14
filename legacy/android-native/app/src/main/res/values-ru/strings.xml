@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">HomePlace</string>
+    <string name="welcome_title">Ваш HomePlace — теперь в телефоне</string>
+    <string name="welcome_body">Безопасно подключитесь к своему серверу HomePlace.</string>
+    <string name="get_started">Начать</string>
+    <string name="connect_title">Подключение к HomePlace</string>
+    <string name="connect_body">Введите HTTPS-домен, локальное имя или локальный IP-адрес.</string>
+    <string name="server_address">Адрес сервера</string>
+    <string name="server_hint">home.example.net или 192.168.1.20:3200</string>
+    <string name="continue_action">Продолжить</string>
+    <string name="checking_server">Проверяем сервер…</string>
+    <string name="connection_secure">Защищённое HTTPS-соединение</string>
+    <string name="connection_local_http">Незашифрованное локальное соединение</string>
+    <string name="server_ready">Можно подключать</string>
+    <string name="server_verified">Сервер проверен</string>
+    <string name="pairing_waits">Подключение станет доступно после появления Link API на сервере HomePlace.</string>
+    <string name="use_another_address">Указать другой адрес</string>
+    <string name="server_url">Адрес сервера</string>
+    <string name="server_id">ID сервера</string>
+    <string name="security">Безопасность</string>
+    <string name="protocol">Протокол Link</string>
+    <string name="notification_channel">Полученные из HomePlace</string>
+</resources>
