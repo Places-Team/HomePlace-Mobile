@@ -13,7 +13,7 @@ HomePlace Mobile treats server addresses, QR payloads, local networks, certifica
 
 ## Secrets
 
-Android identity keys are generated in Android Keystore. iOS identity keys are generated in Keychain. Device credentials use secure platform storage. Pairing secrets, credentials, private keys, authorization headers, and full sensitive payloads must never enter logs, analytics, diagnostics, or UI errors.
+Android identity keys are generated in Android Keystore. iOS identity keys are generated in Keychain. Both platforms send the P-256 public key as Base64-encoded SubjectPublicKeyInfo DER. Device credentials use secure platform storage. Pairing secrets, credentials, private keys, authorization headers, and full sensitive payloads must never enter logs, analytics, diagnostics, or UI errors.
 
 Disconnect requests server-side revocation before deleting the local credential. An already-revoked credential is treated as safe to remove locally.
 

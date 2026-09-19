@@ -73,9 +73,18 @@ import UIKit
       throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecDecode))
     }
     var error: Unmanaged<CFError>?
-    guard let data = SecKeyCopyExternalRepresentation(publicKey, &error) as Data? else {
+    guard let point = SecKeyCopyExternalRepresentation(publicKey, &error) as Data? else {
       throw error!.takeRetainedValue() as Error
     }
-    return data.base64EncodedString()
+    guard point.count == 65, point.first == 0x04 else {
+      throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecDecode))
+    }
+    // DER SubjectPublicKeyInfo header for a P-256 uncompressed public point.
+    let spkiPrefix: [UInt8] = [
+      0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE,
+      0x3D, 0x02, 0x01, 0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D,
+      0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
+    ]
+    return (Data(spkiPrefix) + point).base64EncodedString()
   }
 }
