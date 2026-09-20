@@ -280,6 +280,8 @@ final class ConnectionController extends ChangeNotifier {
         capabilities,
         [
           'dashboard.read',
+          'calendar.read',
+          'calendar.manage',
           'reminder.manage',
           'media.request',
           'telegram.send',

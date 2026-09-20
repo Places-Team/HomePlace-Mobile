@@ -84,6 +84,58 @@ final class MobileApi {
     'id': id,
   });
 
+  Future<LinkResult<List<MobileCalendarEvent>>> calendar(
+    AuthenticatedLinkSession session,
+    DateTime from,
+    DateTime to,
+  ) async {
+    final query = Uri(
+      path: '/api/link/calendar',
+      queryParameters: {
+        'from': from.toUtc().toIso8601String(),
+        'to': to.toUtc().toIso8601String(),
+      },
+    );
+    final response = await _client.requestJson(
+      session.address,
+      'GET',
+      query.toString(),
+      credential: session.credential,
+      maxResponseBytes: 524288,
+    );
+    return _decode(
+      response,
+      (json) => (json['events'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(MobileCalendarEvent.fromJson)
+          .toList(growable: false),
+      'HomePlace returned invalid calendar events.',
+    );
+  }
+
+  Future<LinkResult<void>> saveCalendarEvent(
+    AuthenticatedLinkSession session, {
+    MobileCalendarEvent? existing,
+    required String summary,
+    required DateTime start,
+    required DateTime end,
+    required bool allDay,
+    String? location,
+  }) => _empty(session, '/api/link/calendar', {
+    'action': existing == null ? 'create' : 'update',
+    if (existing != null) 'id': existing.id,
+    'summary': summary,
+    'start': allDay ? _dateOnly(start) : start.toUtc().toIso8601String(),
+    'end': allDay ? _dateOnly(end) : end.toUtc().toIso8601String(),
+    'allDay': allDay,
+    if (location?.trim().isNotEmpty == true) 'location': location!.trim(),
+  });
+
+  Future<LinkResult<void>> deleteCalendarEvent(
+    AuthenticatedLinkSession session,
+    String id,
+  ) => _empty(session, '/api/link/calendar', {'action': 'delete', 'id': id});
+
   Future<LinkResult<List<MobileSearchResult>>> search(
     AuthenticatedLinkSession session,
     String query,
@@ -201,3 +253,6 @@ final class MobileApi {
     }
   }
 }
+
+String _dateOnly(DateTime value) =>
+    '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';

@@ -254,6 +254,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noCalendarEvents => 'No upcoming calendar events.';
 
   @override
+  String get addCalendarEvent => 'Add event';
+
+  @override
+  String get editCalendarEvent => 'Edit event';
+
+  @override
+  String get eventTitle => 'Event title';
+
+  @override
+  String get eventLocation => 'Location (optional)';
+
+  @override
+  String get eventStarts => 'Starts';
+
+  @override
+  String get eventEnds => 'Ends';
+
+  @override
+  String get noEventsOnDay => 'Nothing planned for this day.';
+
+  @override
+  String get deleteCalendarEventTitle => 'Delete event?';
+
+  @override
+  String deleteCalendarEventBody(String title) {
+    return '“$title” will be removed from your calendar.';
+  }
+
+  @override
+  String get repeatFlexible => 'Custom interval';
+
+  @override
+  String get repeatEvery => 'Every';
+
+  @override
   String get requestsTitle => 'Media requests';
 
   @override

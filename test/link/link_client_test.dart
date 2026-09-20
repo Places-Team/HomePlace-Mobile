@@ -93,4 +93,45 @@ void main() {
     expect(result, isA<LinkSuccess>());
     expect((result as LinkSuccess).value.monitoring.online, 1);
   });
+
+  test('loads a bounded calendar range from the Link calendar API', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(server.close);
+    server.listen((request) async {
+      expect(request.uri.path, '/api/link/calendar');
+      expect(request.uri.queryParameters.keys, containsAll(['from', 'to']));
+      expect(
+        request.headers.value(HttpHeaders.authorizationHeader),
+        'Bearer test-credential',
+      );
+      request.response.headers.contentType = ContentType.json;
+      request.response.write('''
+        {"status":"connected","events":[{
+          "id":"event_1","summary":"Family dinner",
+          "start":"2026-09-21T16:00:00.000Z",
+          "end":"2026-09-21T18:00:00.000Z",
+          "allDay":false,"location":"Home"
+        }]}
+      ''');
+      await request.response.close();
+    });
+    final normalized = ServerAddressNormalizer.normalize(
+      'http://127.0.0.1:${server.port}',
+    ) as ValidAddress;
+    final session = AuthenticatedLinkSession(
+      address: normalized.address,
+      credential: 'test-credential',
+      serverId: '9d55059f-5a47-4f23-a778-5714c6744907',
+      serverName: 'Mock Home',
+    );
+
+    final result = await const MobileApi().calendar(
+      session,
+      DateTime.utc(2026, 9, 1),
+      DateTime.utc(2026, 10, 1),
+    );
+
+    expect(result, isA<LinkSuccess>());
+    expect((result as LinkSuccess).value.single.summary, 'Family dinner');
+  });
 }

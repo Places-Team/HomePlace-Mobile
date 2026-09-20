@@ -12,9 +12,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final controller = ConnectionController();
   final preferences = AppPreferences();
+  runApp(HomePlaceApp(controller: controller, preferences: preferences));
   await preferences.initialize();
   await controller.initialize();
-  runApp(HomePlaceApp(controller: controller, preferences: preferences));
 }
 
 class HomePlaceApp extends StatelessWidget {
@@ -128,16 +128,16 @@ class ConnectionShell extends StatelessWidget {
 ThemeData _theme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
   final scheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xff7457ff),
+    seedColor: const Color(0xff829eff),
     brightness: brightness,
-    surface: dark ? const Color(0xff11111b) : const Color(0xfffffbf3),
+    surface: dark ? const Color(0xff0b0d14) : const Color(0xfff5f6fb),
   );
   return ThemeData(
     brightness: brightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: dark
-        ? const Color(0xff11111b)
-        : const Color(0xfffffbf3),
+        ? const Color(0xff0b0d14)
+        : const Color(0xfff5f6fb),
     useMaterial3: true,
     appBarTheme: const AppBarTheme(
       centerTitle: false,
@@ -172,7 +172,7 @@ ThemeData _theme(Brightness brightness) {
       ),
     ),
     cardTheme: CardThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       elevation: 0,
     ),
   );

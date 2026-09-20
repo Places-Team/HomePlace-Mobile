@@ -254,6 +254,41 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noCalendarEvents => 'Ближайших событий в календаре нет.';
 
   @override
+  String get addCalendarEvent => 'Добавить событие';
+
+  @override
+  String get editCalendarEvent => 'Изменить событие';
+
+  @override
+  String get eventTitle => 'Название события';
+
+  @override
+  String get eventLocation => 'Место (необязательно)';
+
+  @override
+  String get eventStarts => 'Начало';
+
+  @override
+  String get eventEnds => 'Окончание';
+
+  @override
+  String get noEventsOnDay => 'На этот день ничего не запланировано.';
+
+  @override
+  String get deleteCalendarEventTitle => 'Удалить событие?';
+
+  @override
+  String deleteCalendarEventBody(String title) {
+    return 'Событие «$title» будет удалено из календаря.';
+  }
+
+  @override
+  String get repeatFlexible => 'Свой интервал';
+
+  @override
+  String get repeatEvery => 'Каждые';
+
+  @override
   String get requestsTitle => 'Заявки на медиа';
 
   @override

@@ -10,7 +10,7 @@ import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import 'home_controller.dart';
 
-const _violet = Color(0xff7457ff);
+const _violet = Color(0xff829eff);
 const _coral = Color(0xffff746c);
 const _mint = Color(0xff70e1b4);
 const _ink = Color(0xff11111b);
@@ -35,6 +35,7 @@ class _HomeShellState extends State<HomeShell> {
       widget.homeController ??
       HomeController(sessionProvider: widget.connection.authenticatedSession);
   late final bool ownsHome = widget.homeController == null;
+  late final PageController pages = PageController();
   var tab = 0;
 
   @override
@@ -46,6 +47,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    pages.dispose();
     if (ownsHome) home.dispose();
     super.dispose();
   }
@@ -132,8 +134,9 @@ class _HomeShellState extends State<HomeShell> {
                           _showShareTargets(context, overview, content),
                     ),
                   Expanded(
-                    child: IndexedStack(
-                      index: tab,
+                    child: PageView(
+                      controller: pages,
+                      onPageChanged: (value) => setState(() => tab = value),
                       children: [
                         _OverviewPage(
                           overview: overview,
@@ -153,7 +156,10 @@ class _HomeShellState extends State<HomeShell> {
         ),
         bottomNavigationBar: _PillNavigation(
           index: tab,
-          onChanged: (value) => setState(() => tab = value),
+          onChanged: (value) {
+            setState(() => tab = value);
+            pages.jumpToPage(value);
+          },
         ),
       );
     },
@@ -832,10 +838,40 @@ class _ClipboardCard extends StatelessWidget {
   }
 }
 
-class _PlanPage extends StatelessWidget {
+class _PlanPage extends StatefulWidget {
   const _PlanPage({required this.overview, required this.home});
   final MobileOverview overview;
   final HomeController home;
+
+  @override
+  State<_PlanPage> createState() => _PlanPageState();
+}
+
+class _PlanPageState extends State<_PlanPage> {
+  late DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime selected = _day(DateTime.now());
+
+  MobileOverview get overview => widget.overview;
+  HomeController get home => widget.home;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMonth());
+  }
+
+  void _loadMonth() {
+    if (!overview.permissions.contains('calendar.read')) return;
+    home.loadCalendar(_rangeStart(month), _rangeEnd(month));
+  }
+
+  void _changeMonth(int delta) {
+    setState(() {
+      month = DateTime(month.year, month.month + delta);
+      selected = DateTime(month.year, month.month, 1);
+    });
+    _loadMonth();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -869,29 +905,34 @@ class _PlanPage extends StatelessWidget {
             icon: Icons.event_busy_rounded,
             text: l10n.calendarNotConnected,
           )
-        else if (overview.calendar.events.isEmpty)
-          _EmptyCard(
-            icon: Icons.event_available_rounded,
-            text: l10n.noCalendarEvents,
-          )
         else
-          ...overview.calendar.events
-              .take(12)
-              .map(
-                (event) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _AgendaRow(
-                    color: _violet,
-                    title: event.summary,
-                    when: _formatWhen(
-                      context,
-                      event.start,
-                      allDay: event.allDay,
-                    ),
-                    detail: event.location,
-                  ),
-                ),
-              ),
+          _MonthCalendar(
+            month: month,
+            selected: selected,
+            events: home.calendarEvents ?? overview.calendar.events,
+            loading: home.calendarLoading,
+            canManage: overview.permissions.contains('calendar.manage'),
+            onSelected: (value) => setState(() => selected = value),
+            onPrevious: () => _changeMonth(-1),
+            onNext: () => _changeMonth(1),
+            onSwipe: _changeMonth,
+            onAdd: () => _showCalendarEditor(
+              context,
+              home,
+              null,
+              selected,
+              _rangeStart(month),
+              _rangeEnd(month),
+            ),
+            onEdit: (event) => _showCalendarEditor(
+              context,
+              home,
+              event,
+              selected,
+              _rangeStart(month),
+              _rangeEnd(month),
+            ),
+          ),
         const SizedBox(height: 22),
         Row(
           children: [
@@ -951,6 +992,209 @@ class _PlanPage extends StatelessWidget {
         ],
         const SizedBox(height: 110),
       ],
+    );
+  }
+}
+
+class _MonthCalendar extends StatelessWidget {
+  const _MonthCalendar({
+    required this.month,
+    required this.selected,
+    required this.events,
+    required this.loading,
+    required this.canManage,
+    required this.onSelected,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onSwipe,
+    required this.onAdd,
+    required this.onEdit,
+  });
+  final DateTime month;
+  final DateTime selected;
+  final List<MobileCalendarEvent> events;
+  final bool loading;
+  final bool canManage;
+  final ValueChanged<DateTime> onSelected;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final ValueChanged<int> onSwipe;
+  final VoidCallback onAdd;
+  final ValueChanged<MobileCalendarEvent> onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final material = MaterialLocalizations.of(context);
+    final first = DateTime(month.year, month.month, 1);
+    final lead = (first.weekday - DateTime.monday) % 7;
+    final start = first.subtract(Duration(days: lead));
+    final days = List.generate(42, (index) => start.add(Duration(days: index)));
+    final weekdays = [
+      ...material.narrowWeekdays.skip(1),
+      material.narrowWeekdays.first,
+    ];
+    final selectedEvents = events.where((event) {
+      final local = event.start.toLocal();
+      return _sameDay(local, selected);
+    }).toList()..sort((a, b) => a.start.compareTo(b.start));
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (velocity.abs() > 250) onSwipe(velocity < 0 ? 1 : -1);
+      },
+      child: _Surface(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  tooltip: material.previousMonthTooltip,
+                  onPressed: onPrevious,
+                  icon: const Icon(Icons.chevron_left_rounded),
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    child: Text(
+                      material.formatMonthYear(month),
+                      key: ValueKey('${month.year}-${month.month}'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: material.nextMonthTooltip,
+                  onPressed: onNext,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                ),
+              ],
+            ),
+            if (loading) const LinearProgressIndicator(minHeight: 2),
+            GridView.count(
+              crossAxisCount: 7,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                ...weekdays.map(
+                  (value) => Center(
+                    child: Text(
+                      value.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                ...days.map((date) {
+                  final active = _sameDay(date, selected);
+                  final today = _sameDay(date, DateTime.now());
+                  final count = events
+                      .where((event) => _sameDay(event.start.toLocal(), date))
+                      .length;
+                  return Semantics(
+                    selected: active,
+                    button: true,
+                    label: material.formatFullDate(date),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => onSelected(date),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        margin: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: active
+                              ? _violet
+                              : today
+                              ? _violet.withValues(alpha: .12)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${date.day}',
+                              style: TextStyle(
+                                color: active
+                                    ? Colors.white
+                                    : date.month == month.month
+                                    ? null
+                                    : Theme.of(context).disabledColor,
+                                fontWeight: today || active
+                                    ? FontWeight.w900
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: count == 0 ? 0 : 5,
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: active ? Colors.white : _coral,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            const Divider(height: 22),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    material.formatMediumDate(selected),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+                if (canManage)
+                  IconButton.filledTonal(
+                    tooltip: l10n.addCalendarEvent,
+                    onPressed: onAdd,
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+              ],
+            ),
+            if (selectedEvents.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Text(
+                  l10n.noEventsOnDay,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...selectedEvents.map(
+                (event) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event_rounded, color: _violet),
+                  title: Text(event.summary),
+                  subtitle: Text(
+                    event.allDay
+                        ? l10n.allDay
+                        : TimeOfDay.fromDateTime(event.start.toLocal())
+                              .format(context),
+                  ),
+                  trailing: canManage
+                      ? const Icon(Icons.chevron_right_rounded)
+                      : null,
+                  onTap: canManage ? () => onEdit(event) : null,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1446,8 +1690,9 @@ class _PillNavigation extends StatelessWidget {
         height: 68,
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.inverseSurface
-              .withValues(alpha: .96),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xff151824).withValues(alpha: .97)
+              : const Color(0xff161a27).withValues(alpha: .97),
           borderRadius: BorderRadius.circular(34),
           boxShadow: const [
             BoxShadow(
@@ -1473,7 +1718,7 @@ class _PillNavigation extends StatelessWidget {
                     curve: Curves.easeOutCubic,
                     decoration: BoxDecoration(
                       color: selected
-                          ? Theme.of(context).colorScheme.onInverseSurface
+                          ? const Color(0xffa9bcff)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(27),
                     ),
@@ -1484,9 +1729,8 @@ class _PillNavigation extends StatelessWidget {
                           items[i].$1,
                           size: 22,
                           color: selected
-                              ? Theme.of(context).colorScheme.inverseSurface
-                              : Theme.of(context).colorScheme.onInverseSurface
-                                    .withValues(alpha: .62),
+                              ? const Color(0xff111521)
+                              : Colors.white.withValues(alpha: .62),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -1497,9 +1741,8 @@ class _PillNavigation extends StatelessWidget {
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             color: selected
-                                ? Theme.of(context).colorScheme.inverseSurface
-                                : Theme.of(context).colorScheme.onInverseSurface
-                                      .withValues(alpha: .62),
+                                ? const Color(0xff111521)
+                                : Colors.white.withValues(alpha: .62),
                           ),
                         ),
                       ],
@@ -1547,6 +1790,15 @@ class _Surface extends StatelessWidget {
         color: Theme.of(context).colorScheme.outlineVariant
             .withValues(alpha: .45),
       ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(
+            alpha: Theme.of(context).brightness == Brightness.dark ? .18 : .04,
+          ),
+          blurRadius: 22,
+          offset: const Offset(0, 9),
+        ),
+      ],
     ),
     child: child,
   );
@@ -1891,6 +2143,175 @@ Future<void> _addReminder(BuildContext context, HomeController home) async {
   await _showReminderEditor(context, home, null);
 }
 
+Future<void> _showCalendarEditor(
+  BuildContext context,
+  HomeController home,
+  MobileCalendarEvent? event,
+  DateTime selected,
+  DateTime rangeFrom,
+  DateTime rangeTo,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final summary = TextEditingController(text: event?.summary ?? '');
+  final location = TextEditingController(text: event?.location ?? '');
+  var allDay = event?.allDay ?? false;
+  var start =
+      event?.start.toLocal() ??
+      DateTime(selected.year, selected.month, selected.day, 9);
+  var end = event?.end.toLocal() ?? start.add(const Duration(hours: 1));
+
+  Future<DateTime?> choose(DateTime value) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: value,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (date == null || !context.mounted) return null;
+    if (allDay) return DateTime(date.year, date.month, date.day);
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(value),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, setModalState) => SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          4,
+          24,
+          24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              event == null ? l10n.addCalendarEvent : l10n.editCalendarEvent,
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: summary,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(labelText: l10n.eventTitle),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: location,
+              decoration: InputDecoration(
+                labelText: l10n.eventLocation,
+                prefixIcon: const Icon(Icons.location_on_outlined),
+              ),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.allDay),
+              value: allDay,
+              onChanged: (value) => setModalState(() {
+                allDay = value;
+                if (allDay) {
+                  start = _day(start);
+                  end = _day(start).add(const Duration(days: 1));
+                }
+              }),
+            ),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final chosen = await choose(start);
+                if (chosen != null) setModalState(() => start = chosen);
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(
+                '${l10n.eventStarts}: ${_formatWhen(context, start, allDay: allDay)}',
+              ),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final chosen = await choose(end);
+                if (chosen != null) setModalState(() => end = chosen);
+              },
+              icon: const Icon(Icons.stop_rounded),
+              label: Text(
+                '${l10n.eventEnds}: ${_formatWhen(context, end, allDay: allDay)}',
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                if (event != null)
+                  IconButton.filledTonal(
+                    tooltip: l10n.delete,
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: sheetContext,
+                        builder: (context) => AlertDialog(
+                          title: Text(l10n.deleteCalendarEventTitle),
+                          content: Text(
+                            l10n.deleteCalendarEventBody(event.summary),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.cancel),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(l10n.delete),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true || !sheetContext.mounted) return;
+                      Navigator.pop(sheetContext);
+                      await home.deleteCalendarEvent(event, rangeFrom, rangeTo);
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded),
+                  ),
+                if (event != null) const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () async {
+                      if (summary.text.trim().isEmpty || !end.isAfter(start)) {
+                        return;
+                      }
+                      Navigator.pop(sheetContext);
+                      await home.saveCalendarEvent(
+                        existing: event,
+                        summary: summary.text,
+                        location: location.text,
+                        start: start,
+                        end: end,
+                        allDay: allDay,
+                        rangeFrom: rangeFrom,
+                        rangeTo: rangeTo,
+                      );
+                    },
+                    child: Text(l10n.save),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  await Future<void>.delayed(const Duration(milliseconds: 300));
+  summary.dispose();
+  location.dispose();
+}
+
 Future<void> _editReminder(
   BuildContext context,
   HomeController home,
@@ -1917,6 +2338,11 @@ Future<void> _showReminderEditor(
     'monthly',
     'yearly',
   };
+  final custom = RegExp(r'^every:(\d+):(hour|day|week|month|year)$')
+      .firstMatch(repeat);
+  var repeatMode = standardRepeats.contains(repeat) ? repeat : 'custom';
+  var repeatCount = int.tryParse(custom?.group(1) ?? '') ?? 2;
+  var repeatUnit = custom?.group(2) ?? 'day';
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -1975,7 +2401,7 @@ Future<void> _showReminderEditor(
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: repeat,
+              initialValue: repeatMode,
               decoration: InputDecoration(labelText: l10n.repeat),
               items:
                   [
@@ -1985,8 +2411,7 @@ Future<void> _showReminderEditor(
                         ('weekly', l10n.repeatWeekly),
                         ('monthly', l10n.repeatMonthly),
                         ('yearly', l10n.repeatYearly),
-                        if (!standardRepeats.contains(repeat))
-                          (repeat, _repeatLabel(l10n, repeat)),
+                        ('custom', l10n.repeatFlexible),
                       ]
                       .map(
                         (item) => DropdownMenuItem(
@@ -1995,13 +2420,66 @@ Future<void> _showReminderEditor(
                         ),
                       )
                       .toList(),
-              onChanged: (value) =>
-                  setModalState(() => repeat = value ?? 'none'),
+              onChanged: (value) => setModalState(() {
+                repeatMode = value ?? 'none';
+                if (repeatMode != 'custom') repeat = repeatMode;
+              }),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: repeatMode != 'custom'
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(l10n.repeatEvery)),
+                          SizedBox(
+                            width: 76,
+                            child: TextFormField(
+                              initialValue: '$repeatCount',
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: const InputDecoration(isDense: true),
+                              onChanged: (value) => repeatCount =
+                                  (int.tryParse(value) ?? 2).clamp(1, 365),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: repeatUnit,
+                              isExpanded: true,
+                              items:
+                                  [
+                                        ('hour', l10n.repeatUnitHour),
+                                        ('day', l10n.repeatUnitDay),
+                                        ('week', l10n.repeatUnitWeek),
+                                        ('month', l10n.repeatUnitMonth),
+                                        ('year', l10n.repeatUnitYear),
+                                      ]
+                                      .map(
+                                        (item) => DropdownMenuItem(
+                                          value: item.$1,
+                                          child: Text(item.$2),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (value) => repeatUnit = value ?? 'day',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
             ),
             const SizedBox(height: 18),
             FilledButton(
               onPressed: () async {
                 if (title.text.trim().isEmpty) return;
+                if (repeatMode == 'custom') {
+                  repeat = 'every:${repeatCount.clamp(1, 365)}:$repeatUnit';
+                }
                 Navigator.pop(context);
                 if (reminder == null) {
                   await home.createReminder(title.text, at, repeat);
@@ -2093,6 +2571,19 @@ String _customRepeatLabel(AppLocalizations l10n, String repeat) {
   };
   return l10n.repeatInterval(int.parse(match.group(1)!), unit);
 }
+
+DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
+
+bool _sameDay(DateTime left, DateTime right) =>
+    left.year == right.year &&
+    left.month == right.month &&
+    left.day == right.day;
+
+DateTime _rangeStart(DateTime month) =>
+    DateTime(month.year, month.month, 1).subtract(const Duration(days: 7));
+
+DateTime _rangeEnd(DateTime month) =>
+    DateTime(month.year, month.month + 2, 1).add(const Duration(days: 7));
 
 (String, DateTime, bool)? _nextItem(MobileOverview overview) {
   final candidates = <(String, DateTime, bool)>[

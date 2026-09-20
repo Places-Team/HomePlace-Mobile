@@ -17,6 +17,7 @@ final class AppPreferences extends ChangeNotifier {
       (item) => item.name == preferences.getString('app.theme'),
       orElse: () => ThemeMode.system,
     );
+    notifyListeners();
   }
 
   Locale? get locale => switch (language) {

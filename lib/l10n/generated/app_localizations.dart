@@ -554,6 +554,72 @@ abstract class AppLocalizations {
   /// **'No upcoming calendar events.'**
   String get noCalendarEvents;
 
+  /// No description provided for @addCalendarEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Add event'**
+  String get addCalendarEvent;
+
+  /// No description provided for @editCalendarEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit event'**
+  String get editCalendarEvent;
+
+  /// No description provided for @eventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Event title'**
+  String get eventTitle;
+
+  /// No description provided for @eventLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location (optional)'**
+  String get eventLocation;
+
+  /// No description provided for @eventStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get eventStarts;
+
+  /// No description provided for @eventEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get eventEnds;
+
+  /// No description provided for @noEventsOnDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing planned for this day.'**
+  String get noEventsOnDay;
+
+  /// No description provided for @deleteCalendarEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete event?'**
+  String get deleteCalendarEventTitle;
+
+  /// No description provided for @deleteCalendarEventBody.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” will be removed from your calendar.'**
+  String deleteCalendarEventBody(String title);
+
+  /// No description provided for @repeatFlexible.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom interval'**
+  String get repeatFlexible;
+
+  /// No description provided for @repeatEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'Every'**
+  String get repeatEvery;
+
   /// No description provided for @requestsTitle.
   ///
   /// In en, this message translates to:

@@ -18,6 +18,8 @@ final class HomeController extends ChangeNotifier {
   final MobileApi _api;
   MobileOverview? overview;
   List<MobileSearchResult> searchResults = const [];
+  List<MobileCalendarEvent>? calendarEvents;
+  bool calendarLoading = false;
   String? error;
   String? notice;
   bool loading = true;
@@ -178,6 +180,77 @@ final class HomeController extends ChangeNotifier {
     busyId = id;
     notifyListeners();
     await _run(() => _api.deleteReminder(session, id));
+  }
+
+  Future<void> loadCalendar(DateTime from, DateTime to) async {
+    final session = await sessionProvider();
+    if (session == null || calendarLoading) return;
+    calendarLoading = true;
+    notifyListeners();
+    final result = await _api.calendar(session, from, to);
+    if (result case LinkSuccess<List<MobileCalendarEvent>> success) {
+      calendarEvents = success.value;
+      error = null;
+    } else if (result case LinkFailure<List<MobileCalendarEvent>> failure) {
+      error = failure.message;
+    }
+    calendarLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> saveCalendarEvent({
+    MobileCalendarEvent? existing,
+    required String summary,
+    required DateTime start,
+    required DateTime end,
+    required bool allDay,
+    String? location,
+    required DateTime rangeFrom,
+    required DateTime rangeTo,
+  }) async {
+    final session = await sessionProvider();
+    if (session == null || summary.trim().isEmpty) return;
+    busyId = existing == null ? 'new-calendar-event' : existing.id;
+    notifyListeners();
+    final result = await _api.saveCalendarEvent(
+      session,
+      existing: existing,
+      summary: summary.trim(),
+      start: start,
+      end: end,
+      allDay: allDay,
+      location: location,
+    );
+    if (result is LinkSuccess<void>) {
+      error = null;
+      calendarEvents = null;
+      await loadCalendar(rangeFrom, rangeTo);
+    } else if (result case LinkFailure<void> failure) {
+      error = failure.message;
+    }
+    busyId = null;
+    notifyListeners();
+  }
+
+  Future<void> deleteCalendarEvent(
+    MobileCalendarEvent event,
+    DateTime rangeFrom,
+    DateTime rangeTo,
+  ) async {
+    final session = await sessionProvider();
+    if (session == null) return;
+    busyId = event.id;
+    notifyListeners();
+    final result = await _api.deleteCalendarEvent(session, event.id);
+    if (result is LinkSuccess<void>) {
+      error = null;
+      calendarEvents = null;
+      await loadCalendar(rangeFrom, rangeTo);
+    } else if (result case LinkFailure<void> failure) {
+      error = failure.message;
+    }
+    busyId = null;
+    notifyListeners();
   }
 
   Future<void> search(String query) async {

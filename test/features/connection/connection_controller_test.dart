@@ -50,6 +50,8 @@ void main() {
     ]);
     expect(link.requestedPermissions, [
       'dashboard.read',
+      'calendar.read',
+      'calendar.manage',
       'reminder.manage',
       'media.request',
       'telegram.send',
