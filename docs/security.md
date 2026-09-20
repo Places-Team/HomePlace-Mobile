@@ -31,4 +31,4 @@ Android sharing is deliberately consent-driven. Selecting HomePlace in the syste
 
 Text is limited to 8,000 characters. Links are limited to HTTP(S), may not contain embedded credentials, and are never opened automatically. Files are limited to 5 MB, encrypted at rest with a random per-transfer AES-256-GCM key, and offered to exactly one target for five minutes. The receiver must accept before download and save, and the client verifies the advertised SHA-256 digest. Content is not included in logs or notification text. Declined and expired offers are removed; downloaded file transfers are consumed once.
 
-Persistent background delivery is not implemented in this milestone and is not advertised.
+Android offers opt-in periodic notification checks through the operating system's WorkManager. Each run validates the saved server ID before reading the credential, processes only bounded `notification.deliver` events, and acknowledges them after local delivery. Clipboard, links, and files are never handled by the background worker. Android controls the schedule with a minimum interval of about 15 minutes, so this is not advertised as realtime or persistent presence.

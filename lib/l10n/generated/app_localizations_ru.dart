@@ -612,4 +612,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cancelAddingConnection => 'Вернуться к подключённому HomePlace';
+
+  @override
+  String get backgroundDelivery => 'Проверка уведомлений в фоне';
+
+  @override
+  String get backgroundDeliveryBody =>
+      'Android проверяет подключённые серверы HomePlace примерно раз в 15 минут. Система может отложить проверку ради батареи; для буфера и файлов всё ещё нужно открыть приложение.';
+
+  @override
+  String get notificationPermissionRequired =>
+      'Разрешите уведомления HomePlace в настройках Android, чтобы включить фоновую доставку.';
 }

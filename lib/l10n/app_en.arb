@@ -200,5 +200,8 @@
   "homePlaceProfiles": "HomePlace connections",
   "activeProfile": "Active",
   "connectAnotherHomePlace": "Connect another HomePlace",
-  "cancelAddingConnection": "Back to the connected HomePlace"
+  "cancelAddingConnection": "Back to the connected HomePlace",
+  "backgroundDelivery": "Background notification checks",
+  "backgroundDeliveryBody": "Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery; clipboard and file offers still require opening the app.",
+  "notificationPermissionRequired": "Allow HomePlace notifications in Android settings to enable background delivery."
 }

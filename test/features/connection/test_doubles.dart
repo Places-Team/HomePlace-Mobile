@@ -26,6 +26,8 @@ final class FakeLinkService implements LinkService {
   String heartbeatServerId = testServerId;
   LinkResult<PairingSession>? pairingResult;
   LinkResult<PairingClaim>? claimResult;
+  final List<LinkResult<HeartbeatResponse>> heartbeatResults = [];
+  final List<List<String>> heartbeatAcknowledgements = [];
   List<Capability> reportedCapabilities = const [];
   List<String> requestedPermissions = const [];
 
@@ -75,9 +77,13 @@ final class FakeLinkService implements LinkService {
     ServerAddress address,
     String credential,
     List<String> acknowledgedEventIds,
-  ) async => LinkSuccess(
-    HeartbeatResponse(serverId: heartbeatServerId, events: const []),
-  );
+  ) async {
+    heartbeatAcknowledgements.add(List.of(acknowledgedEventIds));
+    if (heartbeatResults.isNotEmpty) return heartbeatResults.removeAt(0);
+    return LinkSuccess(
+      HeartbeatResponse(serverId: heartbeatServerId, events: const []),
+    );
+  }
 
   @override
   Future<LinkResult<void>> revoke(

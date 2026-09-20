@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'core/network/server_address.dart';
+import 'core/background/background_delivery.dart';
 import 'core/branding/brand_mark.dart';
 import 'core/settings/app_preferences.dart';
 import 'features/connection/connection_controller.dart';
@@ -10,8 +11,12 @@ import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  const backgroundDelivery = AndroidBackgroundDeliveryScheduler();
+  await backgroundDelivery.initialize();
   final controller = ConnectionController();
-  final preferences = AppPreferences();
+  final preferences = AppPreferences(
+    onBackgroundDeliveryChanged: backgroundDelivery.setEnabled,
+  );
   runApp(HomePlaceApp(controller: controller, preferences: preferences));
   await preferences.initialize();
   await controller.initialize();

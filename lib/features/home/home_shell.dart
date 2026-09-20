@@ -254,6 +254,34 @@ class _HomeShellState extends State<HomeShell> {
                   subtitle: Text(l10n.automaticClipboardBody),
                   secondary: const Icon(Icons.content_paste_go_rounded),
                 ),
+              if (Platform.isAndroid)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: widget.preferences?.backgroundDeliveryEnabled ?? false,
+                  onChanged: widget.preferences == null
+                      ? null
+                      : (enabled) async {
+                          if (enabled &&
+                              !await widget.connection
+                                  .requestNotificationPermission()) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    l10n.notificationPermissionRequired,
+                                  ),
+                                ),
+                              );
+                            }
+                            return;
+                          }
+                          await widget.preferences!
+                              .setBackgroundDeliveryEnabled(enabled);
+                        },
+                  title: Text(l10n.backgroundDelivery),
+                  subtitle: Text(l10n.backgroundDeliveryBody),
+                  secondary: const Icon(Icons.notifications_active_outlined),
+                ),
               FutureBuilder<PackageInfo>(
                 future: PackageInfo.fromPlatform(),
                 builder: (context, snapshot) {

@@ -611,4 +611,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancelAddingConnection => 'Back to the connected HomePlace';
+
+  @override
+  String get backgroundDelivery => 'Background notification checks';
+
+  @override
+  String get backgroundDeliveryBody =>
+      'Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery; clipboard and file offers still require opening the app.';
+
+  @override
+  String get notificationPermissionRequired =>
+      'Allow HomePlace notifications in Android settings to enable background delivery.';
 }

@@ -449,6 +449,9 @@ final class ConnectionController extends ChangeNotifier {
     );
   }
 
+  Future<bool> requestNotificationPermission() =>
+      _notifications.requestPermission();
+
   Future<String?> readClipboardText() async {
     if (!_clipboard.isSupported) return null;
     return _clipboard.readText();
@@ -733,7 +736,14 @@ final class ConnectionController extends ChangeNotifier {
       if (event.type != 'notification.deliver') continue;
       final title = event.payload['title'];
       final body = event.payload['body'];
-      if (title is! String || body is! String) continue;
+      if (title is! String ||
+          body is! String ||
+          title.isEmpty ||
+          title.length > 120 ||
+          body.isEmpty ||
+          body.length > 2000) {
+        continue;
+      }
       await _notifications.show(event.id, title, body);
       acknowledged.add(event.id);
       lastNotification = '$title — $body';

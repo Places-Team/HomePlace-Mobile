@@ -4,8 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum AppLanguage { system, english, russian }
 
 final class AppPreferences extends ChangeNotifier {
+  AppPreferences({this.onBackgroundDeliveryChanged});
+
+  final Future<void> Function(bool enabled)? onBackgroundDeliveryChanged;
   AppLanguage language = AppLanguage.system;
   ThemeMode themeMode = ThemeMode.system;
+  bool backgroundDeliveryEnabled = false;
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
@@ -17,6 +21,11 @@ final class AppPreferences extends ChangeNotifier {
       (item) => item.name == preferences.getString('app.theme'),
       orElse: () => ThemeMode.system,
     );
+    backgroundDeliveryEnabled =
+        preferences.getBool('app.backgroundDelivery') ?? false;
+    if (backgroundDeliveryEnabled) {
+      await onBackgroundDeliveryChanged?.call(true);
+    }
     notifyListeners();
   }
 
@@ -40,5 +49,14 @@ final class AppPreferences extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString('app.theme', value.name);
+  }
+
+  Future<void> setBackgroundDeliveryEnabled(bool value) async {
+    if (backgroundDeliveryEnabled == value) return;
+    backgroundDeliveryEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('app.backgroundDelivery', value);
+    await onBackgroundDeliveryChanged?.call(value);
   }
 }

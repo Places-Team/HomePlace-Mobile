@@ -28,4 +28,4 @@ The server ID returned by pairing and heartbeat must match the ID previewed befo
 
 The app can retain multiple connection profiles and switch between them only after revalidating the saved server ID. Credentials and transfer history remain isolated by server profile. Household sharing uses the server's explicit household membership and approval model and never exposes all accounts on an installation.
 
-WebSocket presence, durable background delivery, richer commands, and local-network discovery remain outside this milestone. Discovery must wait for a canonical server advertisement contract rather than guessing endpoints or service names in the client.
+WebSocket presence, instant push delivery, richer commands, and local-network discovery remain outside this milestone. Android can perform opt-in periodic notification checks, but the operating system controls their timing. Discovery must wait for a canonical server advertisement contract rather than guessing endpoints or service names in the client.

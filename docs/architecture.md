@@ -26,7 +26,7 @@ On Android, an `ACTION_SEND` intent is reduced to a bounded text, HTTP(S) URL, o
 
 ## Native boundaries
 
-- Android generates a P-256 identity key in Android Keystore. Narrow Kotlin channels perform foreground clipboard access, Share Sheet ingestion, safe URL opening, and confirmed file saving. Notification, QR camera, and future foreground-service work remain Android-specific.
+- Android generates a P-256 identity key in Android Keystore. Narrow Kotlin channels perform foreground clipboard access, Share Sheet ingestion, safe URL opening, and confirmed file saving. Opt-in WorkManager jobs periodically validate each server and deliver notification events without processing clipboard, link, or file offers.
 - iOS generates a P-256 identity key in Keychain. Notification, a future Share Extension, and permitted background behavior remain iOS-specific. The current iOS build does not advertise sharing capabilities.
 - Shared code never claims unrestricted background execution, arbitrary app launching, or remote system control. Android clipboard relay is foreground-only and incoming text requires an explicit copy action. iOS does not advertise clipboard relay.
 

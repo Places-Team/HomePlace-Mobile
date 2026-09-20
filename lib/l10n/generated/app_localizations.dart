@@ -1183,6 +1183,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to the connected HomePlace'**
   String get cancelAddingConnection;
+
+  /// No description provided for @backgroundDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Background notification checks'**
+  String get backgroundDelivery;
+
+  /// No description provided for @backgroundDeliveryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery; clipboard and file offers still require opening the app.'**
+  String get backgroundDeliveryBody;
+
+  /// No description provided for @notificationPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow HomePlace notifications in Android settings to enable background delivery.'**
+  String get notificationPermissionRequired;
 }
 
 class _AppLocalizationsDelegate

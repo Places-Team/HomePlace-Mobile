@@ -200,5 +200,8 @@
   "homePlaceProfiles": "Подключения HomePlace",
   "activeProfile": "Активно",
   "connectAnotherHomePlace": "Подключить другой HomePlace",
-  "cancelAddingConnection": "Вернуться к подключённому HomePlace"
+  "cancelAddingConnection": "Вернуться к подключённому HomePlace",
+  "backgroundDelivery": "Проверка уведомлений в фоне",
+  "backgroundDeliveryBody": "Android проверяет подключённые серверы HomePlace примерно раз в 15 минут. Система может отложить проверку ради батареи; для буфера и файлов всё ещё нужно открыть приложение.",
+  "notificationPermissionRequired": "Разрешите уведомления HomePlace в настройках Android, чтобы включить фоновую доставку."
 }

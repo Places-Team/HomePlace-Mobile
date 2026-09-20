@@ -13,12 +13,13 @@ The previous Kotlin/Compose and Swift/SwiftUI trees are preserved in `legacy/and
 - pairing approval, device identity, secure credential storage, and profiles;
 - foreground presence, notification events, disconnect, and revoke;
 - multiple saved HomePlace profiles with identity-checked switching;
+- opt-in Android periodic background notification delivery;
 - unit, controller, widget, and mock-server tests.
 
 ## Remaining platform work
 
 - real-device Android end-to-end pairing and notification validation;
-- persistent Android background transport;
+- instant Android push or WebSocket transport after the server exposes realtime support;
 - real-device iOS pairing and notification validation;
 - iOS background behavior within platform limits;
 - Share Sheet and Share Extension integration;
