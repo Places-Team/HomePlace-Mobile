@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:homeplace/core/settings/app_preferences.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/main.dart';
 
@@ -15,7 +16,9 @@ void main() {
       descriptionProvider: const FakeDescriptionProvider(),
     );
 
-    await tester.pumpWidget(HomePlaceApp(controller: controller));
+    await tester.pumpWidget(
+      HomePlaceApp(controller: controller, preferences: AppPreferences()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Your HomePlace, on your phone'), findsOneWidget);

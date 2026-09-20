@@ -144,6 +144,7 @@ final class ConnectionController extends ChangeNotifier {
   ConnectionProfile? profile;
   String? lastNotification;
   PendingClipboard? pendingClipboard;
+  String? _clipboardTextToSuppress;
   SharedContent? pendingOutgoingShare;
   PendingShareOffer? pendingIncomingShare;
   Timer? _heartbeatTimer;
@@ -409,10 +410,19 @@ final class ConnectionController extends ChangeNotifier {
     return _clipboard.readText();
   }
 
+  Future<String?> readClipboardTextForAutoRelay() async {
+    final text = (await readClipboardText())?.trim();
+    if (text == null || text.isEmpty) return null;
+    if (text == _clipboardTextToSuppress) return null;
+    _clipboardTextToSuppress = null;
+    return text;
+  }
+
   Future<void> acceptPendingClipboard() async {
     final pending = pendingClipboard;
     if (pending == null || !_clipboard.isSupported) return;
     await _clipboard.writeText(pending.text);
+    _clipboardTextToSuppress = pending.text.trim();
     _acknowledgedEventIds = {
       ..._acknowledgedEventIds,
       pending.eventId,
@@ -519,6 +529,7 @@ final class ConnectionController extends ChangeNotifier {
     diagnostics = null;
     lastNotification = null;
     pendingClipboard = null;
+    _clipboardTextToSuppress = null;
     pendingIncomingShare = null;
     clearOutgoingShare();
     notifyListeners();
@@ -530,6 +541,7 @@ final class ConnectionController extends ChangeNotifier {
     serverAddress = null;
     serverInfo = null;
     pairingSession = null;
+    _clipboardTextToSuppress = null;
     error = null;
     notifyListeners();
   }

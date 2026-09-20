@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../../core/branding/brand_mark.dart';
+import '../../core/settings/app_preferences.dart';
 import '../../link/mobile_models.dart';
 import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
@@ -15,9 +16,15 @@ const _mint = Color(0xff70e1b4);
 const _ink = Color(0xff11111b);
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({required this.connection, this.homeController, super.key});
+  const HomeShell({
+    required this.connection,
+    this.homeController,
+    this.preferences,
+    super.key,
+  });
   final ConnectionController connection;
   final HomeController? homeController;
+  final AppPreferences? preferences;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -33,6 +40,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    home.bindClipboardReader(widget.connection.readClipboardTextForAutoRelay);
     if (ownsHome) home.initialize();
   }
 
@@ -89,6 +97,8 @@ class _HomeShellState extends State<HomeShell> {
                     _MessageBanner(
                       message: message == 'clipboard_empty'
                           ? l10n.clipboardEmpty
+                          : message == 'clipboard_no_devices'
+                          ? l10n.clipboardNoDevices
                           : message,
                       error: true,
                       onClose: home.clearMessage,
@@ -100,6 +110,10 @@ class _HomeShellState extends State<HomeShell> {
                           : notice.startsWith('clipboard:')
                           ? l10n.clipboardSent(
                               int.tryParse(notice.substring(10)) ?? 0,
+                            )
+                          : notice.startsWith('clipboard_auto:')
+                          ? l10n.automaticClipboardSent(
+                              int.tryParse(notice.substring(15)) ?? 0,
                             )
                           : notice.startsWith('share:')
                           ? l10n.shareSent(notice.substring(6))
@@ -145,38 +159,128 @@ class _HomeShellState extends State<HomeShell> {
     },
   );
 
-  Future<void> _showSettings(BuildContext context, AppLocalizations l10n) =>
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (context) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  l10n.settings,
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
+  Future<void> _showSettings(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (context) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+        child: ListenableBuilder(
+          listenable: Listenable.merge([
+            home,
+            if (widget.preferences != null) widget.preferences!,
+          ]),
+          builder: (context, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.settings,
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 16),
+              if (widget.preferences case final preferences?) ...[
+                DropdownButtonFormField<AppLanguage>(
+                  initialValue: preferences.language,
+                  decoration: InputDecoration(
+                    labelText: l10n.language,
+                    prefixIcon: const Icon(Icons.language_rounded),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: AppLanguage.system,
+                      child: Text(l10n.languageSystem),
+                    ),
+                    DropdownMenuItem(
+                      value: AppLanguage.english,
+                      child: Text(l10n.languageEnglish),
+                    ),
+                    DropdownMenuItem(
+                      value: AppLanguage.russian,
+                      child: Text(l10n.languageRussian),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) preferences.setLanguage(value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<ThemeMode>(
+                  initialValue: preferences.themeMode,
+                  decoration: InputDecoration(
+                    labelText: l10n.appearance,
+                    prefixIcon: const Icon(Icons.palette_outlined),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text(l10n.themeSystem),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text(l10n.themeLight),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text(l10n.themeDark),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) preferences.setThemeMode(value);
+                  },
                 ),
                 const SizedBox(height: 8),
-                Text(widget.connection.profile?.preferredUrl ?? ''),
-                const SizedBox(height: 20),
-                FilledButton.tonalIcon(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    await widget.connection.disconnect();
-                  },
-                  icon: const Icon(Icons.link_off_rounded),
-                  label: Text(l10n.disconnect),
-                ),
               ],
-            ),
+              if (Platform.isAndroid)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: home.autoClipboardEnabled,
+                  onChanged: home.setAutoClipboardEnabled,
+                  title: Text(l10n.automaticClipboard),
+                  subtitle: Text(l10n.automaticClipboardBody),
+                  secondary: const Icon(Icons.content_paste_go_rounded),
+                ),
+              const Divider(height: 28),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  widget.connection.profile?.secure == true
+                      ? Icons.verified_user_rounded
+                      : Icons.warning_amber_rounded,
+                ),
+                title: Text(l10n.connectionSecurity),
+                subtitle: Text(
+                  widget.connection.profile?.secure == true
+                      ? l10n.secureConnection
+                      : l10n.localUnencryptedConnection,
+                ),
+              ),
+              SelectableText(widget.connection.profile?.preferredUrl ?? ''),
+              const SizedBox(height: 6),
+              SelectableText(
+                '${l10n.serverIdentity}: ${widget.connection.profile?.serverId ?? ''}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.tonalIcon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await widget.connection.disconnect();
+                },
+                icon: const Icon(Icons.link_off_rounded),
+                label: Text(l10n.disconnect),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   Future<void> _showShareTargets(
     BuildContext context,
@@ -527,6 +631,8 @@ class _OverviewPage extends StatelessWidget {
           _ClipboardCard(
             pending: connection.pendingClipboard,
             sending: home.busyId == 'clipboard',
+            autoEnabled: home.autoClipboardEnabled,
+            onAutoChanged: home.setAutoClipboardEnabled,
             onSend: () => home.sendClipboard(connection.readClipboardText),
             onAccept: connection.acceptPendingClipboard,
             onDismiss: connection.dismissPendingClipboard,
@@ -632,12 +738,16 @@ class _ClipboardCard extends StatelessWidget {
   const _ClipboardCard({
     required this.pending,
     required this.sending,
+    required this.autoEnabled,
+    required this.onAutoChanged,
     required this.onSend,
     required this.onAccept,
     required this.onDismiss,
   });
   final PendingClipboard? pending;
   final bool sending;
+  final bool autoEnabled;
+  final ValueChanged<bool> onAutoChanged;
   final VoidCallback onSend;
   final VoidCallback onAccept;
   final VoidCallback onDismiss;
@@ -679,7 +789,15 @@ class _ClipboardCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          if (offer == null)
+          if (offer == null) ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: autoEnabled,
+              onChanged: onAutoChanged,
+              title: Text(l10n.automaticClipboard),
+              subtitle: Text(l10n.automaticClipboardBody),
+            ),
+            const SizedBox(height: 8),
             FilledButton.tonalIcon(
               onPressed: sending ? null : onSend,
               icon: sending
@@ -689,8 +807,8 @@ class _ClipboardCard extends StatelessWidget {
                     )
                   : const Icon(Icons.send_rounded),
               label: Text(l10n.clipboardSend),
-            )
-          else
+            ),
+          ] else
             Row(
               children: [
                 Expanded(
@@ -1791,12 +1909,20 @@ Future<void> _showReminderEditor(
   var at =
       reminder?.at.toLocal() ?? DateTime.now().add(const Duration(hours: 1));
   var repeat = reminder?.repeat ?? 'none';
+  const standardRepeats = {
+    'none',
+    'hourly',
+    'daily',
+    'weekly',
+    'monthly',
+    'yearly',
+  };
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (context) => StatefulBuilder(
-      builder: (context, setModalState) => Padding(
+      builder: (context, setModalState) => SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           24,
           4,
@@ -1854,9 +1980,13 @@ Future<void> _showReminderEditor(
               items:
                   [
                         ('none', l10n.repeatNone),
+                        ('hourly', l10n.repeatHourly),
                         ('daily', l10n.repeatDaily),
                         ('weekly', l10n.repeatWeekly),
                         ('monthly', l10n.repeatMonthly),
+                        ('yearly', l10n.repeatYearly),
+                        if (!standardRepeats.contains(repeat))
+                          (repeat, _repeatLabel(l10n, repeat)),
                       ]
                       .map(
                         (item) => DropdownMenuItem(
@@ -1886,6 +2016,7 @@ Future<void> _showReminderEditor(
       ),
     ),
   );
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   title.dispose();
 }
 
@@ -1940,11 +2071,28 @@ Future<void> _confirmClearCompleted(
 }
 
 String _repeatLabel(AppLocalizations l10n, String repeat) => switch (repeat) {
+  'hourly' => l10n.repeatHourly,
   'daily' => l10n.repeatDaily,
   'weekly' => l10n.repeatWeekly,
   'monthly' => l10n.repeatMonthly,
-  _ => l10n.repeatNone,
+  'yearly' => l10n.repeatYearly,
+  'none' => l10n.repeatNone,
+  _ => _customRepeatLabel(l10n, repeat),
 };
+
+String _customRepeatLabel(AppLocalizations l10n, String repeat) {
+  final match = RegExp(r'^every:(\d+):(hour|day|week|month|year)$')
+      .firstMatch(repeat);
+  if (match == null) return l10n.customRepeat(repeat);
+  final unit = switch (match.group(2)) {
+    'hour' => l10n.repeatUnitHour,
+    'day' => l10n.repeatUnitDay,
+    'week' => l10n.repeatUnitWeek,
+    'month' => l10n.repeatUnitMonth,
+    _ => l10n.repeatUnitYear,
+  };
+  return l10n.repeatInterval(int.parse(match.group(1)!), unit);
+}
 
 (String, DateTime, bool)? _nextItem(MobileOverview overview) {
   final candidates = <(String, DateTime, bool)>[

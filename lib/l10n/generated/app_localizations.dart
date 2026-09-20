@@ -191,7 +191,7 @@ abstract class AppLocalizations {
   /// No description provided for @secureConnection.
   ///
   /// In en, this message translates to:
-  /// **'Secure HTTPS connection'**
+  /// **'Encrypted HTTPS connection'**
   String get secureConnection;
 
   /// No description provided for @localHttpWarning.
@@ -452,6 +452,12 @@ abstract class AppLocalizations {
   /// **'Does not repeat'**
   String get repeatNone;
 
+  /// No description provided for @repeatHourly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every hour'**
+  String get repeatHourly;
+
   /// No description provided for @repeatDaily.
   ///
   /// In en, this message translates to:
@@ -469,6 +475,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Every month'**
   String get repeatMonthly;
+
+  /// No description provided for @repeatYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every year'**
+  String get repeatYearly;
+
+  /// No description provided for @repeatInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {count} {unit}'**
+  String repeatInterval(int count, String unit);
+
+  /// No description provided for @repeatUnitHour.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get repeatUnitHour;
+
+  /// No description provided for @repeatUnitDay.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get repeatUnitDay;
+
+  /// No description provided for @repeatUnitWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'weeks'**
+  String get repeatUnitWeek;
+
+  /// No description provided for @repeatUnitMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'months'**
+  String get repeatUnitMonth;
+
+  /// No description provided for @repeatUnitYear.
+  ///
+  /// In en, this message translates to:
+  /// **'years'**
+  String get repeatUnitYear;
+
+  /// No description provided for @customRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom: {rule}'**
+  String customRepeat(String rule);
 
   /// No description provided for @save.
   ///
@@ -733,6 +787,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The clipboard does not contain text.'**
   String get clipboardEmpty;
+
+  /// No description provided for @clipboardNoDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No other compatible device is connected to this account.'**
+  String get clipboardNoDevices;
+
+  /// No description provided for @automaticClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Send clipboard automatically'**
+  String get automaticClipboard;
+
+  /// No description provided for @automaticClipboardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'While HomePlace is open, send changed text to your approved devices. Incoming text still requires confirmation.'**
+  String get automaticClipboardBody;
+
+  /// No description provided for @automaticClipboardSent.
+  ///
+  /// In en, this message translates to:
+  /// **'New clipboard text was sent to {count} device(s).'**
+  String automaticClipboardSent(int count);
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System language'**
+  String get languageSystem;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageRussian.
+  ///
+  /// In en, this message translates to:
+  /// **'Russian'**
+  String get languageRussian;
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @connectionSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection security'**
+  String get connectionSecurity;
+
+  /// No description provided for @localUnencryptedConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Unencrypted local-network connection'**
+  String get localUnencryptedConnection;
+
+  /// No description provided for @serverIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Server ID'**
+  String get serverIdentity;
 
   /// No description provided for @readyToShare.
   ///

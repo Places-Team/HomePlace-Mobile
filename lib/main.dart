@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'core/network/server_address.dart';
 import 'core/branding/brand_mark.dart';
+import 'core/settings/app_preferences.dart';
 import 'features/connection/connection_controller.dart';
 import 'features/home/home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -10,30 +11,46 @@ import 'l10n/generated/app_localizations.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final controller = ConnectionController();
+  final preferences = AppPreferences();
+  await preferences.initialize();
   await controller.initialize();
-  runApp(HomePlaceApp(controller: controller));
+  runApp(HomePlaceApp(controller: controller, preferences: preferences));
 }
 
 class HomePlaceApp extends StatelessWidget {
-  const HomePlaceApp({required this.controller, super.key});
+  const HomePlaceApp({
+    required this.controller,
+    required this.preferences,
+    super.key,
+  });
   final ConnectionController controller;
+  final AppPreferences preferences;
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    onGenerateTitle: (context) => AppLocalizations.of(context).appName,
-    debugShowCheckedModeBanner: false,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    theme: _theme(Brightness.light),
-    darkTheme: _theme(Brightness.dark),
-    themeMode: ThemeMode.system,
-    home: ConnectionShell(controller: controller),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: preferences,
+    builder: (context, _) => MaterialApp(
+      onGenerateTitle: (context) => AppLocalizations.of(context).appName,
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: preferences.locale,
+      theme: _theme(Brightness.light),
+      darkTheme: _theme(Brightness.dark),
+      themeMode: preferences.themeMode,
+      home: ConnectionShell(controller: controller, preferences: preferences),
+    ),
   );
 }
 
 class ConnectionShell extends StatelessWidget {
-  const ConnectionShell({required this.controller, super.key});
+  const ConnectionShell({
+    required this.controller,
+    required this.preferences,
+    super.key,
+  });
   final ConnectionController controller;
+  final AppPreferences preferences;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -41,7 +58,7 @@ class ConnectionShell extends StatelessWidget {
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
       if (controller.stage == ConnectionStage.connected) {
-        return HomeShell(connection: controller);
+        return HomeShell(connection: controller, preferences: preferences);
       }
       return Scaffold(
         appBar: controller.stage == ConnectionStage.welcome

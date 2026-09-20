@@ -58,7 +58,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get readyToPair => 'Можно подключать';
 
   @override
-  String get secureConnection => 'Защищённое HTTPS-соединение';
+  String get secureConnection => 'Защищённое подключение HTTPS';
 
   @override
   String get localHttpWarning => 'Незашифрованное соединение в локальной сети';
@@ -198,6 +198,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get repeatNone => 'Не повторять';
 
   @override
+  String get repeatHourly => 'Каждый час';
+
+  @override
   String get repeatDaily => 'Каждый день';
 
   @override
@@ -205,6 +208,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get repeatMonthly => 'Каждый месяц';
+
+  @override
+  String get repeatYearly => 'Каждый год';
+
+  @override
+  String repeatInterval(int count, String unit) {
+    return 'Каждые $count $unit';
+  }
+
+  @override
+  String get repeatUnitHour => 'ч.';
+
+  @override
+  String get repeatUnitDay => 'дн.';
+
+  @override
+  String get repeatUnitWeek => 'нед.';
+
+  @override
+  String get repeatUnitMonth => 'мес.';
+
+  @override
+  String get repeatUnitYear => 'г.';
+
+  @override
+  String customRepeat(String rule) {
+    return 'Особый повтор: $rule';
+  }
 
   @override
   String get save => 'Сохранить';
@@ -354,6 +385,56 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clipboardEmpty => 'В буфере обмена нет текста.';
+
+  @override
+  String get clipboardNoDevices =>
+      'К этому аккаунту не подключено другое совместимое устройство.';
+
+  @override
+  String get automaticClipboard => 'Отправлять буфер автоматически';
+
+  @override
+  String get automaticClipboardBody =>
+      'Пока HomePlace открыт, изменённый текст отправляется на ваши подтверждённые устройства. Получение всё равно требует подтверждения.';
+
+  @override
+  String automaticClipboardSent(int count) {
+    return 'Новый текст отправлен на устройств: $count.';
+  }
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get languageSystem => 'Как в системе';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageRussian => 'Русский';
+
+  @override
+  String get appearance => 'Оформление';
+
+  @override
+  String get themeSystem => 'Как в системе';
+
+  @override
+  String get themeLight => 'Светлое';
+
+  @override
+  String get themeDark => 'Тёмное';
+
+  @override
+  String get connectionSecurity => 'Безопасность подключения';
+
+  @override
+  String get localUnencryptedConnection =>
+      'Незашифрованное подключение в локальной сети';
+
+  @override
+  String get serverIdentity => 'ID сервера';
 
   @override
   String get readyToShare => 'Готово к отправке';

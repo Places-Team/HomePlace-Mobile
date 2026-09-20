@@ -46,7 +46,9 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CLIPBOARD_CHANNEL).setMethodCallHandler { call, result ->
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             when (call.method) {
-                "readText" -> result.success(clipboard.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString())
+                "readText" -> result.success(
+                    if (hasWindowFocus()) clipboard.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() else null,
+                )
                 "writeText" -> {
                     val text = call.argument<String>("text")
                     if (text == null || text.length > 8000) {

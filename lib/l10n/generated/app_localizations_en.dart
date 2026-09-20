@@ -58,7 +58,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readyToPair => 'Ready to pair';
 
   @override
-  String get secureConnection => 'Secure HTTPS connection';
+  String get secureConnection => 'Encrypted HTTPS connection';
 
   @override
   String get localHttpWarning => 'Unencrypted local-network connection';
@@ -198,6 +198,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get repeatNone => 'Does not repeat';
 
   @override
+  String get repeatHourly => 'Every hour';
+
+  @override
   String get repeatDaily => 'Every day';
 
   @override
@@ -205,6 +208,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get repeatMonthly => 'Every month';
+
+  @override
+  String get repeatYearly => 'Every year';
+
+  @override
+  String repeatInterval(int count, String unit) {
+    return 'Every $count $unit';
+  }
+
+  @override
+  String get repeatUnitHour => 'hours';
+
+  @override
+  String get repeatUnitDay => 'days';
+
+  @override
+  String get repeatUnitWeek => 'weeks';
+
+  @override
+  String get repeatUnitMonth => 'months';
+
+  @override
+  String get repeatUnitYear => 'years';
+
+  @override
+  String customRepeat(String rule) {
+    return 'Custom: $rule';
+  }
 
   @override
   String get save => 'Save';
@@ -354,6 +385,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clipboardEmpty => 'The clipboard does not contain text.';
+
+  @override
+  String get clipboardNoDevices =>
+      'No other compatible device is connected to this account.';
+
+  @override
+  String get automaticClipboard => 'Send clipboard automatically';
+
+  @override
+  String get automaticClipboardBody =>
+      'While HomePlace is open, send changed text to your approved devices. Incoming text still requires confirmation.';
+
+  @override
+  String automaticClipboardSent(int count) {
+    return 'New clipboard text was sent to $count device(s).';
+  }
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageRussian => 'Russian';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeSystem => 'Follow system';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get connectionSecurity => 'Connection security';
+
+  @override
+  String get localUnencryptedConnection =>
+      'Unencrypted local-network connection';
+
+  @override
+  String get serverIdentity => 'Server ID';
 
   @override
   String get readyToShare => 'Ready to share';

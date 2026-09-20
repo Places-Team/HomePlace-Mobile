@@ -34,6 +34,12 @@ void main() {
       scrollable: find.byType(Scrollable).hitTestable().first,
     );
     expect(find.text('Upcoming · 1'), findsOneWidget);
+    await tester.tap(find.text('Water plants'));
+    await tester.pumpAndSettle();
+    expect(find.text('Every 2 days'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Past due · 1'),
       200,
@@ -71,7 +77,7 @@ MobileOverview _overview() {
         'id': 'r1',
         'title': 'Water plants',
         'at': now.add(const Duration(hours: 2)).toIso8601String(),
-        'repeat': 'weekly',
+        'repeat': 'every:2:day',
         'done': false,
         'createdAt': now.toIso8601String(),
       },

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/sharing/share_service.dart';
 import '../../link/link_client.dart';
@@ -24,13 +25,69 @@ final class HomeController extends ChangeNotifier {
   bool searching = false;
   String? busyId;
   Timer? _refreshTimer;
+  Timer? _clipboardTimer;
+  Future<String?> Function()? _clipboardReader;
+  String? _lastAutoClipboardText;
+  bool _autoClipboardBusy = false;
+  bool autoClipboardEnabled = false;
 
   Future<void> initialize() async {
+    final preferences = await SharedPreferences.getInstance();
+    autoClipboardEnabled = preferences.getBool('clipboard.autoSend') ?? false;
     await refresh(initial: true);
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) => refresh(),
     );
+    _restartClipboardTimer();
+  }
+
+  void bindClipboardReader(Future<String?> Function() reader) {
+    _clipboardReader = reader;
+    _restartClipboardTimer();
+  }
+
+  Future<void> setAutoClipboardEnabled(bool value) async {
+    if (autoClipboardEnabled == value) return;
+    autoClipboardEnabled = value;
+    _lastAutoClipboardText = null;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('clipboard.autoSend', value);
+    _restartClipboardTimer();
+  }
+
+  void _restartClipboardTimer() {
+    _clipboardTimer?.cancel();
+    _clipboardTimer = null;
+    if (!autoClipboardEnabled || _clipboardReader == null) return;
+    unawaited(_relayClipboardIfChanged());
+    _clipboardTimer = Timer.periodic(
+      const Duration(seconds: 4),
+      (_) => unawaited(_relayClipboardIfChanged()),
+    );
+  }
+
+  Future<void> _relayClipboardIfChanged() async {
+    if (_autoClipboardBusy || !autoClipboardEnabled) return;
+    final reader = _clipboardReader;
+    if (reader == null) return;
+    _autoClipboardBusy = true;
+    try {
+      final text = (await reader())?.trim() ?? '';
+      if (text.isEmpty || text == _lastAutoClipboardText) return;
+      _lastAutoClipboardText = text;
+      final session = await sessionProvider();
+      if (session == null) return;
+      final result = await _api.relayClipboard(session, text);
+      if (result case LinkSuccess<int> success when success.value > 0) {
+        notice = 'clipboard_auto:${success.value}';
+        error = null;
+        notifyListeners();
+      }
+    } finally {
+      _autoClipboardBusy = false;
+    }
   }
 
   Future<void> refresh({bool initial = false}) async {
@@ -202,8 +259,12 @@ final class HomeController extends ChangeNotifier {
     notifyListeners();
     final result = await _api.relayClipboard(session, text);
     if (result case LinkSuccess<int> success) {
-      notice = 'clipboard:${success.value}';
-      error = null;
+      if (success.value == 0) {
+        error = 'clipboard_no_devices';
+      } else {
+        notice = 'clipboard:${success.value}';
+        error = null;
+      }
     } else if (result case LinkFailure<int> failure) {
       error = failure.message;
     }
@@ -281,6 +342,7 @@ final class HomeController extends ChangeNotifier {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _clipboardTimer?.cancel();
     super.dispose();
   }
 }
