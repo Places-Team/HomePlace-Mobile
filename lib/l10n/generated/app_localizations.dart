@@ -908,6 +908,12 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get appVersion;
+
   /// No description provided for @themeSystem.
   ///
   /// In en, this message translates to:

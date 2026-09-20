@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../../core/branding/brand_mark.dart';
@@ -252,6 +253,21 @@ class _HomeShellState extends State<HomeShell> {
                   subtitle: Text(l10n.automaticClipboardBody),
                   secondary: const Icon(Icons.content_paste_go_rounded),
                 ),
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  final package = snapshot.data;
+                  if (package == null) return const SizedBox.shrink();
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.system_update_alt_rounded),
+                    title: Text(l10n.appVersion),
+                    subtitle: Text(
+                      '${package.version} (${package.buildNumber})',
+                    ),
+                  );
+                },
+              ),
               const Divider(height: 28),
               ListTile(
                 contentPadding: EdgeInsets.zero,

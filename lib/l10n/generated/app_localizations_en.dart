@@ -453,6 +453,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get appVersion => 'App version';
+
+  @override
   String get themeSystem => 'Follow system';
 
   @override

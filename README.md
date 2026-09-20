@@ -52,6 +52,10 @@ flutter build ios --simulator --no-codesign
 ```
 
 The Android test package is written to `build/app/outputs/flutter-apk/app-debug.apk`.
+Install subsequent local builds with `adb install -r` and keep using the same
+development machine or signing key. Android intentionally rejects an update
+signed by a different key; switching from a CI/debug signer to a release signer
+requires one uninstall. Never commit the signing key to this repository.
 
 ## Project rules
 
