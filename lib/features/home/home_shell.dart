@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../core/branding/brand_mark.dart';
 import '../../core/settings/app_preferences.dart';
+import '../../core/storage/transfer_activity_store.dart';
 import '../../link/mobile_models.dart';
 import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
@@ -691,11 +692,76 @@ class _OverviewPage extends StatelessWidget {
             onDismiss: connection.dismissIncomingShare,
             onAccept: offer.kind == SharedContentKind.file
                 ? () => home.acceptSharedFile(offer, connection)
-                : connection.acceptIncomingTextOrUrl,
+                : () => home.acceptIncomingTextOrUrl(offer, connection),
           ),
+        ],
+        if (home.transferActivity.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _TransferActivityCard(home: home),
         ],
         const SizedBox(height: 110),
       ],
+    );
+  }
+}
+
+class _TransferActivityCard extends StatelessWidget {
+  const _TransferActivityCard({required this.home});
+  final HomeController home;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return _Surface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.recentTransfers,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              TextButton(
+                onPressed: home.clearTransferActivity,
+                child: Text(l10n.clearHistory),
+              ),
+            ],
+          ),
+          Text(
+            l10n.transferHistoryPrivacy,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...home.transferActivity.take(5).map((activity) {
+            final sent = activity.direction == TransferDirection.sent;
+            final icon = switch (activity.kind) {
+              SharedContentKind.text => Icons.notes_rounded,
+              SharedContentKind.url => Icons.link_rounded,
+              SharedContentKind.file => Icons.insert_drive_file_rounded,
+            };
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: Icon(icon, color: sent ? _violet : _mint),
+              title: Text(
+                sent
+                    ? l10n.transferSentTo(activity.peerName)
+                    : l10n.transferReceivedFrom(activity.peerName),
+              ),
+              subtitle: Text(_formatWhen(context, activity.at)),
+              trailing: Icon(
+                sent ? Icons.north_east_rounded : Icons.south_west_rounded,
+                size: 18,
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/sharing/share_service.dart';
+import 'package:homeplace/core/storage/transfer_activity_store.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/features/home/home_controller.dart';
 import 'package:homeplace/features/home/home_shell.dart';
@@ -101,6 +102,46 @@ void main() {
     await tester.tap(find.text('Family tablet'));
     await tester.pumpAndSettle();
     expect(find.textContaining('This device belongs to Alex'), findsOneWidget);
+    connection.dispose();
+    home.dispose();
+  });
+
+  testWidgets('shows and clears private transfer metadata', (tester) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview()
+      ..transferActivity = [
+        TransferActivity(
+          direction: TransferDirection.received,
+          kind: SharedContentKind.file,
+          peerName: 'Family tablet',
+          at: DateTime.now(),
+        ),
+      ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+    await tester.scrollUntilVisible(
+      find.text('Recent transfers'),
+      300,
+      scrollable: find.byType(Scrollable).hitTestable().first,
+    );
+    expect(find.text('Received from Family tablet'), findsOneWidget);
+    expect(find.textContaining('filenames are never saved'), findsOneWidget);
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    expect(find.text('Recent transfers'), findsNothing);
     connection.dispose();
     home.dispose();
   });

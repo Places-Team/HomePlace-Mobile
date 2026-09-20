@@ -524,6 +524,26 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get recentTransfers => 'Недавние передачи';
+
+  @override
+  String get clearHistory => 'Очистить';
+
+  @override
+  String get transferHistoryPrivacy =>
+      'Хранится защищённо для этого профиля устройства. Содержимое и имена файлов сюда не записываются.';
+
+  @override
+  String transferSentTo(String device) {
+    return 'Отправлено на «$device»';
+  }
+
+  @override
+  String transferReceivedFrom(String device) {
+    return 'Получено от «$device»';
+  }
+
+  @override
   String incomingShare(String device) {
     return 'От устройства «$device»';
   }

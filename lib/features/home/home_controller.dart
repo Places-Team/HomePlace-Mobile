@@ -1,21 +1,28 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/sharing/share_service.dart';
+import '../../core/storage/transfer_activity_store.dart';
 import '../../link/link_client.dart';
 import '../../link/mobile_api.dart';
 import '../../link/mobile_models.dart';
 import '../connection/connection_controller.dart';
 
 final class HomeController extends ChangeNotifier {
-  HomeController({required this.sessionProvider, MobileApi? api})
-    : _api = api ?? const MobileApi();
+  HomeController({
+    required this.sessionProvider,
+    MobileApi? api,
+    TransferActivityStore? activityStore,
+  }) : _api = api ?? const MobileApi(),
+       _activityStore = activityStore ?? const PlatformTransferActivityStore();
 
   final Future<AuthenticatedLinkSession?> Function() sessionProvider;
   final MobileApi _api;
+  final TransferActivityStore _activityStore;
   MobileOverview? overview;
   List<MobileSearchResult> searchResults = const [];
   List<MobileCalendarEvent>? calendarEvents;
@@ -32,10 +39,13 @@ final class HomeController extends ChangeNotifier {
   String? _lastAutoClipboardText;
   bool _autoClipboardBusy = false;
   bool autoClipboardEnabled = false;
+  List<TransferActivity> transferActivity = const [];
+  String? _activityScope;
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
     autoClipboardEnabled = preferences.getBool('clipboard.autoSend') ?? false;
+    await _loadTransferActivity();
     await refresh(initial: true);
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -358,6 +368,7 @@ final class HomeController extends ChangeNotifier {
     final sent = result is LinkSuccess<void>;
     if (sent) {
       notice = 'share:${target.name}';
+      await _recordTransfer(TransferDirection.sent, content.kind, target.name);
     } else if (result case LinkFailure<void> failure) {
       error = failure.message;
     }
@@ -385,6 +396,11 @@ final class HomeController extends ChangeNotifier {
       } else {
         await connection.saveIncomingFile(success.value);
         notice = 'file:${offer.filename ?? ''}';
+        await _recordTransfer(
+          TransferDirection.received,
+          SharedContentKind.file,
+          offer.sourceName,
+        );
       }
     } else if (result case LinkFailure<Uint8List> failure) {
       error = failure.message;
@@ -393,6 +409,75 @@ final class HomeController extends ChangeNotifier {
     notifyListeners();
     return error == null;
   }
+
+  Future<void> acceptIncomingTextOrUrl(
+    PendingShareOffer offer,
+    ConnectionController connection,
+  ) async {
+    await connection.acceptIncomingTextOrUrl();
+    await _recordTransfer(
+      TransferDirection.received,
+      offer.kind,
+      offer.sourceName,
+    );
+  }
+
+  Future<void> clearTransferActivity() async {
+    transferActivity = const [];
+    notifyListeners();
+    final scope = _activityScope;
+    if (scope == null) return;
+    try {
+      await _activityStore.clear(scope);
+    } on Object {
+      // Transfer history is optional and must never affect the connection.
+    }
+  }
+
+  Future<void> _loadTransferActivity() async {
+    final session = await sessionProvider();
+    if (session == null) return;
+    final scope = _scopeFor(session);
+    _activityScope = scope;
+    try {
+      transferActivity = await _activityStore.read(scope);
+    } on Object {
+      transferActivity = const [];
+    }
+  }
+
+  Future<void> _recordTransfer(
+    TransferDirection direction,
+    SharedContentKind kind,
+    String peerName,
+  ) async {
+    var scope = _activityScope;
+    if (scope == null) {
+      final session = await sessionProvider();
+      if (session == null) return;
+      scope = _scopeFor(session);
+      _activityScope = scope;
+    }
+    transferActivity = [
+      TransferActivity(
+        direction: direction,
+        kind: kind,
+        peerName: peerName,
+        at: DateTime.now(),
+      ),
+      ...transferActivity,
+    ].take(20).toList(growable: false);
+    notifyListeners();
+    try {
+      await _activityStore.write(scope, transferActivity);
+    } on Object {
+      // The confirmed transfer succeeded even when optional history cannot save.
+    }
+  }
+
+  String _scopeFor(AuthenticatedLinkSession session) => sha256
+      .convert(utf8.encode('${session.serverId}:${session.credential}'))
+      .toString();
 
   Future<void> _run(Future<LinkResult<void>> Function() action) async {
     final result = await action();

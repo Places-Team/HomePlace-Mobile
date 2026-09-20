@@ -523,6 +523,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get recentTransfers => 'Recent transfers';
+
+  @override
+  String get clearHistory => 'Clear';
+
+  @override
+  String get transferHistoryPrivacy =>
+      'Stored securely for this device profile. Shared content and filenames are never saved here.';
+
+  @override
+  String transferSentTo(String device) {
+    return 'Sent to $device';
+  }
+
+  @override
+  String transferReceivedFrom(String device) {
+    return 'Received from $device';
+  }
+
+  @override
   String incomingShare(String device) {
     return 'From $device';
   }

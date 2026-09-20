@@ -1028,6 +1028,36 @@ abstract class AppLocalizations {
   /// **'Sent to {device}.'**
   String shareSent(String device);
 
+  /// No description provided for @recentTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent transfers'**
+  String get recentTransfers;
+
+  /// No description provided for @clearHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearHistory;
+
+  /// No description provided for @transferHistoryPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored securely for this device profile. Shared content and filenames are never saved here.'**
+  String get transferHistoryPrivacy;
+
+  /// No description provided for @transferSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to {device}'**
+  String transferSentTo(String device);
+
+  /// No description provided for @transferReceivedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Received from {device}'**
+  String transferReceivedFrom(String device);
+
   /// No description provided for @incomingShare.
   ///
   /// In en, this message translates to:
