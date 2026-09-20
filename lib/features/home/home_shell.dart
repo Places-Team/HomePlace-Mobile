@@ -145,7 +145,7 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                         _PlanPage(overview: overview, home: home),
                         _RequestsPage(overview: overview, home: home),
-                        _MonitorPage(overview: overview),
+                        _MonitorPage(overview: overview, home: home),
                       ],
                     ),
                   ),
@@ -294,24 +294,25 @@ class _HomeShellState extends State<HomeShell> {
     SharedContent content,
   ) async {
     final l10n = AppLocalizations.of(context);
-    final targets = overview.shareTargets
-        .where(
-          (target) => switch (content.kind) {
-            SharedContentKind.text => target.supportsText,
-            SharedContentKind.url => target.supportsUrl,
-            SharedContentKind.file => target.supportsFile,
-          },
-        )
-        .toList(growable: false)
-      ..sort((a, b) {
-        final ownership = (b.ownedByCurrentUser ? 1 : 0).compareTo(
-          a.ownedByCurrentUser ? 1 : 0,
-        );
-        if (ownership != 0) return ownership;
-        final presence = (b.online ? 1 : 0).compareTo(a.online ? 1 : 0);
-        if (presence != 0) return presence;
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
+    final targets =
+        overview.shareTargets
+            .where(
+              (target) => switch (content.kind) {
+                SharedContentKind.text => target.supportsText,
+                SharedContentKind.url => target.supportsUrl,
+                SharedContentKind.file => target.supportsFile,
+              },
+            )
+            .toList(growable: false)
+          ..sort((a, b) {
+            final ownership = (b.ownedByCurrentUser ? 1 : 0).compareTo(
+              a.ownedByCurrentUser ? 1 : 0,
+            );
+            if (ownership != 0) return ownership;
+            final presence = (b.online ? 1 : 0).compareTo(a.online ? 1 : 0);
+            if (presence != 0) return presence;
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          });
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -551,6 +552,7 @@ class _OverviewPage extends StatelessWidget {
     final next = _nextItem(overview);
     final missingPermissions = !overview.permissions.contains('dashboard.read');
     return _ScrollPage(
+      onRefresh: home.refresh,
       children: [
         Text(
           l10n.everythingInPlace,
@@ -902,6 +904,12 @@ class _PlanPageState extends State<_PlanPage> {
     home.loadCalendar(_rangeStart(month), _rangeEnd(month));
   }
 
+  Future<void> _refresh() async {
+    await home.refresh();
+    if (!overview.permissions.contains('calendar.read')) return;
+    await home.loadCalendar(_rangeStart(month), _rangeEnd(month));
+  }
+
   void _changeMonth(int delta) {
     setState(() {
       month = DateTime(month.year, month.month + delta);
@@ -931,6 +939,7 @@ class _PlanPageState extends State<_PlanPage> {
         ),
       );
     return _ScrollPage(
+      onRefresh: _refresh,
       children: [
         _PageHeading(
           title: l10n.calendarTitle,
@@ -1411,6 +1420,7 @@ class _RequestsPageState extends State<_RequestsPage> {
     final l10n = AppLocalizations.of(context);
     final overview = widget.overview;
     return _ScrollPage(
+      onRefresh: widget.home.refresh,
       children: [
         _PageHeading(title: l10n.requestsTitle, subtitle: l10n.requestsBody),
         const SizedBox(height: 18),
@@ -1598,14 +1608,16 @@ class _RequestsPageState extends State<_RequestsPage> {
 }
 
 class _MonitorPage extends StatelessWidget {
-  const _MonitorPage({required this.overview});
+  const _MonitorPage({required this.overview, required this.home});
   final MobileOverview overview;
+  final HomeController home;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final monitor = overview.monitoring;
     return _ScrollPage(
+      onRefresh: home.refresh,
       children: [
         _PageHeading(
           title: l10n.monitoringTitle,
@@ -1796,12 +1808,18 @@ class _PillNavigation extends StatelessWidget {
 }
 
 class _ScrollPage extends StatelessWidget {
-  const _ScrollPage({required this.children});
+  const _ScrollPage({required this.children, required this.onRefresh});
   final List<Widget> children;
+  final RefreshCallback onRefresh;
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-    children: children,
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: onRefresh,
+    edgeOffset: 8,
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      children: children,
+    ),
   );
 }
 

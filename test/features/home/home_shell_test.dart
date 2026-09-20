@@ -27,8 +27,10 @@ void main() {
       ),
     );
     expect(find.text('Everything in its place'), findsOneWidget);
+    expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
     await tester.tap(find.text('Plan'));
     await tester.pumpAndSettle();
+    expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
     final planScroll = find.descendant(
       of: find.byType(ListView).hitTestable(),
       matching: find.byType(Scrollable),
@@ -55,6 +57,7 @@ void main() {
     for (final label in ['Requests', 'Monitor', 'Home']) {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
+      expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
     connection.dispose();
