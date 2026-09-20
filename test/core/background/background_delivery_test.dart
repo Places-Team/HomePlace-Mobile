@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/background/background_delivery.dart';
 import 'package:homeplace/core/storage/connection_profile.dart';
+import 'package:homeplace/core/storage/notification_history_store.dart';
 import 'package:homeplace/link/link_client.dart';
 
 import '../../features/connection/test_doubles.dart';
@@ -47,21 +48,26 @@ void main() {
       ]);
     final notifications = FakeNotificationService();
     final acknowledgements = MemoryBackgroundAcknowledgementStore();
+    final history = MemoryNotificationHistoryStore();
 
-    await BackgroundHeartbeatRunner(
+    final successfulProfiles = await BackgroundHeartbeatRunner(
       profileStore: profiles,
       credentialStore: credentials,
       linkService: link,
       notificationService: notifications,
       acknowledgementStore: acknowledgements,
+      notificationHistoryStore: history,
     ).run();
 
+    expect(successfulProfiles, 1);
     expect(notifications.delivered, ['HomePlace:Test delivered']);
     expect(link.heartbeatAcknowledgements, [
       <String>[],
       ['notification-1'],
     ]);
     expect(acknowledgements.values, isEmpty);
+    expect(history.items.single.title, 'HomePlace');
+    expect(history.items.single.body, 'Test delivered');
   });
 
   test('does not use credentials when the saved server ID changed', () async {
@@ -78,7 +84,7 @@ void main() {
     final link = FakeLinkService();
     final notifications = FakeNotificationService();
 
-    await BackgroundHeartbeatRunner(
+    final successfulProfiles = await BackgroundHeartbeatRunner(
       profileStore: profiles,
       credentialStore: credentials,
       linkService: link,
@@ -86,6 +92,7 @@ void main() {
       acknowledgementStore: MemoryBackgroundAcknowledgementStore(),
     ).run();
 
+    expect(successfulProfiles, 0);
     expect(link.heartbeatAcknowledgements, isEmpty);
     expect(notifications.delivered, isEmpty);
   });
@@ -159,4 +166,19 @@ final class MemoryBackgroundAcknowledgementStore
       values[serverId] = List.of(eventIds);
     }
   }
+}
+
+final class MemoryNotificationHistoryStore implements NotificationHistoryStore {
+  List<NotificationHistoryItem> items = const [];
+
+  @override
+  Future<void> clear(String scope) async => items = const [];
+
+  @override
+  Future<List<NotificationHistoryItem>> read(String scope) async =>
+      List.of(items);
+
+  @override
+  Future<void> write(String scope, List<NotificationHistoryItem> items) async =>
+      this.items = List.of(items);
 }

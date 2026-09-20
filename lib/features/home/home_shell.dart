@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../core/background/background_delivery.dart';
 import '../../core/branding/brand_mark.dart';
 import '../../core/settings/app_preferences.dart';
 import '../../core/storage/transfer_activity_store.dart';
@@ -281,6 +282,31 @@ class _HomeShellState extends State<HomeShell> {
                   title: Text(l10n.backgroundDelivery),
                   subtitle: Text(l10n.backgroundDeliveryBody),
                   secondary: const Icon(Icons.notifications_active_outlined),
+                ),
+              if (Platform.isAndroid &&
+                  widget.preferences?.backgroundDeliveryEnabled == true)
+                FutureBuilder<BackgroundDeliveryStatus?>(
+                  future: const BackgroundDeliveryStatusStore().read(),
+                  builder: (context, snapshot) {
+                    final status = snapshot.data;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.schedule_rounded),
+                      title: Text(l10n.lastBackgroundCheck),
+                      subtitle: Text(
+                        status == null
+                            ? l10n.backgroundNeverRun
+                            : status.successfulProfiles < 0
+                            ? l10n.backgroundCheckFailed(
+                                _formatWhen(context, status.lastRunAt),
+                              )
+                            : l10n.backgroundCheckedProfiles(
+                                _formatWhen(context, status.lastRunAt),
+                                status.successfulProfiles,
+                              ),
+                      ),
+                    );
+                  },
                 ),
               FutureBuilder<PackageInfo>(
                 future: PackageInfo.fromPlatform(),
@@ -788,10 +814,110 @@ class _OverviewPage extends StatelessWidget {
           const SizedBox(height: 12),
           _TransferActivityCard(home: home),
         ],
+        if (connection.notificationHistory.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _NotificationHistoryCard(connection: connection),
+        ],
         const SizedBox(height: 110),
       ],
     );
   }
+}
+
+class _NotificationHistoryCard extends StatelessWidget {
+  const _NotificationHistoryCard({required this.connection});
+  final ConnectionController connection;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return _Surface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.notificationHistory,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              if (connection.notificationHistory.length > 5)
+                TextButton(
+                  onPressed: () => _showAll(context),
+                  child: Text(l10n.viewAll),
+                ),
+              TextButton(
+                onPressed: connection.clearNotificationHistory,
+                child: Text(l10n.clearHistory),
+              ),
+            ],
+          ),
+          Text(
+            l10n.notificationHistoryPrivacy,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...connection.notificationHistory
+              .take(5)
+              .map(
+                (item) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: _violet,
+                  ),
+                  title: Text(item.title),
+                  subtitle: Text(
+                    '${item.body}\n${_formatWhen(context, item.receivedAt)}',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAll(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (context) => SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: .7,
+        maxChildSize: .92,
+        builder: (context, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          children: [
+            Text(
+              AppLocalizations.of(context).notificationHistory,
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            ...connection.notificationHistory.map(
+              (item) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.notifications_none_rounded),
+                title: Text(item.title),
+                subtitle: Text(
+                  '${item.body}\n${_formatWhen(context, item.receivedAt)}',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _TransferActivityCard extends StatelessWidget {

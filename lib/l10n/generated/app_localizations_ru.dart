@@ -623,4 +623,30 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get notificationPermissionRequired =>
       'Разрешите уведомления HomePlace в настройках Android, чтобы включить фоновую доставку.';
+
+  @override
+  String get lastBackgroundCheck => 'Последняя фоновая проверка';
+
+  @override
+  String get backgroundNeverRun => 'Ожидаем первую проверку от Android.';
+
+  @override
+  String backgroundCheckedProfiles(String time, int count) {
+    return '$time · Проверено подключений: $count';
+  }
+
+  @override
+  String backgroundCheckFailed(String time) {
+    return '$time · Проверка не завершилась и будет повторена.';
+  }
+
+  @override
+  String get notificationHistory => 'История уведомлений';
+
+  @override
+  String get notificationHistoryPrivacy =>
+      'Хранится в зашифрованном хранилище устройства только для этого профиля HomePlace.';
+
+  @override
+  String get viewAll => 'Показать все';
 }

@@ -21,7 +21,8 @@ The first Flutter application slice is implemented with Android as the primary v
 - explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied;
 - Android Share Sheet support for text, safe web links, and files up to 5 MB, with an explicit recipient and send confirmation;
 - private same-account delivery, five-minute offers, encrypted temporary file storage, integrity verification, and receiver acceptance.
-- opt-in Android background notification checks through WorkManager, with server identity validation on every run.
+- opt-in Android background notification checks through WorkManager, with server identity validation on every run;
+- encrypted per-profile notification history and visible background-check diagnostics.
 
 Foreground presence, clipboard relay, and shared-item delivery operate while the application is open. Android can periodically check for notification events in the background, but Android controls the timing and may defer the 15-minute schedule. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 

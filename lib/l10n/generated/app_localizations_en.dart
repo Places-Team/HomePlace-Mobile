@@ -622,4 +622,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notificationPermissionRequired =>
       'Allow HomePlace notifications in Android settings to enable background delivery.';
+
+  @override
+  String get lastBackgroundCheck => 'Last background check';
+
+  @override
+  String get backgroundNeverRun =>
+      'Waiting for Android to run the first check.';
+
+  @override
+  String backgroundCheckedProfiles(String time, int count) {
+    return '$time · Checked $count connection(s)';
+  }
+
+  @override
+  String backgroundCheckFailed(String time) {
+    return '$time · The check could not finish and will be retried.';
+  }
+
+  @override
+  String get notificationHistory => 'Notification history';
+
+  @override
+  String get notificationHistoryPrivacy =>
+      'Stored in encrypted device storage for this HomePlace profile only.';
+
+  @override
+  String get viewAll => 'View all';
 }

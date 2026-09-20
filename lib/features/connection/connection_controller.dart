@@ -12,6 +12,7 @@ import '../../core/platform/platform_identity.dart';
 import '../../core/sharing/share_service.dart';
 import '../../core/storage/connection_profile.dart';
 import '../../core/storage/credential_store.dart';
+import '../../core/storage/notification_history_store.dart';
 import '../../link/link_client.dart';
 import '../../link/models.dart';
 
@@ -112,6 +113,7 @@ final class ConnectionController extends ChangeNotifier {
     Future<void> Function(Duration)? pollDelay,
     ClipboardService? clipboardService,
     ShareService? shareService,
+    NotificationHistoryStore? notificationHistoryStore,
   }) : _link = linkService ?? const HttpLinkService(),
        _profiles = profileStore ?? SharedPreferencesProfileStore(),
        _credentials = credentialStore ?? const PlatformCredentialStore(),
@@ -121,7 +123,9 @@ final class ConnectionController extends ChangeNotifier {
            descriptionProvider ?? PlatformDeviceDescriptionProvider(),
        _pollDelay = pollDelay ?? Future<void>.delayed,
        _clipboard = clipboardService ?? const PlatformClipboardService(),
-       _sharing = shareService ?? const PlatformShareService();
+       _sharing = shareService ?? const PlatformShareService(),
+       _notificationHistory =
+           notificationHistoryStore ?? const PlatformNotificationHistoryStore();
 
   final LinkService _link;
   final ProfileStore _profiles;
@@ -132,6 +136,7 @@ final class ConnectionController extends ChangeNotifier {
   final Future<void> Function(Duration) _pollDelay;
   final ClipboardService _clipboard;
   final ShareService _sharing;
+  final NotificationHistoryStore _notificationHistory;
 
   ConnectionStage stage = ConnectionStage.welcome;
   String addressInput = '';
@@ -144,6 +149,8 @@ final class ConnectionController extends ChangeNotifier {
   ConnectionProfile? profile;
   List<ConnectionProfile> profiles = const [];
   String? lastNotification;
+  List<NotificationHistoryItem> notificationHistory = const [];
+  String? _notificationHistoryScope;
   PendingClipboard? pendingClipboard;
   String? _clipboardTextToSuppress;
   SharedContent? pendingOutgoingShare;
@@ -210,6 +217,7 @@ final class ConnectionController extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+    await _loadNotificationHistory(candidate.serverId, credential);
     _heartbeatTimer?.cancel();
     if (persistSelection) await _profiles.save(candidate);
     profiles = await _profiles.readAll();
@@ -417,6 +425,7 @@ final class ConnectionController extends ChangeNotifier {
       certificateFingerprint: address.certificateFingerprint,
     );
     await _profiles.save(connectedProfile);
+    await _loadNotificationHistory(info.server.id, claim.credential!);
     profiles = await _profiles.readAll();
     profile = connectedProfile;
     pairingSession = null;
@@ -451,6 +460,18 @@ final class ConnectionController extends ChangeNotifier {
 
   Future<bool> requestNotificationPermission() =>
       _notifications.requestPermission();
+
+  Future<void> clearNotificationHistory() async {
+    final scope = _notificationHistoryScope;
+    notificationHistory = const [];
+    notifyListeners();
+    if (scope == null) return;
+    try {
+      await _notificationHistory.clear(scope);
+    } on Object {
+      // Notification history is optional and must never affect delivery.
+    }
+  }
 
   Future<String?> readClipboardText() async {
     if (!_clipboard.isSupported) return null;
@@ -575,6 +596,8 @@ final class ConnectionController extends ChangeNotifier {
     error = null;
     diagnostics = null;
     lastNotification = null;
+    notificationHistory = const [];
+    _notificationHistoryScope = null;
     pendingClipboard = null;
     _clipboardTextToSuppress = null;
     pendingIncomingShare = null;
@@ -666,6 +689,21 @@ final class ConnectionController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    await _loadNotificationHistory(
+      connectedProfile.serverId,
+      credential,
+      applyIf: () =>
+          !_disposed &&
+          stage == ConnectionStage.connected &&
+          profile?.serverId == connectedProfile.serverId &&
+          serverAddress?.uri == address.uri,
+    );
+    if (_disposed ||
+        stage != ConnectionStage.connected ||
+        profile?.serverId != connectedProfile.serverId ||
+        serverAddress?.uri != address.uri) {
+      return;
+    }
     final acknowledged = <String>[];
     for (final event in response.events) {
       if (event.type == 'clipboard.offer') {
@@ -745,12 +783,50 @@ final class ConnectionController extends ChangeNotifier {
         continue;
       }
       await _notifications.show(event.id, title, body);
+      await _recordNotification(event.id, title, body);
       acknowledged.add(event.id);
       lastNotification = '$title — $body';
     }
     _acknowledgedEventIds = acknowledged;
     diagnostics = null;
     notifyListeners();
+  }
+
+  Future<void> _loadNotificationHistory(
+    String serverId,
+    String credential, {
+    bool Function()? applyIf,
+  }) async {
+    final scope = notificationHistoryScope(serverId, credential);
+    List<NotificationHistoryItem> loaded;
+    try {
+      loaded = await _notificationHistory.read(scope);
+    } on Object {
+      loaded = const [];
+    }
+    if (applyIf != null && !applyIf()) return;
+    _notificationHistoryScope = scope;
+    notificationHistory = loaded;
+  }
+
+  Future<void> _recordNotification(String id, String title, String body) async {
+    final scope = _notificationHistoryScope;
+    if (scope == null) return;
+    final item = NotificationHistoryItem(
+      id: id,
+      title: title,
+      body: body,
+      receivedAt: DateTime.now(),
+    );
+    notificationHistory = [
+      item,
+      ...notificationHistory.where((existing) => existing.id != id),
+    ].take(30).toList(growable: false);
+    try {
+      await _notificationHistory.write(scope, notificationHistory);
+    } on Object {
+      // Delivery remains successful when optional history cannot save.
+    }
   }
 
   @override

@@ -107,21 +107,32 @@ final class HomeController extends ChangeNotifier {
     refreshing = true;
     if (initial) loading = true;
     notifyListeners();
-    final session = await sessionProvider();
-    if (session == null) {
-      error = 'The secure connection is unavailable.';
-    } else {
-      final result = await _api.overview(session);
-      if (result case LinkSuccess<MobileOverview> success) {
-        overview = success.value;
-        error = null;
-      } else if (result case LinkFailure<MobileOverview> failure) {
-        error = failure.message;
+    try {
+      final session = await sessionProvider().timeout(
+        const Duration(seconds: 15),
+      );
+      if (session == null) {
+        error = 'The secure connection is unavailable.';
+      } else {
+        final result = await _api
+            .overview(session)
+            .timeout(const Duration(seconds: 20));
+        if (result case LinkSuccess<MobileOverview> success) {
+          overview = success.value;
+          error = null;
+        } else if (result case LinkFailure<MobileOverview> failure) {
+          error = failure.message;
+        }
       }
+    } on TimeoutException {
+      error = 'HomePlace did not respond in time. Pull down to try again.';
+    } on Object {
+      error = 'HomePlace could not refresh securely. Pull down to try again.';
+    } finally {
+      loading = false;
+      refreshing = false;
+      notifyListeners();
     }
-    loading = false;
-    refreshing = false;
-    notifyListeners();
   }
 
   Future<void> createReminder(String title, DateTime at, String repeat) async {

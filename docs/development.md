@@ -25,6 +25,10 @@ test builds and validate upgrades with `adb install -r`; do not mix APKs signed
 by different development machines or CI jobs. Release signing material remains
 outside the repository.
 
+Adaptive and monochrome launcher artwork uses an inset wrapper around the source
+mark so manufacturer masks do not crop or over-scale it. Keep the source artwork
+separate from the wrapper and validate both a standard launcher and a themed icon.
+
 ## Localization and diagnostics
 
 English and Russian strings live in `lib/l10n/app_en.arb` and `lib/l10n/app_ru.arb`. Run `flutter gen-l10n` after changing either file. Primary errors should be actionable and localized; technical, redacted details belong in the troubleshooting view.

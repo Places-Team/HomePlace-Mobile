@@ -203,5 +203,14 @@
   "cancelAddingConnection": "Вернуться к подключённому HomePlace",
   "backgroundDelivery": "Проверка уведомлений в фоне",
   "backgroundDeliveryBody": "Android проверяет подключённые серверы HomePlace примерно раз в 15 минут. Система может отложить проверку ради батареи; для буфера и файлов всё ещё нужно открыть приложение.",
-  "notificationPermissionRequired": "Разрешите уведомления HomePlace в настройках Android, чтобы включить фоновую доставку."
+  "notificationPermissionRequired": "Разрешите уведомления HomePlace в настройках Android, чтобы включить фоновую доставку.",
+  "lastBackgroundCheck": "Последняя фоновая проверка",
+  "backgroundNeverRun": "Ожидаем первую проверку от Android.",
+  "backgroundCheckedProfiles": "{time} · Проверено подключений: {count}",
+  "@backgroundCheckedProfiles": {"placeholders": {"time": {"type": "String"}, "count": {"type": "int"}}},
+  "backgroundCheckFailed": "{time} · Проверка не завершилась и будет повторена.",
+  "@backgroundCheckFailed": {"placeholders": {"time": {"type": "String"}}},
+  "notificationHistory": "История уведомлений",
+  "notificationHistoryPrivacy": "Хранится в зашифрованном хранилище устройства только для этого профиля HomePlace.",
+  "viewAll": "Показать все"
 }

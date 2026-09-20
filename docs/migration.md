@@ -14,6 +14,7 @@ The previous Kotlin/Compose and Swift/SwiftUI trees are preserved in `legacy/and
 - foreground presence, notification events, disconnect, and revoke;
 - multiple saved HomePlace profiles with identity-checked switching;
 - opt-in Android periodic background notification delivery;
+- encrypted notification history and background-run diagnostics;
 - unit, controller, widget, and mock-server tests.
 
 ## Remaining platform work

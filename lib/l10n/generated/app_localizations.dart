@@ -1201,6 +1201,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Allow HomePlace notifications in Android settings to enable background delivery.'**
   String get notificationPermissionRequired;
+
+  /// No description provided for @lastBackgroundCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Last background check'**
+  String get lastBackgroundCheck;
+
+  /// No description provided for @backgroundNeverRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Android to run the first check.'**
+  String get backgroundNeverRun;
+
+  /// No description provided for @backgroundCheckedProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · Checked {count} connection(s)'**
+  String backgroundCheckedProfiles(String time, int count);
+
+  /// No description provided for @backgroundCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · The check could not finish and will be retried.'**
+  String backgroundCheckFailed(String time);
+
+  /// No description provided for @notificationHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification history'**
+  String get notificationHistory;
+
+  /// No description provided for @notificationHistoryPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored in encrypted device storage for this HomePlace profile only.'**
+  String get notificationHistoryPrivacy;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get viewAll;
 }
 
 class _AppLocalizationsDelegate

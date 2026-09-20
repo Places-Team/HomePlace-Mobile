@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/core/storage/transfer_activity_store.dart';
+import 'package:homeplace/core/storage/notification_history_store.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/features/home/home_controller.dart';
 import 'package:homeplace/features/home/home_shell.dart';
@@ -142,6 +143,48 @@ void main() {
     await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
     expect(find.text('Recent transfers'), findsNothing);
+    connection.dispose();
+    home.dispose();
+  });
+
+  testWidgets('shows and clears encrypted notification history', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController()
+      ..notificationHistory = [
+        NotificationHistoryItem(
+          id: 'event-1',
+          title: 'HomePlace',
+          body: 'The reminder is due.',
+          receivedAt: DateTime.now(),
+        ),
+      ];
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+    await tester.scrollUntilVisible(
+      find.text('Notification history'),
+      300,
+      scrollable: find.byType(Scrollable).hitTestable().first,
+    );
+    expect(find.textContaining('The reminder is due.'), findsOneWidget);
+    expect(find.textContaining('encrypted device storage'), findsOneWidget);
+    await tester.tap(find.text('Clear').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Notification history'), findsNothing);
     connection.dispose();
     home.dispose();
   });

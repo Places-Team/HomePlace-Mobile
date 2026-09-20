@@ -203,5 +203,14 @@
   "cancelAddingConnection": "Back to the connected HomePlace",
   "backgroundDelivery": "Background notification checks",
   "backgroundDeliveryBody": "Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery; clipboard and file offers still require opening the app.",
-  "notificationPermissionRequired": "Allow HomePlace notifications in Android settings to enable background delivery."
+  "notificationPermissionRequired": "Allow HomePlace notifications in Android settings to enable background delivery.",
+  "lastBackgroundCheck": "Last background check",
+  "backgroundNeverRun": "Waiting for Android to run the first check.",
+  "backgroundCheckedProfiles": "{time} · Checked {count} connection(s)",
+  "@backgroundCheckedProfiles": {"placeholders": {"time": {"type": "String"}, "count": {"type": "int"}}},
+  "backgroundCheckFailed": "{time} · The check could not finish and will be retried.",
+  "@backgroundCheckFailed": {"placeholders": {"time": {"type": "String"}}},
+  "notificationHistory": "Notification history",
+  "notificationHistoryPrivacy": "Stored in encrypted device storage for this HomePlace profile only.",
+  "viewAll": "View all"
 }

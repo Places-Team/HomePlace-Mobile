@@ -10,9 +10,47 @@ import '../network/server_address.dart';
 import '../notifications/notification_service.dart';
 import '../storage/connection_profile.dart';
 import '../storage/credential_store.dart';
+import '../storage/notification_history_store.dart';
 
 const backgroundHeartbeatTask = 'homeplace.backgroundHeartbeat';
 const _backgroundHeartbeatUniqueName = 'homeplace-periodic-heartbeat';
+
+final class BackgroundDeliveryStatus {
+  const BackgroundDeliveryStatus({
+    required this.lastRunAt,
+    required this.successfulProfiles,
+  });
+
+  final DateTime lastRunAt;
+  final int successfulProfiles;
+}
+
+final class BackgroundDeliveryStatusStore {
+  const BackgroundDeliveryStatusStore();
+
+  static const _lastRunKey = 'homeplace.background.lastRun';
+  static const _successfulProfilesKey = 'homeplace.background.successful';
+
+  Future<BackgroundDeliveryStatus?> read() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_lastRunKey);
+    final lastRun = raw == null ? null : DateTime.tryParse(raw);
+    if (lastRun == null) return null;
+    return BackgroundDeliveryStatus(
+      lastRunAt: lastRun,
+      successfulProfiles: preferences.getInt(_successfulProfilesKey) ?? -1,
+    );
+  }
+
+  Future<void> write(int successfulProfiles) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _lastRunKey,
+      DateTime.now().toUtc().toIso8601String(),
+    );
+    await preferences.setInt(_successfulProfilesKey, successfulProfiles);
+  }
+}
 
 abstract interface class BackgroundAcknowledgementStore {
   Future<List<String>> read(String serverId);
@@ -48,6 +86,7 @@ final class BackgroundHeartbeatRunner {
     this.linkService = const HttpLinkService(),
     this.notificationService,
     this.acknowledgementStore = const _DefaultAcknowledgementStore(),
+    this.notificationHistoryStore = const PlatformNotificationHistoryStore(),
   });
 
   final ProfileStore profileStore;
@@ -55,23 +94,26 @@ final class BackgroundHeartbeatRunner {
   final LinkService linkService;
   final NotificationService? notificationService;
   final BackgroundAcknowledgementStore acknowledgementStore;
+  final NotificationHistoryStore notificationHistoryStore;
 
-  Future<void> run() async {
+  Future<int> run() async {
     final notifications = notificationService ?? LocalNotificationService();
     await notifications.initialize();
-    if (!await notifications.isAvailable()) return;
+    if (!await notifications.isAvailable()) return 0;
 
+    var successfulProfiles = 0;
     for (final profile in await profileStore.readAll()) {
-      await _pollProfile(profile, notifications);
+      if (await _pollProfile(profile, notifications)) successfulProfiles++;
     }
+    return successfulProfiles;
   }
 
-  Future<void> _pollProfile(
+  Future<bool> _pollProfile(
     ConnectionProfile profile,
     NotificationService notifications,
   ) async {
     final normalized = ServerAddressNormalizer.normalize(profile.preferredUrl);
-    if (normalized is! ValidAddress) return;
+    if (normalized is! ValidAddress) return false;
     var address = normalized.address;
     if (profile.certificateFingerprint case final fingerprint?) {
       address = address.trustFingerprint(fingerprint);
@@ -81,10 +123,10 @@ final class BackgroundHeartbeatRunner {
     if (info is! LinkSuccess<ServerInfo> ||
         verifyServerIdentity(profile.serverId, info.value)
             is IdentityMismatch) {
-      return;
+      return false;
     }
     final credential = await credentialStore.read(profile.serverId);
-    if (credential == null) return;
+    if (credential == null) return false;
 
     final pendingAcknowledgements = await acknowledgementStore.read(
       profile.serverId,
@@ -96,7 +138,7 @@ final class BackgroundHeartbeatRunner {
     );
     if (result is! LinkSuccess<HeartbeatResponse> ||
         result.value.serverId != profile.serverId) {
-      return;
+      return false;
     }
     if (pendingAcknowledgements.isNotEmpty) {
       await acknowledgementStore.write(profile.serverId, const []);
@@ -116,9 +158,23 @@ final class BackgroundHeartbeatRunner {
         continue;
       }
       await notifications.show(event.id, title, body);
+      try {
+        await appendNotificationHistory(
+          notificationHistoryStore,
+          notificationHistoryScope(profile.serverId, credential),
+          NotificationHistoryItem(
+            id: event.id,
+            title: title,
+            body: body,
+            receivedAt: DateTime.now(),
+          ),
+        );
+      } on Object {
+        // Notification delivery must not depend on optional local history.
+      }
       delivered.add(event.id);
     }
-    if (delivered.isEmpty) return;
+    if (delivered.isEmpty) return true;
 
     final acknowledgement = await linkService.heartbeat(
       address,
@@ -129,6 +185,7 @@ final class BackgroundHeartbeatRunner {
         acknowledgement.value.serverId != profile.serverId) {
       await acknowledgementStore.write(profile.serverId, delivered);
     }
+    return true;
   }
 }
 
@@ -162,9 +219,11 @@ void backgroundCallbackDispatcher() {
     if (task != backgroundHeartbeatTask) return true;
     DartPluginRegistrant.ensureInitialized();
     try {
-      await const BackgroundHeartbeatRunner().run();
+      final successfulProfiles = await const BackgroundHeartbeatRunner().run();
+      await const BackgroundDeliveryStatusStore().write(successfulProfiles);
       return true;
     } on Object {
+      await const BackgroundDeliveryStatusStore().write(-1);
       return false;
     }
   });
