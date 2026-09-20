@@ -144,4 +144,214 @@ class AppLocalizationsEn extends AppLocalizations {
   String expiresAt(String time) {
     return 'Expires at $time';
   }
+
+  @override
+  String get homeTab => 'Home';
+
+  @override
+  String get calendarTab => 'Plan';
+
+  @override
+  String get requestsTab => 'Requests';
+
+  @override
+  String get monitorTab => 'Monitor';
+
+  @override
+  String get everythingInPlace => 'Everything in its place';
+
+  @override
+  String get homeOverviewBody =>
+      'Your day, services and HomePlace connections at a glance.';
+
+  @override
+  String get onlineNow => 'Online now';
+
+  @override
+  String get needsAttention => 'Needs attention';
+
+  @override
+  String get nextUp => 'Next up';
+
+  @override
+  String get nothingPlanned => 'Nothing planned yet';
+
+  @override
+  String get calendarTitle => 'Calendar';
+
+  @override
+  String get remindersTitle => 'Reminders';
+
+  @override
+  String get addReminder => 'Add reminder';
+
+  @override
+  String get reminderTitleHint => 'What should HomePlace remind you about?';
+
+  @override
+  String get dateAndTime => 'Date and time';
+
+  @override
+  String get repeat => 'Repeat';
+
+  @override
+  String get repeatNone => 'Does not repeat';
+
+  @override
+  String get repeatDaily => 'Every day';
+
+  @override
+  String get repeatWeekly => 'Every week';
+
+  @override
+  String get repeatMonthly => 'Every month';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get complete => 'Complete';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get calendarNotConnected =>
+      'Connect Google Calendar in HomePlace settings to see events here.';
+
+  @override
+  String get noCalendarEvents => 'No upcoming calendar events.';
+
+  @override
+  String get requestsTitle => 'Media requests';
+
+  @override
+  String get requestsBody =>
+      'Search your connected Sonarr and Radarr libraries.';
+
+  @override
+  String get searchMedia => 'Search films and series';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get request => 'Request';
+
+  @override
+  String get inLibrary => 'In library';
+
+  @override
+  String get noMediaServices =>
+      'Connect Sonarr or Radarr in HomePlace settings first.';
+
+  @override
+  String requestSent(String title) {
+    return 'Request sent: $title';
+  }
+
+  @override
+  String get queue => 'Queue';
+
+  @override
+  String get upcomingMedia => 'Upcoming';
+
+  @override
+  String get downloads => 'Downloads';
+
+  @override
+  String activeDownloads(int count) {
+    return '$count active';
+  }
+
+  @override
+  String get monitoringTitle => 'Small but watchful';
+
+  @override
+  String get monitoringBody =>
+      'A live summary of the checks HomePlace already runs.';
+
+  @override
+  String onlineCount(int online, int total) {
+    return '$online of $total online';
+  }
+
+  @override
+  String get allQuiet => 'All quiet';
+
+  @override
+  String get recentEvents => 'Recent events';
+
+  @override
+  String get noMonitors =>
+      'Add availability checks to dashboard tiles to see them here.';
+
+  @override
+  String get telegramTitle => 'Telegram bridge';
+
+  @override
+  String get telegramConnected => 'Connected and ready';
+
+  @override
+  String get telegramDisconnected => 'Not configured on the server';
+
+  @override
+  String get telegramTest => 'Send test';
+
+  @override
+  String get telegramSent => 'A test message was sent to Telegram.';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get settings => 'Connection settings';
+
+  @override
+  String get loadingHome => 'Bringing your HomePlace together…';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get permissionsRequired =>
+      'Reconnect this device to approve the new mobile permissions.';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get tomorrow => 'Tomorrow';
+
+  @override
+  String get allDay => 'All day';
+
+  @override
+  String get clipboardTitle => 'Clipboard relay';
+
+  @override
+  String get clipboardBody =>
+      'Send the current Android clipboard to your other approved devices.';
+
+  @override
+  String get clipboardSend => 'Send clipboard';
+
+  @override
+  String clipboardIncoming(String device) {
+    return 'Clipboard from $device';
+  }
+
+  @override
+  String get clipboardCopy => 'Copy';
+
+  @override
+  String get clipboardDismiss => 'Dismiss';
+
+  @override
+  String clipboardSent(int count) {
+    return 'Clipboard sent to $count device(s).';
+  }
+
+  @override
+  String get clipboardEmpty => 'The clipboard does not contain text.';
 }

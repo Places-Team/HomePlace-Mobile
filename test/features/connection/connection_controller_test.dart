@@ -17,6 +17,7 @@ void main() {
       notificationService: FakeNotificationService(),
       descriptionProvider: const FakeDescriptionProvider(),
       pollDelay: (_) async {},
+      clipboardService: FakeClipboardService(),
     );
 
     controller.continueFromWelcome();
@@ -39,6 +40,15 @@ void main() {
     expect(link.reportedCapabilities.map((capability) => capability.name), [
       'notification.receive',
       'device.presence',
+      'clipboard.send',
+      'clipboard.receive',
+    ]);
+    expect(link.requestedPermissions, [
+      'dashboard.read',
+      'reminder.manage',
+      'media.request',
+      'telegram.send',
+      'clipboard.relay',
     ]);
     controller.dispose();
   });

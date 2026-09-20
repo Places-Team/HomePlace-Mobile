@@ -100,6 +100,8 @@ final class PlatformFeatures {
     this.batteryReporting = false,
     this.networkReporting = false,
     this.foregroundPresence = false,
+    this.clipboardSend = false,
+    this.clipboardReceive = false,
   });
 
   final bool notificationReceive;
@@ -110,6 +112,8 @@ final class PlatformFeatures {
   final bool batteryReporting;
   final bool networkReporting;
   final bool foregroundPresence;
+  final bool clipboardSend;
+  final bool clipboardReceive;
 }
 
 abstract final class CapabilityNegotiator {
@@ -130,6 +134,16 @@ abstract final class CapabilityNegotiator {
       const Capability(
         name: 'device.presence',
         constraints: {'mode': 'foreground'},
+      ),
+    if (features.clipboardSend)
+      const Capability(
+        name: 'clipboard.send',
+        constraints: {'mode': 'foreground'},
+      ),
+    if (features.clipboardReceive)
+      const Capability(
+        name: 'clipboard.receive',
+        constraints: {'requiresConfirmation': 'true'},
       ),
   ];
 }

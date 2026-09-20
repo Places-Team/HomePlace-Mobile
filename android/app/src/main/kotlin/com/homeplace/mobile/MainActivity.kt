@@ -1,5 +1,8 @@
 package com.homeplace.mobile
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -27,6 +30,22 @@ class MainActivity : FlutterActivity() {
                 .onSuccess(result::success)
                 .onFailure { result.error("keystore_unavailable", "Android Keystore is unavailable.", null) }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CLIPBOARD_CHANNEL).setMethodCallHandler { call, result ->
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            when (call.method) {
+                "readText" -> result.success(clipboard.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString())
+                "writeText" -> {
+                    val text = call.argument<String>("text")
+                    if (text == null || text.length > 8000) {
+                        result.error("invalid_text", "Clipboard text must contain at most 8000 characters.", null)
+                    } else {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("HomePlace", text))
+                        result.success(null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     private fun publicKey(serverId: String): String {
@@ -47,6 +66,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val IDENTITY_CHANNEL = "com.homeplace.mobile/identity"
+        private const val CLIPBOARD_CHANNEL = "com.homeplace.mobile/clipboard"
         private val SERVER_ID = Regex("^[0-9a-fA-F-]{36}$")
     }
 }

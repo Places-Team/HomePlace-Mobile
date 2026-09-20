@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/network/server_address.dart';
+import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/link/link_client.dart';
+import 'package:homeplace/link/mobile_api.dart';
 
 void main() {
   test('validates Link info against a mock HomePlace server', () async {
@@ -51,5 +53,44 @@ void main() {
 
     expect(result, isA<LinkFailure>());
     expect((result as LinkFailure).kind, LinkFailureKind.invalidResponse);
+  });
+
+  test('loads the authenticated mobile dashboard from a mock server', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(server.close);
+    server.listen((request) async {
+      expect(request.uri.path, '/api/link/mobile/overview');
+      expect(
+        request.headers.value(HttpHeaders.authorizationHeader),
+        'Bearer test-credential',
+      );
+      request.response.headers.contentType = ContentType.json;
+      request.response.write('''
+        {
+          "serverTime":"2026-09-20T10:00:00Z",
+          "permissions":["dashboard.read"],
+          "reminders":[],
+          "calendar":{"connected":false,"email":null,"events":[]},
+          "requests":{"instances":[],"qbittorrent":null},
+          "telegram":{"connected":false,"enabled":false,"source":"none"},
+          "monitoring":{"total":1,"online":1,"offline":0,"unknown":0,"services":[],"recent":[]}
+        }
+      ''');
+      await request.response.close();
+    });
+    final normalized = ServerAddressNormalizer.normalize(
+      'http://127.0.0.1:${server.port}',
+    ) as ValidAddress;
+    final session = AuthenticatedLinkSession(
+      address: normalized.address,
+      credential: 'test-credential',
+      serverId: '9d55059f-5a47-4f23-a778-5714c6744907',
+      serverName: 'Mock Home',
+    );
+
+    final result = await const MobileApi().overview(session);
+
+    expect(result, isA<LinkSuccess>());
+    expect((result as LinkSuccess).value.monitoring.online, 1);
   });
 }

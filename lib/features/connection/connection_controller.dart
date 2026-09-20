@@ -5,6 +5,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/clipboard/clipboard_service.dart';
 import '../../core/network/server_address.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/platform/platform_identity.dart';
@@ -20,6 +21,31 @@ enum ConnectionStage {
   preview,
   pairing,
   connected,
+}
+
+final class AuthenticatedLinkSession {
+  const AuthenticatedLinkSession({
+    required this.address,
+    required this.credential,
+    required this.serverId,
+    required this.serverName,
+  });
+
+  final ServerAddress address;
+  final String credential;
+  final String serverId;
+  final String serverName;
+}
+
+final class PendingClipboard {
+  const PendingClipboard({
+    required this.eventId,
+    required this.text,
+    required this.sourceName,
+  });
+  final String eventId;
+  final String text;
+  final String sourceName;
 }
 
 abstract interface class DeviceDescriptionProvider {
@@ -60,6 +86,7 @@ final class ConnectionController extends ChangeNotifier {
     NotificationService? notificationService,
     DeviceDescriptionProvider? descriptionProvider,
     Future<void> Function(Duration)? pollDelay,
+    ClipboardService? clipboardService,
   }) : _link = linkService ?? const HttpLinkService(),
        _profiles = profileStore ?? SharedPreferencesProfileStore(),
        _credentials = credentialStore ?? const PlatformCredentialStore(),
@@ -67,7 +94,8 @@ final class ConnectionController extends ChangeNotifier {
        _notifications = notificationService ?? LocalNotificationService(),
        _description =
            descriptionProvider ?? PlatformDeviceDescriptionProvider(),
-       _pollDelay = pollDelay ?? Future<void>.delayed;
+       _pollDelay = pollDelay ?? Future<void>.delayed,
+       _clipboard = clipboardService ?? const PlatformClipboardService();
 
   final LinkService _link;
   final ProfileStore _profiles;
@@ -76,6 +104,7 @@ final class ConnectionController extends ChangeNotifier {
   final NotificationService _notifications;
   final DeviceDescriptionProvider _description;
   final Future<void> Function(Duration) _pollDelay;
+  final ClipboardService _clipboard;
 
   ConnectionStage stage = ConnectionStage.welcome;
   String addressInput = '';
@@ -87,6 +116,7 @@ final class ConnectionController extends ChangeNotifier {
   PairingSession? pairingSession;
   ConnectionProfile? profile;
   String? lastNotification;
+  PendingClipboard? pendingClipboard;
   Timer? _heartbeatTimer;
   bool _polling = false;
   List<String> _acknowledgedEventIds = const [];
@@ -200,6 +230,8 @@ final class ConnectionController extends ChangeNotifier {
         PlatformFeatures(
           notificationReceive: notificationAvailable,
           foregroundPresence: true,
+          clipboardSend: _clipboard.isSupported,
+          clipboardReceive: _clipboard.isSupported,
         ),
       );
       final result = await _link.startPairing(
@@ -207,6 +239,13 @@ final class ConnectionController extends ChangeNotifier {
         await _description.describe(),
         await _identity.publicKey(info.server.id),
         capabilities,
+        const [
+          'dashboard.read',
+          'reminder.manage',
+          'media.request',
+          'telegram.send',
+          'clipboard.relay',
+        ],
       );
       switch (result) {
         case LinkSuccess<PairingSession>():
@@ -305,6 +344,52 @@ final class ConnectionController extends ChangeNotifier {
   void cancelPairing() {
     pairingSession = null;
     stage = ConnectionStage.preview;
+    notifyListeners();
+  }
+
+  Future<AuthenticatedLinkSession?> authenticatedSession() async {
+    final connectedProfile = profile;
+    final address = serverAddress;
+    if (stage != ConnectionStage.connected ||
+        connectedProfile == null ||
+        address == null) {
+      return null;
+    }
+    final credential = await _credentials.read(connectedProfile.serverId);
+    if (credential == null) return null;
+    return AuthenticatedLinkSession(
+      address: address,
+      credential: credential,
+      serverId: connectedProfile.serverId,
+      serverName: connectedProfile.serverName,
+    );
+  }
+
+  Future<String?> readClipboardText() async {
+    if (!_clipboard.isSupported) return null;
+    return _clipboard.readText();
+  }
+
+  Future<void> acceptPendingClipboard() async {
+    final pending = pendingClipboard;
+    if (pending == null || !_clipboard.isSupported) return;
+    await _clipboard.writeText(pending.text);
+    _acknowledgedEventIds = {
+      ..._acknowledgedEventIds,
+      pending.eventId,
+    }.toList(growable: false);
+    pendingClipboard = null;
+    notifyListeners();
+  }
+
+  void dismissPendingClipboard() {
+    final pending = pendingClipboard;
+    if (pending == null) return;
+    _acknowledgedEventIds = {
+      ..._acknowledgedEventIds,
+      pending.eventId,
+    }.toList(growable: false);
+    pendingClipboard = null;
     notifyListeners();
   }
 
@@ -408,6 +493,21 @@ final class ConnectionController extends ChangeNotifier {
     }
     final acknowledged = <String>[];
     for (final event in response.events) {
+      if (event.type == 'clipboard.offer') {
+        final text = event.payload['text'];
+        final sourceName = event.payload['sourceName'];
+        if (text is String &&
+            text.isNotEmpty &&
+            text.length <= 8000 &&
+            sourceName is String) {
+          pendingClipboard = PendingClipboard(
+            eventId: event.id,
+            text: text,
+            sourceName: sourceName,
+          );
+        }
+        continue;
+      }
       if (event.type != 'notification.deliver') continue;
       final title = event.payload['title'];
       final body = event.payload['body'];

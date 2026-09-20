@@ -64,4 +64,20 @@ void main() {
     ]);
     expect(capabilities.last.constraints, {'mode': 'foreground'});
   });
+
+  test(
+    'clipboard capabilities disclose foreground and confirmation limits',
+    () {
+      final capabilities = CapabilityNegotiator.available(
+        const PlatformFeatures(clipboardSend: true, clipboardReceive: true),
+      );
+
+      expect(capabilities.map((capability) => capability.name), [
+        'clipboard.send',
+        'clipboard.receive',
+      ]);
+      expect(capabilities.first.constraints, {'mode': 'foreground'});
+      expect(capabilities.last.constraints, {'requiresConfirmation': 'true'});
+    },
+  );
 }

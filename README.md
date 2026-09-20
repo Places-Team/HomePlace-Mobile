@@ -4,7 +4,7 @@ The Flutter application for connecting Android and iOS devices to a self-hosted 
 
 ## Current milestone
 
-The first Flutter connection slice is implemented and validated on Android and the iOS Simulator. It includes:
+The first Flutter application slice is implemented with Android as the primary validation target. It includes:
 
 - English and Russian onboarding;
 - domain, local hostname, IPv4, IPv6, and QR address input;
@@ -14,8 +14,13 @@ The first Flutter connection slice is implemented and validated on Android and t
 - pairing approval and secure device credentials;
 - capability negotiation, foreground heartbeat, event acknowledgement, and test notifications;
 - saved connection profiles, diagnostics, revoke, and disconnect actions.
+- a four-tab pill navigation shell for home, plans, media requests, and monitoring;
+- Google Calendar agenda and reminder creation, completion, deletion, and recurrence;
+- Sonarr/Radarr search and requests, qBittorrent status, Telegram status and a delivery check;
+- compact service health and recent-event monitoring;
+- explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied.
 
-Presence currently operates while the application is open. Persistent platform background delivery remains a later native-integration milestone.
+Presence and clipboard relay currently operate while the application is open. Persistent platform background delivery remains a later native-integration milestone. iOS does not advertise clipboard relay in this milestone.
 
 ## Repository layout
 

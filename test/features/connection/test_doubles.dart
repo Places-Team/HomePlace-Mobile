@@ -1,4 +1,5 @@
 import 'package:homeplace/core/network/server_address.dart';
+import 'package:homeplace/core/clipboard/clipboard_service.dart';
 import 'package:homeplace/core/notifications/notification_service.dart';
 import 'package:homeplace/core/platform/platform_identity.dart';
 import 'package:homeplace/core/storage/connection_profile.dart';
@@ -22,6 +23,7 @@ final class FakeLinkService implements LinkService {
   LinkResult<PairingSession>? pairingResult;
   LinkResult<PairingClaim>? claimResult;
   List<Capability> reportedCapabilities = const [];
+  List<String> requestedPermissions = const [];
 
   @override
   Future<LinkResult<ServerInfo>> fetchInfo(ServerAddress address) async =>
@@ -33,8 +35,10 @@ final class FakeLinkService implements LinkService {
     DeviceDescription device,
     String publicKey,
     List<Capability> capabilities,
+    List<String> permissions,
   ) async {
     reportedCapabilities = capabilities;
+    requestedPermissions = permissions;
     return pairingResult ??
         LinkSuccess(
           PairingSession(
@@ -137,6 +141,17 @@ final class FakeDeviceIdentity implements DeviceIdentity {
 
   @override
   Future<String> publicKey(String serverId) async => 'public-key';
+}
+
+final class FakeClipboardService implements ClipboardService {
+  FakeClipboardService({this.value});
+  String? value;
+  @override
+  bool get isSupported => true;
+  @override
+  Future<String?> readText() async => value;
+  @override
+  Future<void> writeText(String text) async => value = text;
 }
 
 final class FakeDescriptionProvider implements DeviceDescriptionProvider {

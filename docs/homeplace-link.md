@@ -10,8 +10,18 @@ The Flutter client supports Link protocol version 1 and currently uses:
 - `POST /api/link/heartbeat` for foreground presence, event delivery, and acknowledgements;
 - `DELETE /api/link/device` to revoke the current device.
 
+Approved devices may also use scoped mobile endpoints:
+
+- `GET /api/link/mobile/overview` for calendar, reminders, media queues, Telegram state, and monitoring;
+- `POST /api/link/mobile/reminders` for personal reminder actions;
+- `GET /api/link/mobile/requests/search` and `POST /api/link/mobile/requests` for Sonarr/Radarr requests;
+- `POST /api/link/mobile/telegram` for an explicit delivery check;
+- `POST /api/link/mobile/clipboard` to relay bounded text to the same user's capable devices.
+
+The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal.
+
 The server ID returned by pairing and heartbeat must match the ID previewed before pairing. The client rejects incompatible protocol ranges and does not infer unavailable features.
 
 `docs/fixtures/link-info-v1.json` is a mobile test fixture. Update it and the Flutter contract tests whenever the canonical server response changes.
 
-WebSocket presence, durable background delivery, richer commands, and file transfer are outside this migration milestone. They must be implemented against released server behavior before being advertised.
+WebSocket presence, durable background delivery, richer commands, calendar editing, and file transfer are outside this milestone. They must be implemented against released server behavior before being advertised.

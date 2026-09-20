@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'core/network/server_address.dart';
 import 'features/connection/connection_controller.dart';
+import 'features/home/home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
@@ -22,23 +23,8 @@ class HomePlaceApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff3867d6)),
-      useMaterial3: true,
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-    ),
-    darkTheme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xff7ca5ff),
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-    ),
+    theme: _theme(Brightness.light),
+    darkTheme: _theme(Brightness.dark),
     themeMode: ThemeMode.system,
     home: ConnectionShell(controller: controller),
   );
@@ -53,6 +39,9 @@ class ConnectionShell extends StatelessWidget {
     listenable: controller,
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
+      if (controller.stage == ConnectionStage.connected) {
+        return HomeShell(connection: controller);
+      }
       return Scaffold(
         appBar: controller.stage == ConnectionStage.welcome
             ? null
@@ -96,7 +85,7 @@ class ConnectionShell extends StatelessWidget {
     ConnectionStage.validating => _Address(controller: controller, l10n: l10n),
     ConnectionStage.preview => _Preview(controller: controller, l10n: l10n),
     ConnectionStage.pairing => _Pairing(controller: controller, l10n: l10n),
-    ConnectionStage.connected => _Connected(controller: controller, l10n: l10n),
+    ConnectionStage.connected => const SizedBox.shrink(),
   };
 
   Future<void> _showDiagnostics(
@@ -114,6 +103,59 @@ class ConnectionShell extends StatelessWidget {
           child: Text(l10n.close),
         ),
       ],
+    ),
+  );
+}
+
+ThemeData _theme(Brightness brightness) {
+  final dark = brightness == Brightness.dark;
+  final scheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xff7457ff),
+    brightness: brightness,
+    surface: dark ? const Color(0xff11111b) : const Color(0xfffffbf3),
+  );
+  return ThemeData(
+    brightness: brightness,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: dark
+        ? const Color(0xff11111b)
+        : const Color(0xfffffbf3),
+    useMaterial3: true,
+    appBarTheme: const AppBarTheme(
+      centerTitle: false,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: scheme.surfaceContainerLow,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide(
+          color: scheme.outlineVariant.withValues(alpha: .5),
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      ),
+    ),
+    cardTheme: CardThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
     ),
   );
 }
@@ -453,60 +495,6 @@ class _Pairing extends StatelessWidget {
       ],
     );
   }
-}
-
-class _Connected extends StatelessWidget {
-  const _Connected({required this.controller, required this.l10n});
-  final ConnectionController controller;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    key: const ValueKey('connected'),
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Icon(
-        Icons.check_circle,
-        size: 64,
-        color: Theme.of(context).colorScheme.primary,
-      ),
-      const SizedBox(height: 16),
-      Text(
-        l10n.connected,
-        style: Theme.of(context).textTheme.headlineMedium,
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 8),
-      Text(
-        controller.profile?.serverName ?? l10n.appName,
-        style: Theme.of(context).textTheme.titleLarge,
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 12),
-      Text(l10n.connectedBody, textAlign: TextAlign.center),
-      if (controller.lastNotification case final notification?) ...[
-        const SizedBox(height: 20),
-        Card(
-          child: ListTile(
-            title: Text(l10n.lastNotification),
-            subtitle: Text(notification),
-          ),
-        ),
-      ],
-      if (controller.error case final message?) ...[
-        const SizedBox(height: 12),
-        Text(
-          message,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
-        ),
-      ],
-      const SizedBox(height: 24),
-      FilledButton.tonal(
-        onPressed: controller.disconnect,
-        child: Text(l10n.disconnect),
-      ),
-    ],
-  );
 }
 
 class _Detail extends StatelessWidget {

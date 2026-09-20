@@ -136,6 +136,7 @@ abstract interface class LinkService {
     DeviceDescription device,
     String publicKey,
     List<Capability> capabilities,
+    List<String> permissions,
   );
   Future<LinkResult<PairingClaim>> claimPairing(
     ServerAddress address,
@@ -154,7 +155,7 @@ final class HttpLinkService implements LinkService {
 
   @override
   Future<LinkResult<ServerInfo>> fetchInfo(ServerAddress address) async {
-    final response = await _request(address, 'GET', '/api/link/info');
+    final response = await requestJson(address, 'GET', '/api/link/info');
     if (response is LinkFailure<Map<String, dynamic>>) {
       return _copyFailure(response);
     }
@@ -183,8 +184,9 @@ final class HttpLinkService implements LinkService {
     DeviceDescription device,
     String publicKey,
     List<Capability> capabilities,
+    List<String> permissions,
   ) async {
-    final response = await _request(
+    final response = await requestJson(
       address,
       'POST',
       '/api/link/pair',
@@ -195,6 +197,7 @@ final class HttpLinkService implements LinkService {
         'capabilities': capabilities
             .map((capability) => capability.toJson())
             .toList(),
+        'permissions': permissions,
       },
     );
     if (response is LinkFailure<Map<String, dynamic>>) {
@@ -218,7 +221,7 @@ final class HttpLinkService implements LinkService {
     ServerAddress address,
     PairingSession session,
   ) async {
-    final response = await _request(
+    final response = await requestJson(
       address,
       'POST',
       '/api/link/pairing/${Uri.encodeComponent(session.id)}/claim',
@@ -246,7 +249,7 @@ final class HttpLinkService implements LinkService {
     String credential,
     List<String> acknowledgedEventIds,
   ) async {
-    final response = await _request(
+    final response = await requestJson(
       address,
       'POST',
       '/api/link/heartbeat',
@@ -278,7 +281,7 @@ final class HttpLinkService implements LinkService {
     ServerAddress address,
     String credential,
   ) async {
-    final response = await _request(
+    final response = await requestJson(
       address,
       'DELETE',
       '/api/link/device',
@@ -290,12 +293,13 @@ final class HttpLinkService implements LinkService {
     return const LinkSuccess(null);
   }
 
-  Future<LinkResult<Map<String, dynamic>>> _request(
+  Future<LinkResult<Map<String, dynamic>>> requestJson(
     ServerAddress address,
     String method,
     String path, {
     Map<String, dynamic>? body,
     String? credential,
+    int maxResponseBytes = 65536,
   }) async {
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 10);
@@ -334,8 +338,10 @@ final class HttpLinkService implements LinkService {
           'HomePlace redirected the connection unexpectedly.',
         );
       }
-      final text = await _readBody(response)
-          .timeout(const Duration(seconds: 12));
+      final text = await _readBody(
+        response,
+        maxResponseBytes,
+      ).timeout(const Duration(seconds: 12));
       if (response.statusCode == HttpStatus.unauthorized) {
         return const LinkFailure(
           LinkFailureKind.authentication,
@@ -343,9 +349,20 @@ final class HttpLinkService implements LinkService {
         );
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
+        String? serverMessage;
+        try {
+          final decoded = jsonDecode(text);
+          if (decoded is Map<String, dynamic> && decoded['error'] is String) {
+            serverMessage = decoded['error'] as String;
+          }
+        } on Object {
+          // The HTTP status remains useful when an upstream returned HTML.
+        }
         return LinkFailure(
           LinkFailureKind.invalidResponse,
-          'HomePlace returned HTTP ${response.statusCode}.',
+          serverMessage?.trim().isNotEmpty == true
+              ? serverMessage!
+              : 'HomePlace returned HTTP ${response.statusCode}.',
         );
       }
       if (text.isEmpty) return const LinkSuccess({});
@@ -385,10 +402,10 @@ final class HttpLinkService implements LinkService {
     }
   }
 
-  Future<String> _readBody(HttpClientResponse response) async {
+  Future<String> _readBody(HttpClientResponse response, int maxBytes) async {
     final responseBytes = BytesBuilder(copy: false);
     await for (final chunk in response) {
-      if (responseBytes.length + chunk.length > 65536) {
+      if (responseBytes.length + chunk.length > maxBytes) {
         throw const _ResponseTooLarge();
       }
       responseBytes.add(chunk);

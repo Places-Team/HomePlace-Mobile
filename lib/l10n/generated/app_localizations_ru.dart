@@ -144,4 +144,214 @@ class AppLocalizationsRu extends AppLocalizations {
   String expiresAt(String time) {
     return 'Истекает: $time';
   }
+
+  @override
+  String get homeTab => 'Дом';
+
+  @override
+  String get calendarTab => 'Планы';
+
+  @override
+  String get requestsTab => 'Заявки';
+
+  @override
+  String get monitorTab => 'Контроль';
+
+  @override
+  String get everythingInPlace => 'Всё на своих местах';
+
+  @override
+  String get homeOverviewBody =>
+      'День, сервисы и связи HomePlace — одним взглядом.';
+
+  @override
+  String get onlineNow => 'Сейчас в сети';
+
+  @override
+  String get needsAttention => 'Требует внимания';
+
+  @override
+  String get nextUp => 'Ближайшее';
+
+  @override
+  String get nothingPlanned => 'Пока ничего не запланировано';
+
+  @override
+  String get calendarTitle => 'Календарь';
+
+  @override
+  String get remindersTitle => 'Напоминания';
+
+  @override
+  String get addReminder => 'Добавить напоминание';
+
+  @override
+  String get reminderTitleHint => 'О чём напомнить?';
+
+  @override
+  String get dateAndTime => 'Дата и время';
+
+  @override
+  String get repeat => 'Повтор';
+
+  @override
+  String get repeatNone => 'Не повторять';
+
+  @override
+  String get repeatDaily => 'Каждый день';
+
+  @override
+  String get repeatWeekly => 'Каждую неделю';
+
+  @override
+  String get repeatMonthly => 'Каждый месяц';
+
+  @override
+  String get save => 'Сохранить';
+
+  @override
+  String get complete => 'Выполнить';
+
+  @override
+  String get delete => 'Удалить';
+
+  @override
+  String get calendarNotConnected =>
+      'Подключите Google Calendar в настройках HomePlace, чтобы видеть события здесь.';
+
+  @override
+  String get noCalendarEvents => 'Ближайших событий в календаре нет.';
+
+  @override
+  String get requestsTitle => 'Заявки на медиа';
+
+  @override
+  String get requestsBody =>
+      'Поиск по подключённым библиотекам Sonarr и Radarr.';
+
+  @override
+  String get searchMedia => 'Найти фильм или сериал';
+
+  @override
+  String get search => 'Найти';
+
+  @override
+  String get request => 'Заказать';
+
+  @override
+  String get inLibrary => 'Уже в библиотеке';
+
+  @override
+  String get noMediaServices =>
+      'Сначала подключите Sonarr или Radarr в настройках HomePlace.';
+
+  @override
+  String requestSent(String title) {
+    return 'Заявка отправлена: $title';
+  }
+
+  @override
+  String get queue => 'Очередь';
+
+  @override
+  String get upcomingMedia => 'Скоро';
+
+  @override
+  String get downloads => 'Загрузки';
+
+  @override
+  String activeDownloads(int count) {
+    return 'Активных: $count';
+  }
+
+  @override
+  String get monitoringTitle => 'Небольшой, но внимательный';
+
+  @override
+  String get monitoringBody =>
+      'Живая сводка проверок, которые уже выполняет HomePlace.';
+
+  @override
+  String onlineCount(int online, int total) {
+    return 'В сети $online из $total';
+  }
+
+  @override
+  String get allQuiet => 'Всё спокойно';
+
+  @override
+  String get recentEvents => 'Последние события';
+
+  @override
+  String get noMonitors =>
+      'Добавьте проверки доступности плиткам на панели, чтобы видеть их здесь.';
+
+  @override
+  String get telegramTitle => 'Связь с Telegram';
+
+  @override
+  String get telegramConnected => 'Подключён и готов';
+
+  @override
+  String get telegramDisconnected => 'Не настроен на сервере';
+
+  @override
+  String get telegramTest => 'Проверить связь';
+
+  @override
+  String get telegramSent => 'Тестовое сообщение отправлено в Telegram.';
+
+  @override
+  String get refresh => 'Обновить';
+
+  @override
+  String get settings => 'Настройки подключения';
+
+  @override
+  String get loadingHome => 'Собираем ваш HomePlace…';
+
+  @override
+  String get tryAgain => 'Повторить';
+
+  @override
+  String get permissionsRequired =>
+      'Переподключите устройство, чтобы подтвердить новые разрешения приложения.';
+
+  @override
+  String get today => 'Сегодня';
+
+  @override
+  String get tomorrow => 'Завтра';
+
+  @override
+  String get allDay => 'Весь день';
+
+  @override
+  String get clipboardTitle => 'Общий буфер';
+
+  @override
+  String get clipboardBody =>
+      'Отправьте текст из буфера Android на другие подтверждённые устройства.';
+
+  @override
+  String get clipboardSend => 'Отправить буфер';
+
+  @override
+  String clipboardIncoming(String device) {
+    return 'Буфер с устройства $device';
+  }
+
+  @override
+  String get clipboardCopy => 'Скопировать';
+
+  @override
+  String get clipboardDismiss => 'Отклонить';
+
+  @override
+  String clipboardSent(int count) {
+    return 'Буфер отправлен на устройств: $count.';
+  }
+
+  @override
+  String get clipboardEmpty => 'В буфере обмена нет текста.';
 }

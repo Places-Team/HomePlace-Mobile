@@ -19,6 +19,12 @@ Disconnect requests server-side revocation before deleting the local credential.
 
 ## Capabilities and events
 
-The initial Flutter slice advertises `notification.receive` only after permission is available and `device.presence` with the `foreground` constraint. Unsupported capabilities are omitted. Incoming events are allowlisted, validated, and acknowledged by event ID; unknown or malformed events are ignored.
+The Flutter client advertises `notification.receive` only after permission is available and `device.presence` with the `foreground` constraint. Android additionally advertises `clipboard.send` with a foreground constraint and `clipboard.receive` with `requiresConfirmation=true`. iOS does not advertise clipboard capabilities. Unsupported capabilities are omitted.
+
+Capabilities describe what the device can do. Server permissions describe what an approved device may request: dashboard reads, reminder management, media requests, Telegram delivery checks, and clipboard relay. Requested permissions are shown in the web approval screen and stored with the device. The mobile API checks both the device credential and the required permission.
+
+Clipboard text is bounded to 8,000 characters, relayed only to capable devices approved for the same user, and kept in the existing per-device event queue for at most five minutes. Acknowledgement deletes the payload instead of retaining it as event history. Android never reads the clipboard in the background. Incoming text is shown in the application and copied only after the user confirms it.
+
+Incoming events are allowlisted, validated, and acknowledged by event ID; unknown or malformed events are ignored.
 
 Persistent background delivery is not implemented in this milestone and is not advertised.
