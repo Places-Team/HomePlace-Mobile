@@ -478,15 +478,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get choose => 'Выбрать';
 
   @override
-  String get chooseDevice => 'Выберите своё устройство';
+  String get chooseDevice => 'Выберите устройство';
 
   @override
   String get onlyYourDevices =>
-      'Показаны только устройства, подтверждённые для вашего аккаунта.';
+      'Ваши устройства изолированы внутри аккаунта. Семейные появляются только после явного разрешения их владельца.';
 
   @override
   String get noShareDevices =>
-      'У этого аккаунта нет совместимых подключённых устройств.';
+      'Нет доступных совместимых подтверждённых устройств.';
+
+  @override
+  String get yourDevice => 'Ваше устройство';
+
+  @override
+  String householdDevice(String owner) {
+    return 'Семья · $owner';
+  }
 
   @override
   String get deviceOnline => 'Сейчас в сети';
@@ -500,6 +508,11 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String confirmShareBody(String device) {
     return 'HomePlace отправит его только на устройство «$device». Предложение исчезнет через пять минут.';
+  }
+
+  @override
+  String confirmHouseholdShareBody(String owner, String device) {
+    return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит объект только на «$device». Предложение исчезнет через пять минут.';
   }
 
   @override

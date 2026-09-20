@@ -302,7 +302,16 @@ class _HomeShellState extends State<HomeShell> {
             SharedContentKind.file => target.supportsFile,
           },
         )
-        .toList(growable: false);
+        .toList(growable: false)
+      ..sort((a, b) {
+        final ownership = (b.ownedByCurrentUser ? 1 : 0).compareTo(
+          a.ownedByCurrentUser ? 1 : 0,
+        );
+        if (ownership != 0) return ownership;
+        final presence = (b.online ? 1 : 0).compareTo(a.online ? 1 : 0);
+        if (presence != 0) return presence;
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -335,16 +344,44 @@ class _HomeShellState extends State<HomeShell> {
                           : Icons.phone_iphone_rounded,
                     ),
                     title: Text(target.name),
-                    subtitle: Text(
-                      target.online ? l10n.deviceOnline : l10n.deviceOffline,
+                    subtitle: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: target.ownedByCurrentUser
+                                ? l10n.yourDevice
+                                : l10n.householdDevice(
+                                    target.ownerName ?? l10n.appName,
+                                  ),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const TextSpan(text: ' · '),
+                          TextSpan(
+                            text: target.online
+                                ? l10n.deviceOnline
+                                : l10n.deviceOffline,
+                          ),
+                        ],
+                      ),
                     ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    trailing: Icon(
+                      target.ownedByCurrentUser
+                          ? Icons.chevron_right_rounded
+                          : Icons.group_rounded,
+                    ),
                     onTap: () async {
                       final confirmed = await showDialog<bool>(
                         context: sheetContext,
                         builder: (dialogContext) => AlertDialog(
                           title: Text(l10n.confirmShareTitle),
-                          content: Text(l10n.confirmShareBody(target.name)),
+                          content: Text(
+                            target.ownedByCurrentUser
+                                ? l10n.confirmShareBody(target.name)
+                                : l10n.confirmHouseholdShareBody(
+                                    target.ownerName ?? l10n.appName,
+                                    target.name,
+                                  ),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () =>

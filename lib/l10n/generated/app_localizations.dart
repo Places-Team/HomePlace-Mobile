@@ -959,20 +959,32 @@ abstract class AppLocalizations {
   /// No description provided for @chooseDevice.
   ///
   /// In en, this message translates to:
-  /// **'Choose your device'**
+  /// **'Choose a device'**
   String get chooseDevice;
 
   /// No description provided for @onlyYourDevices.
   ///
   /// In en, this message translates to:
-  /// **'Only devices approved for your account are shown.'**
+  /// **'Your devices stay account-isolated. Household devices appear only when their owner explicitly allows sharing.'**
   String get onlyYourDevices;
 
   /// No description provided for @noShareDevices.
   ///
   /// In en, this message translates to:
-  /// **'No compatible devices are connected to this account.'**
+  /// **'No compatible approved devices are available.'**
   String get noShareDevices;
+
+  /// No description provided for @yourDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your device'**
+  String get yourDevice;
+
+  /// No description provided for @householdDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Household · {owner}'**
+  String householdDevice(String owner);
 
   /// No description provided for @deviceOnline.
   ///
@@ -997,6 +1009,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'HomePlace will send it only to {device}. The offer expires in five minutes.'**
   String confirmShareBody(String device);
+
+  /// No description provided for @confirmHouseholdShareBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device belongs to {owner}. HomePlace will send the item only to {device} after you confirm. The offer expires in five minutes.'**
+  String confirmHouseholdShareBody(String owner, String device);
 
   /// No description provided for @send.
   ///

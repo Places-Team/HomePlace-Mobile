@@ -478,15 +478,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get choose => 'Choose';
 
   @override
-  String get chooseDevice => 'Choose your device';
+  String get chooseDevice => 'Choose a device';
 
   @override
   String get onlyYourDevices =>
-      'Only devices approved for your account are shown.';
+      'Your devices stay account-isolated. Household devices appear only when their owner explicitly allows sharing.';
 
   @override
-  String get noShareDevices =>
-      'No compatible devices are connected to this account.';
+  String get noShareDevices => 'No compatible approved devices are available.';
+
+  @override
+  String get yourDevice => 'Your device';
+
+  @override
+  String householdDevice(String owner) {
+    return 'Household · $owner';
+  }
 
   @override
   String get deviceOnline => 'Online now';
@@ -500,6 +507,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String confirmShareBody(String device) {
     return 'HomePlace will send it only to $device. The offer expires in five minutes.';
+  }
+
+  @override
+  String confirmHouseholdShareBody(String owner, String device) {
+    return 'This device belongs to $owner. HomePlace will send the item only to $device after you confirm. The offer expires in five minutes.';
   }
 
   @override

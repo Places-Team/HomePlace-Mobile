@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/features/home/home_controller.dart';
 import 'package:homeplace/features/home/home_shell.dart';
@@ -56,6 +57,47 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
+    connection.dispose();
+    home.dispose();
+  });
+
+  testWidgets('labels household share targets before confirmation', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 820);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController()
+      ..pendingOutgoingShare = const SharedContent(
+        kind: SharedContentKind.text,
+        value: 'Family note',
+      );
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+    await tester.tap(find.text('Choose'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText().contains('Household · Alex'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Family tablet'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('This device belongs to Alex'), findsOneWidget);
     connection.dispose();
     home.dispose();
   });
@@ -134,5 +176,18 @@ MobileOverview _overview() {
       ],
       'recent': [],
     },
+    'shareTargets': [
+      {
+        'id': 'family-tablet',
+        'name': 'Family tablet',
+        'platform': 'android',
+        'supportsText': true,
+        'supportsUrl': true,
+        'supportsFile': true,
+        'online': true,
+        'ownerName': 'Alex',
+        'ownedByCurrentUser': false,
+      },
+    ],
   });
 }

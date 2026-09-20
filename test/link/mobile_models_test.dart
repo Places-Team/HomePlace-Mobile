@@ -49,6 +49,8 @@ void main() {
           'supportsUrl': true,
           'supportsFile': true,
           'online': true,
+          'ownerName': 'Olmae family',
+          'ownedByCurrentUser': false,
         },
       ],
     });
@@ -61,5 +63,7 @@ void main() {
     expect(overview.monitoring.offline, 1);
     expect(overview.shareTargets.single.name, 'Family tablet');
     expect(overview.shareTargets.single.supportsFile, isTrue);
+    expect(overview.shareTargets.single.ownerName, 'Olmae family');
+    expect(overview.shareTargets.single.ownedByCurrentUser, isFalse);
   });
 }

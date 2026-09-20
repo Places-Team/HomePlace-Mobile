@@ -269,6 +269,8 @@ final class MobileShareTarget {
     required this.supportsUrl,
     required this.supportsFile,
     required this.online,
+    required this.ownedByCurrentUser,
+    this.ownerName,
   });
   factory MobileShareTarget.fromJson(Map<String, dynamic> json) =>
       MobileShareTarget(
@@ -279,6 +281,8 @@ final class MobileShareTarget {
         supportsUrl: json['supportsUrl'] as bool? ?? false,
         supportsFile: json['supportsFile'] as bool? ?? false,
         online: json['online'] as bool? ?? false,
+        ownerName: json['ownerName'] as String?,
+        ownedByCurrentUser: json['ownedByCurrentUser'] as bool? ?? true,
       );
   final String id;
   final String name;
@@ -287,6 +291,8 @@ final class MobileShareTarget {
   final bool supportsUrl;
   final bool supportsFile;
   final bool online;
+  final String? ownerName;
+  final bool ownedByCurrentUser;
 }
 
 final class MobileOverview {
