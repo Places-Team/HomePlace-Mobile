@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:homeplace/core/network/server_address.dart';
 import 'package:homeplace/core/clipboard/clipboard_service.dart';
 import 'package:homeplace/core/notifications/notification_service.dart';
 import 'package:homeplace/core/platform/platform_identity.dart';
+import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/core/storage/connection_profile.dart';
 import 'package:homeplace/core/storage/credential_store.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
@@ -152,6 +155,25 @@ final class FakeClipboardService implements ClipboardService {
   Future<String?> readText() async => value;
   @override
   Future<void> writeText(String text) async => value = text;
+}
+
+final class FakeShareService implements ShareService {
+  SharedContent? pending;
+  @override
+  bool get isSupported => true;
+  @override
+  Future<void> initialize(void Function(SharedContent content) onShare) async {
+    if (pending != null) onShare(pending!);
+  }
+
+  @override
+  Future<void> openUrl(String url) async {}
+  @override
+  Future<void> saveFile(
+    Uint8List bytes,
+    String filename,
+    String mimeType,
+  ) async {}
 }
 
 final class FakeDescriptionProvider implements DeviceDescriptionProvider {

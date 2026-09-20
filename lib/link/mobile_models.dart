@@ -4,17 +4,28 @@ final class MobileReminder {
     required this.title,
     required this.at,
     required this.repeat,
+    required this.done,
+    required this.createdAt,
+    this.completedAt,
   });
   factory MobileReminder.fromJson(Map<String, dynamic> json) => MobileReminder(
     id: json['id'] as String,
     title: json['title'] as String,
     at: DateTime.parse(json['at'] as String),
     repeat: json['repeat'] as String? ?? 'none',
+    done: json['done'] as bool? ?? false,
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+        DateTime.parse(json['at'] as String),
+    completedAt: DateTime.tryParse(json['completedAt'] as String? ?? ''),
   );
   final String id;
   final String title;
   final DateTime at;
   final String repeat;
+  final bool done;
+  final DateTime createdAt;
+  final DateTime? completedAt;
 }
 
 final class MobileCalendarEvent {
@@ -249,6 +260,35 @@ final class MobileTelegram {
   final String source;
 }
 
+final class MobileShareTarget {
+  const MobileShareTarget({
+    required this.id,
+    required this.name,
+    required this.platform,
+    required this.supportsText,
+    required this.supportsUrl,
+    required this.supportsFile,
+    required this.online,
+  });
+  factory MobileShareTarget.fromJson(Map<String, dynamic> json) =>
+      MobileShareTarget(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        platform: json['platform'] as String? ?? '',
+        supportsText: json['supportsText'] as bool? ?? false,
+        supportsUrl: json['supportsUrl'] as bool? ?? false,
+        supportsFile: json['supportsFile'] as bool? ?? false,
+        online: json['online'] as bool? ?? false,
+      );
+  final String id;
+  final String name;
+  final String platform;
+  final bool supportsText;
+  final bool supportsUrl;
+  final bool supportsFile;
+  final bool online;
+}
+
 final class MobileOverview {
   const MobileOverview({
     required this.serverTime,
@@ -258,6 +298,7 @@ final class MobileOverview {
     required this.requests,
     required this.telegram,
     required this.monitoring,
+    required this.shareTargets,
   });
   factory MobileOverview.fromJson(Map<String, dynamic> json) => MobileOverview(
     serverTime: DateTime.parse(json['serverTime'] as String),
@@ -279,6 +320,10 @@ final class MobileOverview {
     monitoring: MobileMonitoring.fromJson(
       json['monitoring'] as Map<String, dynamic>? ?? const {},
     ),
+    shareTargets: _maps(json['shareTargets'])
+        .map(MobileShareTarget.fromJson)
+        .where((item) => item.id.isNotEmpty && item.name.isNotEmpty)
+        .toList(growable: false),
   );
   final DateTime serverTime;
   final Set<String> permissions;
@@ -287,6 +332,7 @@ final class MobileOverview {
   final MobileRequests requests;
   final MobileTelegram telegram;
   final MobileMonitoring monitoring;
+  final List<MobileShareTarget> shareTargets;
 }
 
 final class MobileSearchResult {

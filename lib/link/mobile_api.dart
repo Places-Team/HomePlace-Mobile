@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import '../features/connection/connection_controller.dart';
+import '../core/sharing/share_service.dart';
 import 'link_client.dart';
 import 'mobile_models.dart';
 
@@ -42,6 +46,34 @@ final class MobileApi {
   ) => _empty(session, '/api/link/mobile/reminders', {
     'action': 'complete',
     'id': id,
+  });
+
+  Future<LinkResult<void>> updateReminder(
+    AuthenticatedLinkSession session,
+    MobileReminder reminder, {
+    required String title,
+    required DateTime at,
+    required String repeat,
+  }) => _empty(session, '/api/link/mobile/reminders', {
+    'action': 'update',
+    'id': reminder.id,
+    'title': title,
+    'at': at.toUtc().toIso8601String(),
+    'repeat': repeat,
+  });
+
+  Future<LinkResult<void>> reopenReminder(
+    AuthenticatedLinkSession session,
+    String id,
+  ) => _empty(session, '/api/link/mobile/reminders', {
+    'action': 'reopen',
+    'id': id,
+  });
+
+  Future<LinkResult<void>> deleteCompletedReminders(
+    AuthenticatedLinkSession session,
+  ) => _empty(session, '/api/link/mobile/reminders', {
+    'action': 'deleteCompleted',
   });
 
   Future<LinkResult<void>> deleteReminder(
@@ -101,6 +133,38 @@ final class MobileApi {
       'HomePlace returned an invalid clipboard response.',
     );
   }
+
+  Future<LinkResult<void>> relayShare(
+    AuthenticatedLinkSession session,
+    MobileShareTarget target,
+    SharedContent content,
+  ) {
+    if (content.kind == SharedContentKind.file) {
+      return _client.uploadFile(
+        session.address,
+        '/api/link/mobile/share/file',
+        session.credential,
+        File(content.path!),
+        targetDeviceId: target.id,
+        filename: content.filename!,
+        mimeType: content.mimeType ?? 'application/octet-stream',
+      );
+    }
+    return _empty(session, '/api/link/mobile/share', {
+      'targetDeviceId': target.id,
+      'type': content.kind.name,
+      'value': content.value,
+    });
+  }
+
+  Future<LinkResult<Uint8List>> downloadSharedFile(
+    AuthenticatedLinkSession session,
+    String transferId,
+  ) => _client.downloadFile(
+    session.address,
+    '/api/link/mobile/share/file/${Uri.encodeComponent(transferId)}',
+    session.credential,
+  );
 
   Future<LinkResult<void>> _empty(
     AuthenticatedLinkSession session,

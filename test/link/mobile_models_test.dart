@@ -12,6 +12,9 @@ void main() {
           'title': 'Water plants',
           'at': '2026-09-20T18:00:00Z',
           'repeat': 'weekly',
+          'done': true,
+          'createdAt': '2026-09-19T18:00:00Z',
+          'completedAt': '2026-09-20T09:00:00Z',
         },
       ],
       'calendar': {
@@ -37,11 +40,26 @@ void main() {
         'services': [],
         'recent': [],
       },
+      'shareTargets': [
+        {
+          'id': 'device-2',
+          'name': 'Family tablet',
+          'platform': 'android',
+          'supportsText': true,
+          'supportsUrl': true,
+          'supportsFile': true,
+          'online': true,
+        },
+      ],
     });
 
     expect(overview.reminders.single.repeat, 'weekly');
+    expect(overview.reminders.single.done, isTrue);
+    expect(overview.reminders.single.completedAt, isNotNull);
     expect(overview.calendar.events.single.summary, 'Dinner');
     expect(overview.telegram.enabled, isTrue);
     expect(overview.monitoring.offline, 1);
+    expect(overview.shareTargets.single.name, 'Family tablet');
+    expect(overview.shareTargets.single.supportsFile, isTrue);
   });
 }

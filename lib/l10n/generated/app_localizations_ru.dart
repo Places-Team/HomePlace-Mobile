@@ -354,4 +354,98 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clipboardEmpty => 'В буфере обмена нет текста.';
+
+  @override
+  String get readyToShare => 'Готово к отправке';
+
+  @override
+  String get choose => 'Выбрать';
+
+  @override
+  String get chooseDevice => 'Выберите своё устройство';
+
+  @override
+  String get onlyYourDevices =>
+      'Показаны только устройства, подтверждённые для вашего аккаунта.';
+
+  @override
+  String get noShareDevices =>
+      'У этого аккаунта нет совместимых подключённых устройств.';
+
+  @override
+  String get deviceOnline => 'Сейчас в сети';
+
+  @override
+  String get deviceOffline => 'Получит при открытии HomePlace';
+
+  @override
+  String get confirmShareTitle => 'Отправить этот объект?';
+
+  @override
+  String confirmShareBody(String device) {
+    return 'HomePlace отправит его только на устройство «$device». Предложение исчезнет через пять минут.';
+  }
+
+  @override
+  String get send => 'Отправить';
+
+  @override
+  String shareSent(String device) {
+    return 'Отправлено на устройство «$device».';
+  }
+
+  @override
+  String incomingShare(String device) {
+    return 'От устройства «$device»';
+  }
+
+  @override
+  String get decline => 'Отклонить';
+
+  @override
+  String get acceptAndSave => 'Принять и сохранить';
+
+  @override
+  String get open => 'Открыть';
+
+  @override
+  String fileSaved(String filename) {
+    return 'Файл $filename сохранён в Downloads/HomePlace.';
+  }
+
+  @override
+  String get upcomingReminders => 'Ближайшие';
+
+  @override
+  String get overdueReminders => 'Прошедшие';
+
+  @override
+  String get completedReminders => 'Выполненные';
+
+  @override
+  String get overdue => 'Просрочено';
+
+  @override
+  String get editReminder => 'Изменить напоминание';
+
+  @override
+  String get restore => 'Вернуть';
+
+  @override
+  String get clearCompleted => 'Очистить выполненные';
+
+  @override
+  String get deleteReminderTitle => 'Удалить напоминание?';
+
+  @override
+  String deleteReminderBody(String title) {
+    return 'Напоминание «$title» будет удалено без возможности восстановления.';
+  }
+
+  @override
+  String get clearCompletedTitle => 'Удалить выполненные?';
+
+  @override
+  String get clearCompletedBody =>
+      'Все выполненные напоминания этого аккаунта будут удалены без возможности восстановления.';
 }

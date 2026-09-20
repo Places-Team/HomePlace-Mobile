@@ -20,12 +20,14 @@ Network requests have bounded timeouts and explicit error paths. Pairing secrets
 
 On reconnect, the client requests `/api/link/info` before using the saved credential and stops if the server ID differs. Foreground heartbeat delivers allowlisted events and acknowledges their IDs on the next request.
 
-After pairing, `HomeController` reads the authenticated mobile overview and refreshes it every 30 seconds while the application is open. Calendar, reminders, media requests, Telegram, and monitoring reuse server-owned services and models. The app does not keep a competing local source of truth.
+After pairing, `HomeController` reads the authenticated mobile overview and refreshes it every 30 seconds while the application is open. Calendar, reminders, media requests, Telegram, and monitoring reuse server-owned services and models. Reminder history includes upcoming, overdue, and completed items; every mutation remains scoped to the paired user's ID on the server. The app does not keep a competing local source of truth.
+
+On Android, an `ACTION_SEND` intent is reduced to a bounded text, HTTP(S) URL, or private cache file. Shared Dart UI shows the item, filters the server-provided same-account device list by real receiver capability, and requires a second confirmation before upload. The receiving device separately accepts or declines the offer. Files are downloaded only after acceptance, verified by SHA-256, and then written to `Downloads/HomePlace` by the Android host.
 
 ## Native boundaries
 
-- Android generates a P-256 identity key in Android Keystore. A narrow Kotlin channel performs foreground clipboard reads and user-approved writes. Notification, QR camera, and future foreground-service work remain Android-specific.
-- iOS generates a P-256 identity key in Keychain. Notification, Share Extension, and permitted background behavior remain iOS-specific.
+- Android generates a P-256 identity key in Android Keystore. Narrow Kotlin channels perform foreground clipboard access, Share Sheet ingestion, safe URL opening, and confirmed file saving. Notification, QR camera, and future foreground-service work remain Android-specific.
+- iOS generates a P-256 identity key in Keychain. Notification, a future Share Extension, and permitted background behavior remain iOS-specific. The current iOS build does not advertise sharing capabilities.
 - Shared code never claims unrestricted background execution, arbitrary app launching, or remote system control. Android clipboard relay is foreground-only and incoming text requires an explicit copy action. iOS does not advertise clipboard relay.
 
 ## Migration policy

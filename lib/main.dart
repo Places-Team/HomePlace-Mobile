@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'core/network/server_address.dart';
+import 'core/branding/brand_mark.dart';
 import 'features/connection/connection_controller.dart';
 import 'features/home/home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -170,10 +171,17 @@ class _Welcome extends StatelessWidget {
     key: const ValueKey('welcome'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Icon(
-        Icons.home_rounded,
-        size: 72,
-        color: Theme.of(context).colorScheme.primary,
+      Center(
+        child: Container(
+          width: 112,
+          height: 112,
+          padding: const EdgeInsets.all(17),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(34),
+          ),
+          child: const HomePlaceMark(size: 78),
+        ),
       ),
       const SizedBox(height: 24),
       Text(

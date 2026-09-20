@@ -15,12 +15,14 @@ The first Flutter application slice is implemented with Android as the primary v
 - capability negotiation, foreground heartbeat, event acknowledgement, and test notifications;
 - saved connection profiles, diagnostics, revoke, and disconnect actions.
 - a four-tab pill navigation shell for home, plans, media requests, and monitoring;
-- Google Calendar agenda and reminder creation, completion, deletion, and recurrence;
+- Google Calendar agenda and full reminder management: upcoming, overdue and completed sections, create, edit, repeat, complete, restore and confirmed deletion;
 - Sonarr/Radarr search and requests, qBittorrent status, Telegram status and a delivery check;
 - compact service health and recent-event monitoring;
 - explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied.
+- Android Share Sheet support for text, safe web links, and files up to 5 MB, with an explicit recipient and send confirmation;
+- private same-account delivery, five-minute offers, encrypted temporary file storage, integrity verification, and receiver acceptance.
 
-Presence and clipboard relay currently operate while the application is open. Persistent platform background delivery remains a later native-integration milestone. iOS does not advertise clipboard relay in this milestone.
+Presence, clipboard relay, and shared-item delivery currently operate while the application is open. Persistent platform background delivery and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 
 ## Repository layout
 

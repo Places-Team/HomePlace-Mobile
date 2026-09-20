@@ -3,6 +3,13 @@ package com.homeplace.mobile
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContentValues
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -12,8 +19,14 @@ import io.flutter.plugin.common.MethodChannel
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.spec.ECGenParameterSpec
+import java.io.File
+import java.io.FileOutputStream
+import java.net.URI
 
 class MainActivity : FlutterActivity() {
+    private var shareChannel: MethodChannel? = null
+    private var pendingShare: Map<String, Any>? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, IDENTITY_CHANNEL).setMethodCallHandler { call, result ->
@@ -46,7 +59,133 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+        shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHARE_CHANNEL).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "takePending" -> result.success(pendingShare.also { pendingShare = null })
+                    "openUrl" -> {
+                        val value = call.argument<String>("url")
+                        if (value == null || !isSafeWebUrl(value)) {
+                            result.error("invalid_url", "Only safe HTTP and HTTPS links can be opened.", null)
+                        } else {
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(value)))
+                            result.success(null)
+                        }
+                    }
+                    "saveFile" -> saveReceivedFile(call.arguments as? Map<*, *>, result)
+                    else -> result.notImplemented()
+                }
+            }
+        }
+        captureShareIntent(intent)
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        captureShareIntent(intent)
+    }
+
+    private fun captureShareIntent(incoming: Intent?) {
+        if (incoming?.action != Intent.ACTION_SEND) return
+        val stream = if (Build.VERSION.SDK_INT >= 33) {
+            incoming.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION") incoming.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+        }
+        val content = if (stream != null) copyIncomingFile(stream, incoming.type) else captureText(incoming)
+        incoming.action = null
+        incoming.removeExtra(Intent.EXTRA_TEXT)
+        incoming.removeExtra(Intent.EXTRA_STREAM)
+        if (content != null) {
+            pendingShare = content
+            shareChannel?.invokeMethod("shareReceived", content)
+        }
+    }
+
+    private fun captureText(incoming: Intent): Map<String, Any>? {
+        val text = incoming.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.trim() ?: return null
+        if (text.isEmpty() || text.length > MAX_TEXT_LENGTH) return null
+        val type = if (text.length <= MAX_URL_LENGTH && isSafeWebUrl(text)) "url" else "text"
+        return mapOf("type" to type, "value" to text)
+    }
+
+    private fun copyIncomingFile(uri: Uri, announcedType: String?): Map<String, Any>? = runCatching {
+        var filename = "shared-file"
+        var announcedSize = -1L
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                filename = cursor.getString(0)?.take(180) ?: filename
+                if (!cursor.isNull(1)) announcedSize = cursor.getLong(1)
+            }
+        }
+        if (announcedSize > MAX_FILE_BYTES) return null
+        filename = filename.replace(Regex("[\\\\/\\x00-\\x1f\\x7f]"), "_")
+        val target = File.createTempFile("share-", ".bin", cacheDir)
+        var total = 0L
+        contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(target).use { output ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    if (total > MAX_FILE_BYTES) {
+                        target.delete()
+                        return null
+                    }
+                    output.write(buffer, 0, count)
+                }
+            }
+        } ?: return null
+        if (total == 0L) {
+            target.delete()
+            return null
+        }
+        mapOf(
+            "type" to "file",
+            "path" to target.absolutePath,
+            "filename" to filename,
+            "mimeType" to (announcedType ?: contentResolver.getType(uri) ?: "application/octet-stream"),
+            "size" to total,
+        )
+    }.getOrNull()
+
+    private fun saveReceivedFile(arguments: Map<*, *>?, result: MethodChannel.Result) {
+        val bytes = arguments?.get("bytes") as? ByteArray
+        val rawName = arguments?.get("filename") as? String
+        val mimeType = arguments?.get("mimeType") as? String ?: "application/octet-stream"
+        if (bytes == null || bytes.isEmpty() || bytes.size > MAX_FILE_BYTES || rawName == null) {
+            result.error("invalid_file", "The received file is invalid.", null)
+            return
+        }
+        val filename = rawName.replace(Regex("[\\\\/\\x00-\\x1f\\x7f]"), "_").take(180)
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 29) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, filename)
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/HomePlace")
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+                val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: error("Could not create download")
+                contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("Could not write download")
+                values.clear()
+                values.put(MediaStore.Downloads.IS_PENDING, 0)
+                contentResolver.update(uri, values, null, null)
+            } else {
+                val directory = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "HomePlace").apply { mkdirs() }
+                File(directory, filename).writeBytes(bytes)
+            }
+        }.onSuccess { result.success(null) }
+            .onFailure { result.error("save_failed", "The file could not be saved.", null) }
+    }
+
+    private fun isSafeWebUrl(value: String): Boolean = runCatching {
+        val uri = URI(value)
+        (uri.scheme.equals("http", true) || uri.scheme.equals("https", true)) && uri.userInfo == null && uri.host != null
+    }.getOrDefault(false)
 
     private fun publicKey(serverId: String): String {
         val alias = "homeplace.identity.$serverId"
@@ -67,6 +206,10 @@ class MainActivity : FlutterActivity() {
     companion object {
         private const val IDENTITY_CHANNEL = "com.homeplace.mobile/identity"
         private const val CLIPBOARD_CHANNEL = "com.homeplace.mobile/clipboard"
+        private const val SHARE_CHANNEL = "com.homeplace.mobile/share"
+        private const val MAX_TEXT_LENGTH = 8000
+        private const val MAX_URL_LENGTH = 4096
+        private const val MAX_FILE_BYTES = 5 * 1024 * 1024L
         private val SERVER_ID = Regex("^[0-9a-fA-F-]{36}$")
     }
 }

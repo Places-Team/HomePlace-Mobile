@@ -9,6 +9,7 @@ import '../../core/clipboard/clipboard_service.dart';
 import '../../core/network/server_address.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/platform/platform_identity.dart';
+import '../../core/sharing/share_service.dart';
 import '../../core/storage/connection_profile.dart';
 import '../../core/storage/credential_store.dart';
 import '../../link/link_client.dart';
@@ -46,6 +47,29 @@ final class PendingClipboard {
   final String eventId;
   final String text;
   final String sourceName;
+}
+
+final class PendingShareOffer {
+  const PendingShareOffer({
+    required this.eventId,
+    required this.kind,
+    required this.sourceName,
+    this.value,
+    this.transferId,
+    this.filename,
+    this.mimeType,
+    this.size,
+    this.sha256,
+  });
+  final String eventId;
+  final SharedContentKind kind;
+  final String sourceName;
+  final String? value;
+  final String? transferId;
+  final String? filename;
+  final String? mimeType;
+  final int? size;
+  final String? sha256;
 }
 
 abstract interface class DeviceDescriptionProvider {
@@ -87,6 +111,7 @@ final class ConnectionController extends ChangeNotifier {
     DeviceDescriptionProvider? descriptionProvider,
     Future<void> Function(Duration)? pollDelay,
     ClipboardService? clipboardService,
+    ShareService? shareService,
   }) : _link = linkService ?? const HttpLinkService(),
        _profiles = profileStore ?? SharedPreferencesProfileStore(),
        _credentials = credentialStore ?? const PlatformCredentialStore(),
@@ -95,7 +120,8 @@ final class ConnectionController extends ChangeNotifier {
        _description =
            descriptionProvider ?? PlatformDeviceDescriptionProvider(),
        _pollDelay = pollDelay ?? Future<void>.delayed,
-       _clipboard = clipboardService ?? const PlatformClipboardService();
+       _clipboard = clipboardService ?? const PlatformClipboardService(),
+       _sharing = shareService ?? const PlatformShareService();
 
   final LinkService _link;
   final ProfileStore _profiles;
@@ -105,6 +131,7 @@ final class ConnectionController extends ChangeNotifier {
   final DeviceDescriptionProvider _description;
   final Future<void> Function(Duration) _pollDelay;
   final ClipboardService _clipboard;
+  final ShareService _sharing;
 
   ConnectionStage stage = ConnectionStage.welcome;
   String addressInput = '';
@@ -117,12 +144,19 @@ final class ConnectionController extends ChangeNotifier {
   ConnectionProfile? profile;
   String? lastNotification;
   PendingClipboard? pendingClipboard;
+  SharedContent? pendingOutgoingShare;
+  PendingShareOffer? pendingIncomingShare;
   Timer? _heartbeatTimer;
   bool _polling = false;
   List<String> _acknowledgedEventIds = const [];
 
   Future<void> initialize() async {
     await _notifications.initialize();
+    await _sharing.initialize((content) {
+      _discardOutgoingFile();
+      pendingOutgoingShare = content;
+      notifyListeners();
+    });
     final saved = await _profiles.readAll();
     if (saved.isEmpty) return;
     final candidate = saved.first;
@@ -232,6 +266,10 @@ final class ConnectionController extends ChangeNotifier {
           foregroundPresence: true,
           clipboardSend: _clipboard.isSupported,
           clipboardReceive: _clipboard.isSupported,
+          shareSend: _sharing.isSupported,
+          textReceive: _sharing.isSupported,
+          urlOpen: _sharing.isSupported,
+          fileReceive: _sharing.isSupported,
         ),
       );
       final result = await _link.startPairing(
@@ -239,12 +277,13 @@ final class ConnectionController extends ChangeNotifier {
         await _description.describe(),
         await _identity.publicKey(info.server.id),
         capabilities,
-        const [
+        [
           'dashboard.read',
           'reminder.manage',
           'media.request',
           'telegram.send',
           'clipboard.relay',
+          if (_sharing.isSupported) 'share.relay',
         ],
       );
       switch (result) {
@@ -393,6 +432,61 @@ final class ConnectionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearOutgoingShare() {
+    _discardOutgoingFile();
+    pendingOutgoingShare = null;
+    notifyListeners();
+  }
+
+  Future<void> acceptIncomingTextOrUrl() async {
+    final pending = pendingIncomingShare;
+    if (pending == null) return;
+    if (pending.kind == SharedContentKind.text && pending.value != null) {
+      await _clipboard.writeText(pending.value!);
+    } else if (pending.kind == SharedContentKind.url && pending.value != null) {
+      await _sharing.openUrl(pending.value!);
+    } else {
+      return;
+    }
+    _acknowledgeIncomingShare(pending.eventId);
+  }
+
+  Future<void> saveIncomingFile(Uint8List bytes) async {
+    final pending = pendingIncomingShare;
+    if (pending == null ||
+        pending.kind != SharedContentKind.file ||
+        pending.filename == null) {
+      return;
+    }
+    await _sharing.saveFile(
+      bytes,
+      pending.filename!,
+      pending.mimeType ?? 'application/octet-stream',
+    );
+    _acknowledgeIncomingShare(pending.eventId);
+  }
+
+  void dismissIncomingShare() {
+    final pending = pendingIncomingShare;
+    if (pending != null) _acknowledgeIncomingShare(pending.eventId);
+  }
+
+  void _acknowledgeIncomingShare(String eventId) {
+    _acknowledgedEventIds = {
+      ..._acknowledgedEventIds,
+      eventId,
+    }.toList(growable: false);
+    pendingIncomingShare = null;
+    notifyListeners();
+  }
+
+  void _discardOutgoingFile() {
+    final path = pendingOutgoingShare?.path;
+    if (path != null) {
+      unawaited(File(path).delete().catchError((_) => File(path)));
+    }
+  }
+
   Future<void> disconnect() async {
     final connectedProfile = profile;
     final address = serverAddress;
@@ -424,6 +518,9 @@ final class ConnectionController extends ChangeNotifier {
     error = null;
     diagnostics = null;
     lastNotification = null;
+    pendingClipboard = null;
+    pendingIncomingShare = null;
+    clearOutgoingShare();
     notifyListeners();
   }
 
@@ -505,6 +602,56 @@ final class ConnectionController extends ChangeNotifier {
             text: text,
             sourceName: sourceName,
           );
+        }
+        continue;
+      }
+      if (event.type == 'share.offer') {
+        final type = event.payload['type'];
+        final sourceName = event.payload['sourceName'];
+        if (sourceName is! String) continue;
+        if ((type == 'text' || type == 'url') &&
+            event.payload['value'] is String) {
+          final value = event.payload['value'] as String;
+          final uri = type == 'url' ? Uri.tryParse(value) : null;
+          if (value.isEmpty || value.length > (type == 'url' ? 4096 : 8000)) {
+            continue;
+          }
+          if (type == 'url' &&
+              (uri == null ||
+                  !{'http', 'https'}.contains(uri.scheme) ||
+                  uri.userInfo.isNotEmpty)) {
+            continue;
+          }
+          pendingIncomingShare = PendingShareOffer(
+            eventId: event.id,
+            kind: type == 'url'
+                ? SharedContentKind.url
+                : SharedContentKind.text,
+            sourceName: sourceName,
+            value: value,
+          );
+        } else if (type == 'file') {
+          final transferId = event.payload['transferId'];
+          final filename = event.payload['filename'];
+          final size = event.payload['size'];
+          final sha256 = event.payload['sha256'];
+          if (transferId is String &&
+              filename is String &&
+              size is int &&
+              size > 0 &&
+              size <= 5 * 1024 * 1024 &&
+              sha256 is String) {
+            pendingIncomingShare = PendingShareOffer(
+              eventId: event.id,
+              kind: SharedContentKind.file,
+              sourceName: sourceName,
+              transferId: transferId,
+              filename: filename,
+              mimeType: event.payload['mimeType'] as String?,
+              size: size,
+              sha256: sha256,
+            );
+          }
         }
         continue;
       }

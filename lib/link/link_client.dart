@@ -153,6 +153,134 @@ abstract interface class LinkService {
 final class HttpLinkService implements LinkService {
   const HttpLinkService();
 
+  Future<LinkResult<void>> uploadFile(
+    ServerAddress address,
+    String path,
+    String credential,
+    File file, {
+    required String targetDeviceId,
+    required String filename,
+    required String mimeType,
+  }) async {
+    final client = _clientFor(address);
+    try {
+      final length = await file.length();
+      if (length < 1 || length > 5 * 1024 * 1024) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'Files must be 5 MB or smaller.',
+        );
+      }
+      final request = await client
+          .openUrl('POST', address.uri.resolve(path))
+          .timeout(const Duration(seconds: 10));
+      request.followRedirects = false;
+      request.contentLength = length;
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer $credential',
+      );
+      request.headers.set('x-homeplace-target', targetDeviceId);
+      request.headers.set(
+        'x-homeplace-filename',
+        Uri.encodeComponent(filename),
+      );
+      request.headers.contentType = ContentType.parse(mimeType);
+      await request.addStream(file.openRead());
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
+      final body = await _readBody(response, 65536);
+      if (response.statusCode == HttpStatus.unauthorized) {
+        return const LinkFailure(
+          LinkFailureKind.authentication,
+          'This device credential is no longer accepted.',
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return LinkFailure(
+          LinkFailureKind.invalidResponse,
+          _serverError(body) ?? 'HomePlace rejected the file.',
+        );
+      }
+      return const LinkSuccess(null);
+    } on HandshakeException {
+      return const LinkFailure(LinkFailureKind.tls, 'TLS validation failed.');
+    } on Object {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The file could not be sent.',
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<LinkResult<Uint8List>> downloadFile(
+    ServerAddress address,
+    String path,
+    String credential,
+  ) async {
+    final client = _clientFor(address);
+    try {
+      final request = await client
+          .getUrl(address.uri.resolve(path))
+          .timeout(const Duration(seconds: 10));
+      request.followRedirects = false;
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer $credential',
+      );
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
+      if (response.statusCode == HttpStatus.unauthorized) {
+        return const LinkFailure(
+          LinkFailureKind.authentication,
+          'This device credential is no longer accepted.',
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        await response.drain<void>();
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'The shared file is unavailable or expired.',
+        );
+      }
+      final builder = BytesBuilder(copy: false);
+      var total = 0;
+      await for (final chunk in response) {
+        total += chunk.length;
+        if (total > 5 * 1024 * 1024) throw const _ResponseTooLarge();
+        builder.add(chunk);
+      }
+      return LinkSuccess(builder.takeBytes());
+    } on HandshakeException {
+      return const LinkFailure(LinkFailureKind.tls, 'TLS validation failed.');
+    } on Object {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The shared file could not be downloaded.',
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  HttpClient _clientFor(ServerAddress address) {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
+    client.badCertificateCallback = (certificate, host, port) {
+      final fingerprint = _fingerprint(certificate.der);
+      return address.security == ConnectionSecurity.confirmedCertificate &&
+          _constantTimeEquals(
+            fingerprint,
+            address.certificateFingerprint ?? '',
+          );
+    };
+    return client;
+  }
+
   @override
   Future<LinkResult<ServerInfo>> fetchInfo(ServerAddress address) async {
     final response = await requestJson(address, 'GET', '/api/link/info');
@@ -432,5 +560,14 @@ final class HttpLinkService implements LinkService {
       difference |= left.codeUnitAt(index) ^ right.codeUnitAt(index);
     }
     return difference == 0;
+  }
+}
+
+String? _serverError(String text) {
+  try {
+    final decoded = jsonDecode(text);
+    return decoded is Map<String, dynamic> ? decoded['error'] as String? : null;
+  } on Object {
+    return null;
   }
 }

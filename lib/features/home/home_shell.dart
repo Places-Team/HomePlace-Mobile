@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../core/branding/brand_mark.dart';
 import '../../link/mobile_models.dart';
+import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import 'home_controller.dart';
 
@@ -42,7 +44,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: home,
+    listenable: Listenable.merge([home, widget.connection]),
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
       if (home.loading && home.overview == null) {
@@ -99,9 +101,21 @@ class _HomeShellState extends State<HomeShell> {
                           ? l10n.clipboardSent(
                               int.tryParse(notice.substring(10)) ?? 0,
                             )
+                          : notice.startsWith('share:')
+                          ? l10n.shareSent(notice.substring(6))
+                          : notice.startsWith('file:')
+                          ? l10n.fileSaved(notice.substring(5))
                           : l10n.requestSent(notice),
                       error: false,
                       onClose: home.clearMessage,
+                    ),
+                  if (widget.connection.pendingOutgoingShare
+                      case final content?)
+                    _OutgoingShareBanner(
+                      content: content,
+                      onCancel: widget.connection.clearOutgoingShare,
+                      onChoose: () =>
+                          _showShareTargets(context, overview, content),
                     ),
                   Expanded(
                     child: IndexedStack(
@@ -163,6 +177,147 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ),
       );
+
+  Future<void> _showShareTargets(
+    BuildContext context,
+    MobileOverview overview,
+    SharedContent content,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final targets = overview.shareTargets
+        .where(
+          (target) => switch (content.kind) {
+            SharedContentKind.text => target.supportsText,
+            SharedContentKind.url => target.supportsUrl,
+            SharedContentKind.file => target.supportsFile,
+          },
+        )
+        .toList(growable: false);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.chooseDevice,
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 8),
+              Text(l10n.onlyYourDevices),
+              const SizedBox(height: 16),
+              if (targets.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(l10n.noShareDevices, textAlign: TextAlign.center),
+                )
+              else
+                ...targets.map(
+                  (target) => ListTile(
+                    leading: Icon(
+                      target.platform == 'android'
+                          ? Icons.android_rounded
+                          : Icons.phone_iphone_rounded,
+                    ),
+                    title: Text(target.name),
+                    subtitle: Text(
+                      target.online ? l10n.deviceOnline : l10n.deviceOffline,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: sheetContext,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(l10n.confirmShareTitle),
+                          content: Text(l10n.confirmShareBody(target.name)),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(l10n.cancel),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(l10n.send),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true || !mounted) return;
+                      final sent = await home.sendSharedContent(
+                        target,
+                        content,
+                      );
+                      if (sent) widget.connection.clearOutgoingShare();
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OutgoingShareBanner extends StatelessWidget {
+  const _OutgoingShareBanner({
+    required this.content,
+    required this.onCancel,
+    required this.onChoose,
+  });
+  final SharedContent content;
+  final VoidCallback onCancel;
+  final VoidCallback onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final label = switch (content.kind) {
+      SharedContentKind.text => content.value ?? '',
+      SharedContentKind.url => content.value ?? '',
+      SharedContentKind.file =>
+        '${content.filename} · ${_formatBytes(content.size ?? 0)}',
+    };
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _violet.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.ios_share_rounded, color: _violet),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.readyToShare,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onCancel,
+            icon: const Icon(Icons.close_rounded),
+          ),
+          FilledButton(onPressed: onChoose, child: Text(l10n.choose)),
+        ],
+      ),
+    );
+  }
 }
 
 class _TopBar extends StatelessWidget {
@@ -189,9 +344,9 @@ class _TopBar extends StatelessWidget {
             color: Theme.of(context).colorScheme.inverseSurface,
             borderRadius: BorderRadius.circular(15),
           ),
-          child: Icon(
-            Icons.home_work_rounded,
-            color: Theme.of(context).colorScheme.onInverseSurface,
+          child: HomePlaceMark(
+            size: 28,
+            lightOnDark: Theme.of(context).brightness == Brightness.light,
           ),
         ),
         const SizedBox(width: 12),
@@ -377,8 +532,98 @@ class _OverviewPage extends StatelessWidget {
             onDismiss: connection.dismissPendingClipboard,
           ),
         ],
+        if (connection.pendingIncomingShare case final offer?) ...[
+          const SizedBox(height: 12),
+          _IncomingShareCard(
+            offer: offer,
+            receiving: home.busyId == 'receive-file',
+            onDismiss: connection.dismissIncomingShare,
+            onAccept: offer.kind == SharedContentKind.file
+                ? () => home.acceptSharedFile(offer, connection)
+                : connection.acceptIncomingTextOrUrl,
+          ),
+        ],
         const SizedBox(height: 110),
       ],
+    );
+  }
+}
+
+class _IncomingShareCard extends StatelessWidget {
+  const _IncomingShareCard({
+    required this.offer,
+    required this.receiving,
+    required this.onDismiss,
+    required this.onAccept,
+  });
+  final PendingShareOffer offer;
+  final bool receiving;
+  final VoidCallback onDismiss;
+  final VoidCallback onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final detail = offer.kind == SharedContentKind.file
+        ? '${offer.filename} · ${_formatBytes(offer.size ?? 0)}'
+        : offer.value ?? '';
+    return _Surface(
+      color: _violet.withValues(alpha: .11),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const _RoundIcon(
+                icon: Icons.move_to_inbox_rounded,
+                color: _violet,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.incomingShare(offer.sourceName),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    Text(detail, maxLines: 3, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: receiving ? null : onDismiss,
+                  child: Text(l10n.decline),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: receiving ? null : onAccept,
+                  child: receiving
+                      ? const SizedBox.square(
+                          dimension: 17,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          offer.kind == SharedContentKind.file
+                              ? l10n.acceptAndSave
+                              : offer.kind == SharedContentKind.url
+                              ? l10n.open
+                              : l10n.clipboardCopy,
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -477,6 +722,23 @@ class _PlanPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final upcoming =
+        overview.reminders
+            .where((item) => !item.done && !item.at.isBefore(now))
+            .toList()
+          ..sort((a, b) => a.at.compareTo(b.at));
+    final overdue =
+        overview.reminders
+            .where((item) => !item.done && item.at.isBefore(now))
+            .toList()
+          ..sort((a, b) => b.at.compareTo(a.at));
+    final completed = overview.reminders.where((item) => item.done).toList()
+      ..sort(
+        (a, b) => (b.completedAt ?? b.createdAt).compareTo(
+          a.completedAt ?? a.createdAt,
+        ),
+      );
     return _ScrollPage(
       children: [
         _PageHeading(
@@ -536,50 +798,193 @@ class _PlanPage extends StatelessWidget {
           _EmptyCard(
             icon: Icons.notifications_none_rounded,
             text: l10n.nothingPlanned,
-          )
-        else
-          ...overview.reminders.map(
-            (reminder) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Dismissible(
-                key: ValueKey(reminder.id),
-                background: Container(
-                  decoration: BoxDecoration(
-                    color: _mint,
-                    borderRadius: BorderRadius.circular(24),
+          ),
+        if (upcoming.isNotEmpty) ...[
+          _ReminderSectionTitle(
+            title: l10n.upcomingReminders,
+            count: upcoming.length,
+          ),
+          ...upcoming.map((item) => _ReminderCard(reminder: item, home: home)),
+        ],
+        if (overdue.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _ReminderSectionTitle(
+            title: l10n.overdueReminders,
+            count: overdue.length,
+            color: _coral,
+          ),
+          ...overdue.map(
+            (item) => _ReminderCard(reminder: item, home: home, overdue: true),
+          ),
+        ],
+        if (completed.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _ReminderSectionTitle(
+            title: l10n.completedReminders,
+            count: completed.length,
+            trailing: TextButton(
+              onPressed: home.busyId == 'completed-reminders'
+                  ? null
+                  : () => _confirmClearCompleted(context, home),
+              child: Text(l10n.clearCompleted),
+            ),
+          ),
+          ...completed.map((item) => _ReminderCard(reminder: item, home: home)),
+        ],
+        const SizedBox(height: 110),
+      ],
+    );
+  }
+}
+
+class _ReminderSectionTitle extends StatelessWidget {
+  const _ReminderSectionTitle({
+    required this.title,
+    required this.count,
+    this.color,
+    this.trailing,
+  });
+  final String title;
+  final int count;
+  final Color? color;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            '$title · $count',
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w900, color: color),
+          ),
+        ),
+        ?trailing,
+      ],
+    ),
+  );
+}
+
+class _ReminderCard extends StatelessWidget {
+  const _ReminderCard({
+    required this.reminder,
+    required this.home,
+    this.overdue = false,
+  });
+  final MobileReminder reminder;
+  final HomeController home;
+  final bool overdue;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final busy = home.busyId == reminder.id;
+    final color = reminder.done
+        ? _mint
+        : overdue
+        ? _coral
+        : _violet;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: _Surface(
+        color: color.withValues(alpha: .08),
+        child: Row(
+          children: [
+            IconButton.filledTonal(
+              tooltip: reminder.done ? l10n.restore : l10n.complete,
+              onPressed: busy
+                  ? null
+                  : reminder.done
+                  ? () => home.reopenReminder(reminder.id)
+                  : () => home.completeReminder(reminder.id),
+              icon: busy
+                  ? const SizedBox.square(
+                      dimension: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      reminder.done
+                          ? Icons.settings_backup_restore_rounded
+                          : Icons.check_rounded,
+                    ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: busy
+                    ? null
+                    : () => _editReminder(context, home, reminder),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        reminder.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          decoration: reminder.done
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        [
+                          if (overdue) l10n.overdue,
+                          _formatWhen(context, reminder.at),
+                          if (reminder.repeat != 'none')
+                            _repeatLabel(l10n, reminder.repeat),
+                        ].join(' · '),
+                        style: TextStyle(
+                          color: overdue
+                              ? _coral
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: overdue
+                              ? FontWeight.w700
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.only(left: 22),
-                  child: const Icon(Icons.check_rounded, color: _ink),
-                ),
-                secondaryBackground: Container(
-                  decoration: BoxDecoration(
-                    color: _coral,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 22),
-                  child: const Icon(Icons.delete_outline_rounded, color: _ink),
-                ),
-                confirmDismiss: (direction) async {
-                  if (direction == DismissDirection.startToEnd) {
-                    await home.completeReminder(reminder.id);
-                  } else {
-                    await home.deleteReminder(reminder.id);
-                  }
-                  return false;
-                },
-                child: _AgendaRow(
-                  color: _coral,
-                  title: reminder.title,
-                  when: _formatWhen(context, reminder.at),
-                  trailing: home.busyId == reminder.id,
                 ),
               ),
             ),
-          ),
-        const SizedBox(height: 110),
-      ],
+            PopupMenuButton<String>(
+              enabled: !busy,
+              onSelected: (action) async {
+                if (action == 'edit') {
+                  await _editReminder(context, home, reminder);
+                }
+                if (action == 'delete' &&
+                    context.mounted &&
+                    await _confirmDeleteReminder(context, reminder)) {
+                  await home.deleteReminder(reminder.id);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: Text(l10n.editReminder),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: const Icon(Icons.delete_outline_rounded),
+                    title: Text(l10n.delete),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1121,13 +1526,11 @@ class _AgendaRow extends StatelessWidget {
     required this.title,
     required this.when,
     this.detail,
-    this.trailing = false,
   });
   final Color color;
   final String title;
   final String when;
   final String? detail;
-  final bool trailing;
   @override
   Widget build(BuildContext context) => _Surface(
     child: Row(
@@ -1166,14 +1569,6 @@ class _AgendaRow extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing)
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
       ],
     ),
   );
@@ -1375,10 +1770,27 @@ class _LoadError extends StatelessWidget {
 }
 
 Future<void> _addReminder(BuildContext context, HomeController home) async {
+  await _showReminderEditor(context, home, null);
+}
+
+Future<void> _editReminder(
+  BuildContext context,
+  HomeController home,
+  MobileReminder reminder,
+) async {
+  await _showReminderEditor(context, home, reminder);
+}
+
+Future<void> _showReminderEditor(
+  BuildContext context,
+  HomeController home,
+  MobileReminder? reminder,
+) async {
   final l10n = AppLocalizations.of(context);
-  final title = TextEditingController();
-  var at = DateTime.now().add(const Duration(hours: 1));
-  var repeat = 'none';
+  final title = TextEditingController(text: reminder?.title ?? '');
+  var at =
+      reminder?.at.toLocal() ?? DateTime.now().add(const Duration(hours: 1));
+  var repeat = reminder?.repeat ?? 'none';
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -1396,7 +1808,7 @@ Future<void> _addReminder(BuildContext context, HomeController home) async {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              l10n.addReminder,
+              reminder == null ? l10n.addReminder : l10n.editReminder,
               style: Theme.of(context).textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w900),
             ),
@@ -1412,7 +1824,7 @@ Future<void> _addReminder(BuildContext context, HomeController home) async {
               onPressed: () async {
                 final day = await showDatePicker(
                   context: context,
-                  firstDate: DateTime.now(),
+                  firstDate: DateTime(2000),
                   lastDate: DateTime.now().add(const Duration(days: 3650)),
                   initialDate: at,
                 );
@@ -1461,7 +1873,11 @@ Future<void> _addReminder(BuildContext context, HomeController home) async {
               onPressed: () async {
                 if (title.text.trim().isEmpty) return;
                 Navigator.pop(context);
-                await home.createReminder(title.text, at, repeat);
+                if (reminder == null) {
+                  await home.createReminder(title.text, at, repeat);
+                } else {
+                  await home.updateReminder(reminder, title.text, at, repeat);
+                }
               },
               child: Text(l10n.save),
             ),
@@ -1473,9 +1889,68 @@ Future<void> _addReminder(BuildContext context, HomeController home) async {
   title.dispose();
 }
 
+Future<bool> _confirmDeleteReminder(
+  BuildContext context,
+  MobileReminder reminder,
+) async {
+  final l10n = AppLocalizations.of(context);
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.deleteReminderTitle),
+          content: Text(l10n.deleteReminderBody(reminder.title)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.delete),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
+
+Future<void> _confirmClearCompleted(
+  BuildContext context,
+  HomeController home,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l10n.clearCompletedTitle),
+      content: Text(l10n.clearCompletedBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(l10n.clearCompleted),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) await home.deleteCompletedReminders();
+}
+
+String _repeatLabel(AppLocalizations l10n, String repeat) => switch (repeat) {
+  'daily' => l10n.repeatDaily,
+  'weekly' => l10n.repeatWeekly,
+  'monthly' => l10n.repeatMonthly,
+  _ => l10n.repeatNone,
+};
+
 (String, DateTime, bool)? _nextItem(MobileOverview overview) {
   final candidates = <(String, DateTime, bool)>[
-    ...overview.reminders.map((item) => (item.title, item.at, false)),
+    ...overview.reminders
+        .where((item) => !item.done && !item.at.isBefore(DateTime.now()))
+        .map((item) => (item.title, item.at, false)),
     ...overview.calendar.events.map(
       (item) => (item.summary, item.start, item.allDay),
     ),
@@ -1505,4 +1980,12 @@ String _bytesPerSecond(int value) {
   }
   if (value >= 1024) return '${(value / 1024).toStringAsFixed(0)} KB/s';
   return '$value B/s';
+}
+
+String _formatBytes(int value) {
+  if (value >= 1024 * 1024) {
+    return '${(value / 1024 / 1024).toStringAsFixed(1)} MB';
+  }
+  if (value >= 1024) return '${(value / 1024).toStringAsFixed(0)} KB';
+  return '$value B';
 }

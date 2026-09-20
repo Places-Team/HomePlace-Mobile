@@ -12,16 +12,18 @@ The Flutter client supports Link protocol version 1 and currently uses:
 
 Approved devices may also use scoped mobile endpoints:
 
-- `GET /api/link/mobile/overview` for calendar, reminders, media queues, Telegram state, and monitoring;
-- `POST /api/link/mobile/reminders` for personal reminder actions;
+- `GET /api/link/mobile/overview` for calendar, reminders, media queues, Telegram state, monitoring, and same-account share targets;
+- `POST /api/link/mobile/reminders` to create, edit, complete, restore, delete, or clear completed reminders belonging to the paired user;
 - `GET /api/link/mobile/requests/search` and `POST /api/link/mobile/requests` for Sonarr/Radarr requests;
 - `POST /api/link/mobile/telegram` for an explicit delivery check;
 - `POST /api/link/mobile/clipboard` to relay bounded text to the same user's capable devices.
+- `POST /api/link/mobile/share` for confirmed text and URL offers to one same-account device;
+- `POST /api/link/mobile/share/file` and `GET /api/link/mobile/share/file/{id}` for single-use encrypted file transfer.
 
-The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal.
+The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal. Share events use `share.offer`, expire after five minutes, and are deleted when accepted or declined. Android advertises `share.send`, `text.receive`, `url.open`, and `file.receive`; iOS does not advertise them until its Share Extension and receiving UI are implemented.
 
 The server ID returned by pairing and heartbeat must match the ID previewed before pairing. The client rejects incompatible protocol ranges and does not infer unavailable features.
 
 `docs/fixtures/link-info-v1.json` is a mobile test fixture. Update it and the Flutter contract tests whenever the canonical server response changes.
 
-WebSocket presence, durable background delivery, richer commands, calendar editing, and file transfer are outside this milestone. They must be implemented against released server behavior before being advertised.
+WebSocket presence, durable background delivery, richer commands, calendar editing, multiple connection profiles, and family sharing are outside this milestone. Family sharing must add an explicit server-side household membership and approval model; it must never expose all accounts on an installation.

@@ -733,6 +733,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The clipboard does not contain text.'**
   String get clipboardEmpty;
+
+  /// No description provided for @readyToShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to share'**
+  String get readyToShare;
+
+  /// No description provided for @choose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get choose;
+
+  /// No description provided for @chooseDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your device'**
+  String get chooseDevice;
+
+  /// No description provided for @onlyYourDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Only devices approved for your account are shown.'**
+  String get onlyYourDevices;
+
+  /// No description provided for @noShareDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No compatible devices are connected to this account.'**
+  String get noShareDevices;
+
+  /// No description provided for @deviceOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online now'**
+  String get deviceOnline;
+
+  /// No description provided for @deviceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'May receive it when HomePlace is opened'**
+  String get deviceOffline;
+
+  /// No description provided for @confirmShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this item?'**
+  String get confirmShareTitle;
+
+  /// No description provided for @confirmShareBody.
+  ///
+  /// In en, this message translates to:
+  /// **'HomePlace will send it only to {device}. The offer expires in five minutes.'**
+  String confirmShareBody(String device);
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @shareSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to {device}.'**
+  String shareSent(String device);
+
+  /// No description provided for @incomingShare.
+  ///
+  /// In en, this message translates to:
+  /// **'From {device}'**
+  String incomingShare(String device);
+
+  /// No description provided for @decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get decline;
+
+  /// No description provided for @acceptAndSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept and save'**
+  String get acceptAndSave;
+
+  /// No description provided for @open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get open;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {filename} to Downloads/HomePlace.'**
+  String fileSaved(String filename);
+
+  /// No description provided for @upcomingReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get upcomingReminders;
+
+  /// No description provided for @overdueReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Past due'**
+  String get overdueReminders;
+
+  /// No description provided for @completedReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedReminders;
+
+  /// No description provided for @overdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get overdue;
+
+  /// No description provided for @editReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit reminder'**
+  String get editReminder;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @clearCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear completed'**
+  String get clearCompleted;
+
+  /// No description provided for @deleteReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete reminder?'**
+  String get deleteReminderTitle;
+
+  /// No description provided for @deleteReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” will be permanently deleted.'**
+  String deleteReminderBody(String title);
+
+  /// No description provided for @clearCompletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear completed reminders?'**
+  String get clearCompletedTitle;
+
+  /// No description provided for @clearCompletedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All completed reminders for this account will be permanently deleted.'**
+  String get clearCompletedBody;
 }
 
 class _AppLocalizationsDelegate

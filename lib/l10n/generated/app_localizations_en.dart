@@ -354,4 +354,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clipboardEmpty => 'The clipboard does not contain text.';
+
+  @override
+  String get readyToShare => 'Ready to share';
+
+  @override
+  String get choose => 'Choose';
+
+  @override
+  String get chooseDevice => 'Choose your device';
+
+  @override
+  String get onlyYourDevices =>
+      'Only devices approved for your account are shown.';
+
+  @override
+  String get noShareDevices =>
+      'No compatible devices are connected to this account.';
+
+  @override
+  String get deviceOnline => 'Online now';
+
+  @override
+  String get deviceOffline => 'May receive it when HomePlace is opened';
+
+  @override
+  String get confirmShareTitle => 'Send this item?';
+
+  @override
+  String confirmShareBody(String device) {
+    return 'HomePlace will send it only to $device. The offer expires in five minutes.';
+  }
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String shareSent(String device) {
+    return 'Sent to $device.';
+  }
+
+  @override
+  String incomingShare(String device) {
+    return 'From $device';
+  }
+
+  @override
+  String get decline => 'Decline';
+
+  @override
+  String get acceptAndSave => 'Accept and save';
+
+  @override
+  String get open => 'Open';
+
+  @override
+  String fileSaved(String filename) {
+    return 'Saved $filename to Downloads/HomePlace.';
+  }
+
+  @override
+  String get upcomingReminders => 'Upcoming';
+
+  @override
+  String get overdueReminders => 'Past due';
+
+  @override
+  String get completedReminders => 'Completed';
+
+  @override
+  String get overdue => 'Overdue';
+
+  @override
+  String get editReminder => 'Edit reminder';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get clearCompleted => 'Clear completed';
+
+  @override
+  String get deleteReminderTitle => 'Delete reminder?';
+
+  @override
+  String deleteReminderBody(String title) {
+    return '“$title” will be permanently deleted.';
+  }
+
+  @override
+  String get clearCompletedTitle => 'Clear completed reminders?';
+
+  @override
+  String get clearCompletedBody =>
+      'All completed reminders for this account will be permanently deleted.';
 }

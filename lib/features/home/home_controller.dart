@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/sharing/share_service.dart';
 import '../../link/link_client.dart';
 import '../../link/mobile_api.dart';
 import '../../link/mobile_models.dart';
@@ -74,6 +76,43 @@ final class HomeController extends ChangeNotifier {
     busyId = id;
     notifyListeners();
     await _run(() => _api.completeReminder(session, id));
+  }
+
+  Future<void> updateReminder(
+    MobileReminder reminder,
+    String title,
+    DateTime at,
+    String repeat,
+  ) async {
+    final session = await sessionProvider();
+    if (session == null || title.trim().isEmpty) return;
+    busyId = reminder.id;
+    notifyListeners();
+    await _run(
+      () => _api.updateReminder(
+        session,
+        reminder,
+        title: title.trim(),
+        at: at,
+        repeat: repeat,
+      ),
+    );
+  }
+
+  Future<void> reopenReminder(String id) async {
+    final session = await sessionProvider();
+    if (session == null) return;
+    busyId = id;
+    notifyListeners();
+    await _run(() => _api.reopenReminder(session, id));
+  }
+
+  Future<void> deleteCompletedReminders() async {
+    final session = await sessionProvider();
+    if (session == null) return;
+    busyId = 'completed-reminders';
+    notifyListeners();
+    await _run(() => _api.deleteCompletedReminders(session));
   }
 
   Future<void> deleteReminder(String id) async {
@@ -170,6 +209,55 @@ final class HomeController extends ChangeNotifier {
     }
     busyId = null;
     notifyListeners();
+  }
+
+  Future<bool> sendSharedContent(
+    MobileShareTarget target,
+    SharedContent content,
+  ) async {
+    final session = await sessionProvider();
+    if (session == null) return false;
+    busyId = 'share';
+    error = null;
+    notifyListeners();
+    final result = await _api.relayShare(session, target, content);
+    final sent = result is LinkSuccess<void>;
+    if (sent) {
+      notice = 'share:${target.name}';
+    } else if (result case LinkFailure<void> failure) {
+      error = failure.message;
+    }
+    busyId = null;
+    notifyListeners();
+    return sent;
+  }
+
+  Future<bool> acceptSharedFile(
+    PendingShareOffer offer,
+    ConnectionController connection,
+  ) async {
+    final session = await sessionProvider();
+    if (session == null || offer.transferId == null || offer.sha256 == null) {
+      return false;
+    }
+    busyId = 'receive-file';
+    error = null;
+    notifyListeners();
+    final result = await _api.downloadSharedFile(session, offer.transferId!);
+    if (result case LinkSuccess<Uint8List> success) {
+      final actual = sha256.convert(success.value).toString();
+      if (actual != offer.sha256) {
+        error = 'Shared file integrity check failed.';
+      } else {
+        await connection.saveIncomingFile(success.value);
+        notice = 'file:${offer.filename ?? ''}';
+      }
+    } else if (result case LinkFailure<Uint8List> failure) {
+      error = failure.message;
+    }
+    busyId = null;
+    notifyListeners();
+    return error == null;
   }
 
   Future<void> _run(Future<LinkResult<void>> Function() action) async {

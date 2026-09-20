@@ -18,6 +18,7 @@ void main() {
       descriptionProvider: const FakeDescriptionProvider(),
       pollDelay: (_) async {},
       clipboardService: FakeClipboardService(),
+      shareService: FakeShareService(),
     );
 
     controller.continueFromWelcome();
@@ -39,6 +40,10 @@ void main() {
     expect(profiles.profiles.single.deviceId, 'device-1');
     expect(link.reportedCapabilities.map((capability) => capability.name), [
       'notification.receive',
+      'url.open',
+      'text.receive',
+      'file.receive',
+      'share.send',
       'device.presence',
       'clipboard.send',
       'clipboard.receive',
@@ -49,6 +54,7 @@ void main() {
       'media.request',
       'telegram.send',
       'clipboard.relay',
+      'share.relay',
     ]);
     controller.dispose();
   });
