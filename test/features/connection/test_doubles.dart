@@ -23,6 +23,7 @@ const testServerInfo = ServerInfo(
 
 final class FakeLinkService implements LinkService {
   LinkResult<ServerInfo> infoResult = const LinkSuccess(testServerInfo);
+  String heartbeatServerId = testServerId;
   LinkResult<PairingSession>? pairingResult;
   LinkResult<PairingClaim>? claimResult;
   List<Capability> reportedCapabilities = const [];
@@ -74,8 +75,9 @@ final class FakeLinkService implements LinkService {
     ServerAddress address,
     String credential,
     List<String> acknowledgedEventIds,
-  ) async =>
-      const LinkSuccess(HeartbeatResponse(serverId: testServerId, events: []));
+  ) async => LinkSuccess(
+    HeartbeatResponse(serverId: heartbeatServerId, events: const []),
+  );
 
   @override
   Future<LinkResult<void>> revoke(

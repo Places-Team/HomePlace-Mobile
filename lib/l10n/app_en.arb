@@ -196,5 +196,9 @@
   "deleteReminderBody": "“{title}” will be permanently deleted.",
   "@deleteReminderBody": {"placeholders": {"title": {"type": "String"}}},
   "clearCompletedTitle": "Clear completed reminders?",
-  "clearCompletedBody": "All completed reminders for this account will be permanently deleted."
+  "clearCompletedBody": "All completed reminders for this account will be permanently deleted.",
+  "homePlaceProfiles": "HomePlace connections",
+  "activeProfile": "Active",
+  "connectAnotherHomePlace": "Connect another HomePlace",
+  "cancelAddingConnection": "Back to the connected HomePlace"
 }

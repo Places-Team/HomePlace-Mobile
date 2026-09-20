@@ -12,6 +12,7 @@ The previous Kotlin/Compose and Swift/SwiftUI trees are preserved in `legacy/and
 - Link info parsing and protocol rejection;
 - pairing approval, device identity, secure credential storage, and profiles;
 - foreground presence, notification events, disconnect, and revoke;
+- multiple saved HomePlace profiles with identity-checked switching;
 - unit, controller, widget, and mock-server tests.
 
 ## Remaining platform work
@@ -21,4 +22,4 @@ The previous Kotlin/Compose and Swift/SwiftUI trees are preserved in `legacy/and
 - real-device iOS pairing and notification validation;
 - iOS background behavior within platform limits;
 - Share Sheet and Share Extension integration;
-- discovery and multiple-profile selection UI.
+- local-network discovery after the server publishes a canonical discovery contract.

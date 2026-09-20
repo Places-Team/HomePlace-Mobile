@@ -196,5 +196,9 @@
   "deleteReminderBody": "Напоминание «{title}» будет удалено без возможности восстановления.",
   "@deleteReminderBody": {"placeholders": {"title": {"type": "String"}}},
   "clearCompletedTitle": "Удалить выполненные?",
-  "clearCompletedBody": "Все выполненные напоминания этого аккаунта будут удалены без возможности восстановления."
+  "clearCompletedBody": "Все выполненные напоминания этого аккаунта будут удалены без возможности восстановления.",
+  "homePlaceProfiles": "Подключения HomePlace",
+  "activeProfile": "Активно",
+  "connectAnotherHomePlace": "Подключить другой HomePlace",
+  "cancelAddingConnection": "Вернуться к подключённому HomePlace"
 }

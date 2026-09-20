@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/storage/connection_profile.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
+import 'package:homeplace/link/link_client.dart';
+import 'package:homeplace/link/models.dart';
 
 import 'test_doubles.dart';
 
@@ -89,4 +91,99 @@ void main() {
     expect(controller.error, contains('different identity'));
     controller.dispose();
   });
+
+  test('switches profiles only after validating the saved server ID', () async {
+    const otherServerId = 'c956a1b1-244c-46c2-b4c8-a0dbf7449558';
+    const otherInfo = ServerInfo(
+      product: 'HomePlace',
+      server: LinkServer(id: otherServerId, name: 'Family Home'),
+      protocol: LinkProtocolRange(min: 1, max: 1),
+      serverTime: '2026-09-21T12:00:00Z',
+      features: LinkFeatures(pairing: true, realtime: false),
+    );
+    const primary = ConnectionProfile(
+      serverId: testServerId,
+      serverName: 'Test Home',
+      preferredUrl: 'https://home.example.test',
+      deviceId: 'device-1',
+      secure: true,
+    );
+    const other = ConnectionProfile(
+      serverId: otherServerId,
+      serverName: 'Family Home',
+      preferredUrl: 'https://family.example.test',
+      deviceId: 'device-2',
+      secure: true,
+    );
+    final link = FakeLinkService();
+    final profiles = MemoryProfileStore()..profiles.addAll([other, primary]);
+    final credentials = MemoryCredentialStore()
+      ..values.addAll({
+        testServerId: 'primary-credential',
+        otherServerId: 'other-credential',
+      });
+    final controller = ConnectionController(
+      linkService: link,
+      profileStore: profiles,
+      credentialStore: credentials,
+      deviceIdentity: const FakeDeviceIdentity(),
+      notificationService: FakeNotificationService(),
+      descriptionProvider: const FakeDescriptionProvider(),
+    );
+
+    await controller.initialize();
+    expect(controller.profile?.serverId, testServerId);
+    expect(controller.profiles, hasLength(2));
+
+    link.infoResult = const LinkSuccess(otherInfo);
+    link.heartbeatServerId = otherServerId;
+    expect(await controller.switchProfile(other), isTrue);
+    expect(controller.profile?.serverId, otherServerId);
+    expect(profiles.profiles.last.serverId, otherServerId);
+    expect(credentials.values[testServerId], 'primary-credential');
+    expect(credentials.values[otherServerId], 'other-credential');
+    controller.dispose();
+  });
+
+  test(
+    'keeps the active profile when another address has a different ID',
+    () async {
+      const impostorProfile = ConnectionProfile(
+        serverId: 'c956a1b1-244c-46c2-b4c8-a0dbf7449558',
+        serverName: 'Other Home',
+        preferredUrl: 'https://other.example.test',
+        deviceId: 'device-2',
+        secure: true,
+      );
+      const primary = ConnectionProfile(
+        serverId: testServerId,
+        serverName: 'Test Home',
+        preferredUrl: 'https://home.example.test',
+        deviceId: 'device-1',
+        secure: true,
+      );
+      final link = FakeLinkService();
+      final profiles = MemoryProfileStore()
+        ..profiles.addAll([impostorProfile, primary]);
+      final credentials = MemoryCredentialStore()
+        ..values.addAll({
+          testServerId: 'primary-credential',
+          impostorProfile.serverId: 'other-credential',
+        });
+      final controller = ConnectionController(
+        linkService: link,
+        profileStore: profiles,
+        credentialStore: credentials,
+        deviceIdentity: const FakeDeviceIdentity(),
+        notificationService: FakeNotificationService(),
+        descriptionProvider: const FakeDescriptionProvider(),
+      );
+
+      await controller.initialize();
+      expect(await controller.switchProfile(impostorProfile), isFalse);
+      expect(controller.profile?.serverId, testServerId);
+      expect(controller.error, contains('different identity'));
+      controller.dispose();
+    },
+  );
 }

@@ -600,4 +600,16 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get clearCompletedBody =>
       'Все выполненные напоминания этого аккаунта будут удалены без возможности восстановления.';
+
+  @override
+  String get homePlaceProfiles => 'Подключения HomePlace';
+
+  @override
+  String get activeProfile => 'Активно';
+
+  @override
+  String get connectAnotherHomePlace => 'Подключить другой HomePlace';
+
+  @override
+  String get cancelAddingConnection => 'Вернуться к подключённому HomePlace';
 }

@@ -142,6 +142,7 @@ final class ConnectionController extends ChangeNotifier {
   ServerInfo? serverInfo;
   PairingSession? pairingSession;
   ConnectionProfile? profile;
+  List<ConnectionProfile> profiles = const [];
   String? lastNotification;
   PendingClipboard? pendingClipboard;
   String? _clipboardTextToSuppress;
@@ -149,6 +150,7 @@ final class ConnectionController extends ChangeNotifier {
   PendingShareOffer? pendingIncomingShare;
   Timer? _heartbeatTimer;
   bool _polling = false;
+  bool _disposed = false;
   List<String> _acknowledgedEventIds = const [];
 
   Future<void> initialize() async {
@@ -158,38 +160,77 @@ final class ConnectionController extends ChangeNotifier {
       pendingOutgoingShare = content;
       notifyListeners();
     });
-    final saved = await _profiles.readAll();
-    if (saved.isEmpty) return;
-    final candidate = saved.first;
+    profiles = await _profiles.readAll();
+    if (profiles.isEmpty) return;
+    await _activateProfile(profiles.last, persistSelection: false);
+  }
+
+  Future<bool> switchProfile(ConnectionProfile candidate) =>
+      _activateProfile(candidate, persistSelection: true);
+
+  Future<bool> _activateProfile(
+    ConnectionProfile candidate, {
+    required bool persistSelection,
+  }) async {
     final normalized = ServerAddressNormalizer.normalize(
       candidate.preferredUrl,
     );
-    if (normalized is! ValidAddress) return;
+    if (normalized is! ValidAddress) {
+      error = normalized is InvalidAddress
+          ? normalized.message
+          : 'The saved server address is invalid.';
+      notifyListeners();
+      return false;
+    }
     var restored = normalized.address;
     if (candidate.certificateFingerprint case final fingerprint?) {
       restored = restored.trustFingerprint(fingerprint);
     }
     final credential = await _credentials.read(candidate.serverId);
-    if (credential == null) return;
+    if (credential == null) {
+      error = 'Secure credentials for this HomePlace are unavailable.';
+      diagnostics = 'No credential is stored for ${candidate.serverId}.';
+      notifyListeners();
+      return false;
+    }
     final result = await _link.fetchInfo(restored);
     if (result is! LinkSuccess<ServerInfo>) {
+      error = result is LinkFailure<ServerInfo>
+          ? result.message
+          : 'Could not validate this HomePlace.';
       diagnostics = result is LinkFailure<ServerInfo> ? result.message : null;
-      return;
+      notifyListeners();
+      return false;
     }
     if (verifyServerIdentity(candidate.serverId, result.value)
         is IdentityMismatch) {
       error = 'The server at this address has a different identity.';
       diagnostics =
           'Expected ${candidate.serverId}; received ${result.value.server.id}.';
-      return;
+      notifyListeners();
+      return false;
     }
+    _heartbeatTimer?.cancel();
+    if (persistSelection) await _profiles.save(candidate);
+    profiles = await _profiles.readAll();
     serverAddress = restored;
     serverInfo = result.value;
     profile = candidate;
     addressInput = candidate.preferredUrl;
+    pairingSession = null;
+    error = null;
+    diagnostics = null;
+    lastNotification = null;
+    pendingClipboard = null;
+    pendingIncomingShare = null;
+    _discardOutgoingFile();
+    pendingOutgoingShare = null;
+    _clipboardTextToSuppress = null;
+    _acknowledgedEventIds = const [];
     stage = ConnectionStage.connected;
     _startHeartbeat();
     notifyListeners();
+    return true;
   }
 
   void continueFromWelcome() {
@@ -376,6 +417,7 @@ final class ConnectionController extends ChangeNotifier {
       certificateFingerprint: address.certificateFingerprint,
     );
     await _profiles.save(connectedProfile);
+    profiles = await _profiles.readAll();
     profile = connectedProfile;
     pairingSession = null;
     stage = ConnectionStage.connected;
@@ -523,7 +565,7 @@ final class ConnectionController extends ChangeNotifier {
     _heartbeatTimer?.cancel();
     await _credentials.remove(connectedProfile.serverId);
     await _profiles.remove(connectedProfile.serverId);
-    stage = ConnectionStage.welcome;
+    profiles = await _profiles.readAll();
     serverAddress = null;
     serverInfo = null;
     profile = null;
@@ -533,8 +575,21 @@ final class ConnectionController extends ChangeNotifier {
     pendingClipboard = null;
     _clipboardTextToSuppress = null;
     pendingIncomingShare = null;
-    clearOutgoingShare();
+    _discardOutgoingFile();
+    pendingOutgoingShare = null;
+    _acknowledgedEventIds = const [];
+    if (profiles.isNotEmpty) {
+      await _activateProfile(profiles.last, persistSelection: false);
+      return;
+    }
+    stage = ConnectionStage.welcome;
     notifyListeners();
+  }
+
+  Future<void> returnToConnectedProfile() async {
+    final connectedProfile = profile;
+    if (connectedProfile == null) return;
+    await _activateProfile(connectedProfile, persistSelection: false);
   }
 
   void useAnotherAddress() {
@@ -588,6 +643,12 @@ final class ConnectionController extends ChangeNotifier {
       credential,
       _acknowledgedEventIds,
     );
+    if (_disposed ||
+        stage != ConnectionStage.connected ||
+        profile?.serverId != connectedProfile.serverId ||
+        serverAddress?.uri != address.uri) {
+      return;
+    }
     if (result is LinkFailure<HeartbeatResponse>) {
       diagnostics = result.message;
       notifyListeners();
@@ -684,6 +745,7 @@ final class ConnectionController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _heartbeatTimer?.cancel();
     super.dispose();
   }

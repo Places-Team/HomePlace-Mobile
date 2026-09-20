@@ -26,4 +26,6 @@ The server ID returned by pairing and heartbeat must match the ID previewed befo
 
 `docs/fixtures/link-info-v1.json` is a mobile test fixture. Update it and the Flutter contract tests whenever the canonical server response changes.
 
-WebSocket presence, durable background delivery, richer commands, calendar editing, multiple connection profiles, and family sharing are outside this milestone. Family sharing must add an explicit server-side household membership and approval model; it must never expose all accounts on an installation.
+The app can retain multiple connection profiles and switch between them only after revalidating the saved server ID. Credentials and transfer history remain isolated by server profile. Household sharing uses the server's explicit household membership and approval model and never exposes all accounts on an installation.
+
+WebSocket presence, durable background delivery, richer commands, and local-network discovery remain outside this milestone. Discovery must wait for a canonical server advertisement contract rather than guessing endpoints or service names in the client.

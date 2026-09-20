@@ -1159,6 +1159,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All completed reminders for this account will be permanently deleted.'**
   String get clearCompletedBody;
+
+  /// No description provided for @homePlaceProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'HomePlace connections'**
+  String get homePlaceProfiles;
+
+  /// No description provided for @activeProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get activeProfile;
+
+  /// No description provided for @connectAnotherHomePlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect another HomePlace'**
+  String get connectAnotherHomePlace;
+
+  /// No description provided for @cancelAddingConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the connected HomePlace'**
+  String get cancelAddingConnection;
 }
 
 class _AppLocalizationsDelegate

@@ -180,6 +180,7 @@ class _HomeShellState extends State<HomeShell> {
         child: ListenableBuilder(
           listenable: Listenable.merge([
             home,
+            widget.connection,
             if (widget.preferences != null) widget.preferences!,
           ]),
           builder: (context, _) => Column(
@@ -267,6 +268,50 @@ class _HomeShellState extends State<HomeShell> {
                     ),
                   );
                 },
+              ),
+              const Divider(height: 28),
+              Text(
+                l10n.homePlaceProfiles,
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              ...widget.connection.profiles.map((profile) {
+                final selected =
+                    profile.serverId == widget.connection.profile?.serverId;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: Icon(
+                      selected
+                          ? Icons.check_circle_rounded
+                          : Icons.dns_outlined,
+                    ),
+                    title: Text(profile.serverName),
+                    subtitle: Text(
+                      profile.preferredUrl,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: selected
+                        ? Text(l10n.activeProfile)
+                        : const Icon(Icons.chevron_right_rounded),
+                    onTap: selected
+                        ? null
+                        : () async {
+                            Navigator.pop(context);
+                            await widget.connection.switchProfile(profile);
+                          },
+                  ),
+                );
+              }),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.connection.useAnotherAddress();
+                },
+                icon: const Icon(Icons.add_link_rounded),
+                label: Text(l10n.connectAnotherHomePlace),
               ),
               const Divider(height: 28),
               ListTile(

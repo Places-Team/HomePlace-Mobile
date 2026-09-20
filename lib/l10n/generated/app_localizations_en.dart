@@ -599,4 +599,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get clearCompletedBody =>
       'All completed reminders for this account will be permanently deleted.';
+
+  @override
+  String get homePlaceProfiles => 'HomePlace connections';
+
+  @override
+  String get activeProfile => 'Active';
+
+  @override
+  String get connectAnotherHomePlace => 'Connect another HomePlace';
+
+  @override
+  String get cancelAddingConnection => 'Back to the connected HomePlace';
 }

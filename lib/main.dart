@@ -58,7 +58,11 @@ class ConnectionShell extends StatelessWidget {
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
       if (controller.stage == ConnectionStage.connected) {
-        return HomeShell(connection: controller, preferences: preferences);
+        return HomeShell(
+          key: ValueKey(controller.profile?.serverId),
+          connection: controller,
+          preferences: preferences,
+        );
       }
       return Scaffold(
         appBar: controller.stage == ConnectionStage.welcome
@@ -315,6 +319,13 @@ class _AddressState extends State<_Address> {
           icon: const Icon(Icons.qr_code_scanner),
           label: Text(widget.l10n.scanQr),
         ),
+        if (widget.controller.profile != null) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: busy ? null : widget.controller.returnToConnectedProfile,
+            child: Text(widget.l10n.cancelAddingConnection),
+          ),
+        ],
       ],
     );
   }
