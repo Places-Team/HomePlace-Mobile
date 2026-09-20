@@ -186,4 +186,78 @@ void main() {
       controller.dispose();
     },
   );
+
+  test('keeps multiple incoming file offers until each is reviewed', () async {
+    const profile = ConnectionProfile(
+      serverId: testServerId,
+      serverName: 'Test Home',
+      preferredUrl: 'https://home.example.test',
+      deviceId: 'device-1',
+      secure: true,
+    );
+    final profiles = MemoryProfileStore()..profiles.add(profile);
+    final credentials = MemoryCredentialStore()
+      ..values[testServerId] = 'device-credential';
+    final link = FakeLinkService()
+      ..heartbeatResults.add(
+        const LinkSuccess(
+          HeartbeatResponse(
+            serverId: testServerId,
+            events: [
+              DeviceEvent(
+                id: 'file-1',
+                type: 'share.offer',
+                payload: {
+                  'type': 'file',
+                  'sourceName': 'Phone',
+                  'transferId': 'transfer-1',
+                  'filename': 'first.txt',
+                  'size': 5,
+                  'sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                },
+              ),
+              DeviceEvent(
+                id: 'file-2',
+                type: 'share.offer',
+                payload: {
+                  'type': 'file',
+                  'sourceName': 'Tablet',
+                  'transferId': 'transfer-2',
+                  'filename': 'second.txt',
+                  'size': 6,
+                  'sha256': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    final controller = ConnectionController(
+      linkService: link,
+      profileStore: profiles,
+      credentialStore: credentials,
+      deviceIdentity: const FakeDeviceIdentity(),
+      notificationService: FakeNotificationService(),
+      descriptionProvider: const FakeDescriptionProvider(),
+      clipboardService: FakeClipboardService(),
+      shareService: FakeShareService(),
+    );
+
+    await controller.initialize();
+    for (
+      var attempt = 0;
+      attempt < 10 && controller.pendingIncomingShares.length < 2;
+      attempt++
+    ) {
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    expect(controller.pendingIncomingShares.map((offer) => offer.filename), [
+      'first.txt',
+      'second.txt',
+    ]);
+    controller.dismissIncomingShare(controller.pendingIncomingShares.first);
+    expect(controller.pendingIncomingShares.single.filename, 'second.txt');
+    controller.dispose();
+  });
 }

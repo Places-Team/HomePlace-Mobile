@@ -551,6 +551,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String incomingOffers(int count) {
+    return 'Incoming items · $count';
+  }
+
+  @override
+  String moreIncomingOffers(int count) {
+    return '+$count more incoming item(s)';
+  }
+
+  @override
   String get decline => 'Decline';
 
   @override
@@ -613,11 +623,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelAddingConnection => 'Back to the connected HomePlace';
 
   @override
-  String get backgroundDelivery => 'Background notification checks';
+  String get backgroundDelivery => 'Background HomePlace checks';
 
   @override
   String get backgroundDeliveryBody =>
-      'Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery; clipboard and file offers still require opening the app.';
+      'Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery.';
+
+  @override
+  String get backgroundIncomingOffers => 'Incoming items in background';
+
+  @override
+  String get backgroundIncomingOffersBody =>
+      'Check for clipboard, text, links and files while HomePlace is closed. Tap a private notification to review and confirm. Clipboard sending still requires the app open.';
 
   @override
   String get notificationPermissionRequired =>

@@ -131,6 +131,7 @@ final class FakeNotificationService implements NotificationService {
   FakeNotificationService({this.permissionGranted = true});
   final bool permissionGranted;
   final List<String> delivered = [];
+  final List<String> incomingOffers = [];
 
   @override
   Future<void> initialize() async {}
@@ -144,6 +145,16 @@ final class FakeNotificationService implements NotificationService {
   @override
   Future<void> show(String id, String title, String body) async {
     delivered.add('$title:$body');
+  }
+
+  @override
+  Future<void> showIncomingOffer(
+    String id,
+    String title,
+    String body,
+    String reviewLabel,
+  ) async {
+    incomingOffers.add('$id:$title:$body:$reviewLabel');
   }
 }
 

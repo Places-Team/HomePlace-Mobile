@@ -399,25 +399,34 @@ final class HomeController extends ChangeNotifier {
     busyId = 'receive-file';
     error = null;
     notifyListeners();
-    final result = await _api.downloadSharedFile(session, offer.transferId!);
-    if (result case LinkSuccess<Uint8List> success) {
-      final actual = sha256.convert(success.value).toString();
-      if (actual != offer.sha256) {
-        error = 'Shared file integrity check failed.';
-      } else {
-        await connection.saveIncomingFile(success.value);
-        notice = 'file:${offer.filename ?? ''}';
-        await _recordTransfer(
-          TransferDirection.received,
-          SharedContentKind.file,
-          offer.sourceName,
-        );
+    try {
+      final result = await _api.downloadSharedFile(session, offer.transferId!);
+      if (result case LinkSuccess<Uint8List> success) {
+        final actual = sha256.convert(success.value).toString();
+        if (actual != offer.sha256) {
+          error = 'Shared file integrity check failed.';
+        } else {
+          final saved = await connection.saveIncomingFile(offer, success.value);
+          if (!saved) {
+            error = 'This file offer is no longer available.';
+          } else {
+            notice = 'file:${offer.filename ?? ''}';
+            await _recordTransfer(
+              TransferDirection.received,
+              SharedContentKind.file,
+              offer.sourceName,
+            );
+          }
+        }
+      } else if (result case LinkFailure<Uint8List> failure) {
+        error = failure.message;
       }
-    } else if (result case LinkFailure<Uint8List> failure) {
-      error = failure.message;
+    } on Object {
+      error = 'The shared file could not be saved. Please try again.';
+    } finally {
+      busyId = null;
+      notifyListeners();
     }
-    busyId = null;
-    notifyListeners();
     return error == null;
   }
 
@@ -425,12 +434,17 @@ final class HomeController extends ChangeNotifier {
     PendingShareOffer offer,
     ConnectionController connection,
   ) async {
-    await connection.acceptIncomingTextOrUrl();
-    await _recordTransfer(
-      TransferDirection.received,
-      offer.kind,
-      offer.sourceName,
-    );
+    try {
+      if (!await connection.acceptIncomingTextOrUrl(offer)) return;
+      await _recordTransfer(
+        TransferDirection.received,
+        offer.kind,
+        offer.sourceName,
+      );
+    } on Object {
+      error = 'The incoming item could not be opened. Please try again.';
+      notifyListeners();
+    }
   }
 
   Future<void> clearTransferActivity() async {

@@ -148,6 +148,72 @@ void main() {
     expect(nextLink.heartbeatAcknowledgements.single, ['notification-2']);
     expect(acknowledgements.values, isEmpty);
   });
+
+  test(
+    'notifies once for valid incoming offers without acknowledging them',
+    () async {
+      const profile = ConnectionProfile(
+        serverId: testServerId,
+        serverName: 'Test Home',
+        preferredUrl: 'https://home.example.test',
+        deviceId: 'device-1',
+        secure: true,
+      );
+      final profiles = MemoryProfileStore()..profiles.add(profile);
+      final credentials = MemoryCredentialStore()
+        ..values[testServerId] = 'device-credential';
+      final notices = MemoryBackgroundOfferNoticeStore();
+      final notifications = FakeNotificationService();
+      const response = LinkSuccess(
+        HeartbeatResponse(
+          serverId: testServerId,
+          events: [
+            DeviceEvent(
+              id: 'file-1',
+              type: 'share.offer',
+              payload: {
+                'type': 'file',
+                'sourceName': 'Family tablet',
+                'transferId': 'transfer-1',
+                'filename': 'photo.jpg',
+                'mimeType': 'image/jpeg',
+                'size': 1200,
+                'sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+              },
+            ),
+          ],
+        ),
+      );
+      final firstLink = FakeLinkService()..heartbeatResults.add(response);
+
+      await BackgroundHeartbeatRunner(
+        profileStore: profiles,
+        credentialStore: credentials,
+        linkService: firstLink,
+        notificationService: notifications,
+        acknowledgementStore: MemoryBackgroundAcknowledgementStore(),
+        offerNoticeStore: notices,
+        includeIncomingOffers: true,
+      ).run();
+
+      expect(notifications.incomingOffers.single, contains('Family tablet'));
+      expect(firstLink.heartbeatAcknowledgements.single, isEmpty);
+      expect(notices.values[testServerId], ['file-1']);
+
+      final secondLink = FakeLinkService()..heartbeatResults.add(response);
+      await BackgroundHeartbeatRunner(
+        profileStore: profiles,
+        credentialStore: credentials,
+        linkService: secondLink,
+        notificationService: notifications,
+        acknowledgementStore: MemoryBackgroundAcknowledgementStore(),
+        offerNoticeStore: notices,
+        includeIncomingOffers: true,
+      ).run();
+
+      expect(notifications.incomingOffers, hasLength(1));
+    },
+  );
 }
 
 final class MemoryBackgroundAcknowledgementStore
@@ -181,4 +247,18 @@ final class MemoryNotificationHistoryStore implements NotificationHistoryStore {
   @override
   Future<void> write(String scope, List<NotificationHistoryItem> items) async =>
       this.items = List.of(items);
+}
+
+final class MemoryBackgroundOfferNoticeStore
+    implements BackgroundOfferNoticeStore {
+  final Map<String, List<String>> values = {};
+
+  @override
+  Future<List<String>> read(String serverId) async =>
+      List.of(values[serverId] ?? const []);
+
+  @override
+  Future<void> write(String serverId, List<String> eventIds) async {
+    values[serverId] = List.of(eventIds);
+  }
 }

@@ -552,6 +552,16 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String incomingOffers(int count) {
+    return 'Входящие объекты · $count';
+  }
+
+  @override
+  String moreIncomingOffers(int count) {
+    return 'Ещё входящих объектов: $count';
+  }
+
+  @override
   String get decline => 'Отклонить';
 
   @override
@@ -614,11 +624,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cancelAddingConnection => 'Вернуться к подключённому HomePlace';
 
   @override
-  String get backgroundDelivery => 'Проверка уведомлений в фоне';
+  String get backgroundDelivery => 'Фоновые проверки HomePlace';
 
   @override
   String get backgroundDeliveryBody =>
-      'Android проверяет подключённые серверы HomePlace примерно раз в 15 минут. Система может отложить проверку ради батареи; для буфера и файлов всё ещё нужно открыть приложение.';
+      'Android проверяет подключённые серверы HomePlace примерно раз в 15 минут. Система может отложить проверку ради батареи.';
+
+  @override
+  String get backgroundIncomingOffers => 'Входящие объекты в фоне';
+
+  @override
+  String get backgroundIncomingOffersBody =>
+      'Проверять буфер, текст, ссылки и файлы, пока HomePlace закрыт. Нажмите приватное уведомление для просмотра и подтверждения. Отправка буфера требует открытого приложения.';
 
   @override
   String get notificationPermissionRequired =>

@@ -16,6 +16,9 @@ Future<void> main() async {
   final controller = ConnectionController();
   final preferences = AppPreferences(
     onBackgroundDeliveryChanged: backgroundDelivery.setEnabled,
+    onBackgroundIncomingOffersChanged: (enabled) async {
+      if (enabled) await backgroundDelivery.refreshNow();
+    },
   );
   runApp(HomePlaceApp(controller: controller, preferences: preferences));
   await preferences.initialize();

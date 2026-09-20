@@ -7,6 +7,17 @@ abstract interface class NotificationService {
   Future<bool> requestPermission();
   Future<bool> isAvailable();
   Future<void> show(String id, String title, String body);
+  Future<void> showIncomingOffer(
+    String id,
+    String title,
+    String body,
+    String reviewLabel,
+  );
+}
+
+@pragma('vm:entry-point')
+void homePlaceNotificationResponse(NotificationResponse response) {
+  // Android opens the application for consent-gated incoming offer actions.
 }
 
 final class LocalNotificationService implements NotificationService {
@@ -21,6 +32,8 @@ final class LocalNotificationService implements NotificationService {
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(),
     ),
+    onDidReceiveNotificationResponse: homePlaceNotificationResponse,
+    onDidReceiveBackgroundNotificationResponse: homePlaceNotificationResponse,
   );
 
   @override
@@ -72,5 +85,37 @@ final class LocalNotificationService implements NotificationService {
       ),
       iOS: DarwinNotificationDetails(),
     ),
+  );
+
+  @override
+  Future<void> showIncomingOffer(
+    String id,
+    String title,
+    String body,
+    String reviewLabel,
+  ) => _plugin.show(
+    id.hashCode & 0x7fffffff,
+    title,
+    body,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        'homeplace_incoming',
+        'Incoming HomePlace items',
+        channelDescription:
+            'Private text, link, clipboard and file offers awaiting review',
+        importance: Importance.high,
+        priority: Priority.high,
+        visibility: NotificationVisibility.private,
+        category: AndroidNotificationCategory.message,
+        actions: [
+          AndroidNotificationAction(
+            'review_incoming',
+            reviewLabel,
+            showsUserInterface: true,
+          ),
+        ],
+      ),
+    ),
+    payload: 'incoming:$id',
   );
 }

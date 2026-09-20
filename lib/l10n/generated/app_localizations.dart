@@ -1070,6 +1070,18 @@ abstract class AppLocalizations {
   /// **'From {device}'**
   String incomingShare(String device);
 
+  /// No description provided for @incomingOffers.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming items · {count}'**
+  String incomingOffers(int count);
+
+  /// No description provided for @moreIncomingOffers.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more incoming item(s)'**
+  String moreIncomingOffers(int count);
+
   /// No description provided for @decline.
   ///
   /// In en, this message translates to:
@@ -1187,14 +1199,26 @@ abstract class AppLocalizations {
   /// No description provided for @backgroundDelivery.
   ///
   /// In en, this message translates to:
-  /// **'Background notification checks'**
+  /// **'Background HomePlace checks'**
   String get backgroundDelivery;
 
   /// No description provided for @backgroundDeliveryBody.
   ///
   /// In en, this message translates to:
-  /// **'Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery; clipboard and file offers still require opening the app.'**
+  /// **'Android checks connected HomePlace servers about every 15 minutes. The system may delay checks to save battery.'**
   String get backgroundDeliveryBody;
+
+  /// No description provided for @backgroundIncomingOffers.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming items in background'**
+  String get backgroundIncomingOffers;
+
+  /// No description provided for @backgroundIncomingOffersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for clipboard, text, links and files while HomePlace is closed. Tap a private notification to review and confirm. Clipboard sending still requires the app open.'**
+  String get backgroundIncomingOffersBody;
 
   /// No description provided for @notificationPermissionRequired.
   ///

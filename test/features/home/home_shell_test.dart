@@ -188,6 +188,60 @@ void main() {
     connection.dispose();
     home.dispose();
   });
+
+  testWidgets(
+    'shows multiple incoming file offers independently',
+    (tester) async {
+      tester.view.physicalSize = const Size(420, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final connection = ConnectionController()
+        ..pendingIncomingShares = const [
+          PendingShareOffer(
+            eventId: 'file-1',
+            kind: SharedContentKind.file,
+            sourceName: 'Phone',
+            transferId: 'transfer-1',
+            filename: 'first.txt',
+            size: 5,
+            sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          ),
+          PendingShareOffer(
+            eventId: 'file-2',
+            kind: SharedContentKind.file,
+            sourceName: 'Tablet',
+            transferId: 'transfer-2',
+            filename: 'second.txt',
+            size: 6,
+            sha256: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          ),
+        ];
+      final home = HomeController(sessionProvider: () async => null)
+        ..loading = false
+        ..overview = _overview();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: HomeShell(connection: connection, homeController: home),
+        ),
+      );
+      await tester.scrollUntilVisible(
+        find.text('first.txt · 5 B'),
+        300,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+
+      expect(find.text('Incoming items · 2'), findsOneWidget);
+      expect(find.text('first.txt · 5 B'), findsOneWidget);
+      expect(find.text('second.txt · 6 B'), findsOneWidget);
+      connection.dispose();
+      home.dispose();
+    },
+  );
 }
 
 MobileOverview _overview() {

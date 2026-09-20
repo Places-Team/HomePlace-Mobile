@@ -285,6 +285,19 @@ class _HomeShellState extends State<HomeShell> {
                 ),
               if (Platform.isAndroid &&
                   widget.preferences?.backgroundDeliveryEnabled == true)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value:
+                      widget.preferences?.backgroundIncomingOffersEnabled ??
+                      false,
+                  onChanged:
+                      widget.preferences?.setBackgroundIncomingOffersEnabled,
+                  title: Text(l10n.backgroundIncomingOffers),
+                  subtitle: Text(l10n.backgroundIncomingOffersBody),
+                  secondary: const Icon(Icons.move_to_inbox_outlined),
+                ),
+              if (Platform.isAndroid &&
+                  widget.preferences?.backgroundDeliveryEnabled == true)
                 FutureBuilder<BackgroundDeliveryStatus?>(
                   future: const BackgroundDeliveryStatusStore().read(),
                   builder: (context, snapshot) {
@@ -799,16 +812,38 @@ class _OverviewPage extends StatelessWidget {
             onDismiss: connection.dismissPendingClipboard,
           ),
         ],
-        if (connection.pendingIncomingShare case final offer?) ...[
+        if (connection.pendingIncomingShares.isNotEmpty) ...[
           const SizedBox(height: 12),
-          _IncomingShareCard(
-            offer: offer,
-            receiving: home.busyId == 'receive-file',
-            onDismiss: connection.dismissIncomingShare,
-            onAccept: offer.kind == SharedContentKind.file
-                ? () => home.acceptSharedFile(offer, connection)
-                : () => home.acceptIncomingTextOrUrl(offer, connection),
-          ),
+          if (connection.pendingIncomingShares.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                l10n.incomingOffers(connection.pendingIncomingShares.length),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ...connection.pendingIncomingShares
+              .take(5)
+              .map(
+                (offer) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _IncomingShareCard(
+                    offer: offer,
+                    receiving: home.busyId == 'receive-file',
+                    onDismiss: () => connection.dismissIncomingShare(offer),
+                    onAccept: offer.kind == SharedContentKind.file
+                        ? () => home.acceptSharedFile(offer, connection)
+                        : () => home.acceptIncomingTextOrUrl(offer, connection),
+                  ),
+                ),
+              ),
+          if (connection.pendingIncomingShares.length > 5)
+            Text(
+              l10n.moreIncomingOffers(
+                connection.pendingIncomingShares.length - 5,
+              ),
+              textAlign: TextAlign.center,
+            ),
         ],
         if (home.transferActivity.isNotEmpty) ...[
           const SizedBox(height: 12),

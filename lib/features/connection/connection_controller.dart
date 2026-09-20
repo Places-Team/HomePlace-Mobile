@@ -154,7 +154,9 @@ final class ConnectionController extends ChangeNotifier {
   PendingClipboard? pendingClipboard;
   String? _clipboardTextToSuppress;
   SharedContent? pendingOutgoingShare;
-  PendingShareOffer? pendingIncomingShare;
+  List<PendingShareOffer> pendingIncomingShares = const [];
+  PendingShareOffer? get pendingIncomingShare =>
+      pendingIncomingShares.firstOrNull;
   Timer? _heartbeatTimer;
   bool _polling = false;
   bool _disposed = false;
@@ -230,7 +232,7 @@ final class ConnectionController extends ChangeNotifier {
     diagnostics = null;
     lastNotification = null;
     pendingClipboard = null;
-    pendingIncomingShare = null;
+    pendingIncomingShares = const [];
     _discardOutgoingFile();
     pendingOutgoingShare = null;
     _clipboardTextToSuppress = null;
@@ -516,25 +518,33 @@ final class ConnectionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> acceptIncomingTextOrUrl() async {
-    final pending = pendingIncomingShare;
-    if (pending == null) return;
+  Future<bool> acceptIncomingTextOrUrl(PendingShareOffer pending) async {
+    if (!pendingIncomingShares.any(
+      (offer) => offer.eventId == pending.eventId,
+    )) {
+      return false;
+    }
     if (pending.kind == SharedContentKind.text && pending.value != null) {
       await _clipboard.writeText(pending.value!);
     } else if (pending.kind == SharedContentKind.url && pending.value != null) {
       await _sharing.openUrl(pending.value!);
     } else {
-      return;
+      return false;
     }
     _acknowledgeIncomingShare(pending.eventId);
+    return true;
   }
 
-  Future<void> saveIncomingFile(Uint8List bytes) async {
-    final pending = pendingIncomingShare;
-    if (pending == null ||
+  Future<bool> saveIncomingFile(
+    PendingShareOffer pending,
+    Uint8List bytes,
+  ) async {
+    if (!pendingIncomingShares.any(
+          (offer) => offer.eventId == pending.eventId,
+        ) ||
         pending.kind != SharedContentKind.file ||
         pending.filename == null) {
-      return;
+      return false;
     }
     await _sharing.saveFile(
       bytes,
@@ -542,19 +552,20 @@ final class ConnectionController extends ChangeNotifier {
       pending.mimeType ?? 'application/octet-stream',
     );
     _acknowledgeIncomingShare(pending.eventId);
+    return true;
   }
 
-  void dismissIncomingShare() {
-    final pending = pendingIncomingShare;
-    if (pending != null) _acknowledgeIncomingShare(pending.eventId);
-  }
+  void dismissIncomingShare(PendingShareOffer pending) =>
+      _acknowledgeIncomingShare(pending.eventId);
 
   void _acknowledgeIncomingShare(String eventId) {
     _acknowledgedEventIds = {
       ..._acknowledgedEventIds,
       eventId,
     }.toList(growable: false);
-    pendingIncomingShare = null;
+    pendingIncomingShares = pendingIncomingShares
+        .where((offer) => offer.eventId != eventId)
+        .toList(growable: false);
     notifyListeners();
   }
 
@@ -600,7 +611,7 @@ final class ConnectionController extends ChangeNotifier {
     _notificationHistoryScope = null;
     pendingClipboard = null;
     _clipboardTextToSuppress = null;
-    pendingIncomingShare = null;
+    pendingIncomingShares = const [];
     _discardOutgoingFile();
     pendingOutgoingShare = null;
     _acknowledgedEventIds = const [];
@@ -738,13 +749,15 @@ final class ConnectionController extends ChangeNotifier {
                   uri.userInfo.isNotEmpty)) {
             continue;
           }
-          pendingIncomingShare = PendingShareOffer(
-            eventId: event.id,
-            kind: type == 'url'
-                ? SharedContentKind.url
-                : SharedContentKind.text,
-            sourceName: sourceName,
-            value: value,
+          _enqueueIncomingShare(
+            PendingShareOffer(
+              eventId: event.id,
+              kind: type == 'url'
+                  ? SharedContentKind.url
+                  : SharedContentKind.text,
+              sourceName: sourceName,
+              value: value,
+            ),
           );
         } else if (type == 'file') {
           final transferId = event.payload['transferId'];
@@ -756,16 +769,19 @@ final class ConnectionController extends ChangeNotifier {
               size is int &&
               size > 0 &&
               size <= 5 * 1024 * 1024 &&
-              sha256 is String) {
-            pendingIncomingShare = PendingShareOffer(
-              eventId: event.id,
-              kind: SharedContentKind.file,
-              sourceName: sourceName,
-              transferId: transferId,
-              filename: filename,
-              mimeType: event.payload['mimeType'] as String?,
-              size: size,
-              sha256: sha256,
+              sha256 is String &&
+              RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(sha256)) {
+            _enqueueIncomingShare(
+              PendingShareOffer(
+                eventId: event.id,
+                kind: SharedContentKind.file,
+                sourceName: sourceName,
+                transferId: transferId,
+                filename: filename,
+                mimeType: event.payload['mimeType'] as String?,
+                size: size,
+                sha256: sha256,
+              ),
             );
           }
         }
@@ -790,6 +806,18 @@ final class ConnectionController extends ChangeNotifier {
     _acknowledgedEventIds = acknowledged;
     diagnostics = null;
     notifyListeners();
+  }
+
+  void _enqueueIncomingShare(PendingShareOffer offer) {
+    final updated = [
+      ...pendingIncomingShares.where(
+        (existing) => existing.eventId != offer.eventId,
+      ),
+      offer,
+    ];
+    pendingIncomingShares =
+        (updated.length <= 20 ? updated : updated.sublist(updated.length - 20))
+            .toList(growable: false);
   }
 
   Future<void> _loadNotificationHistory(

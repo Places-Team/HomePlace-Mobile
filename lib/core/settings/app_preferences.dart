@@ -4,12 +4,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum AppLanguage { system, english, russian }
 
 final class AppPreferences extends ChangeNotifier {
-  AppPreferences({this.onBackgroundDeliveryChanged});
+  AppPreferences({
+    this.onBackgroundDeliveryChanged,
+    this.onBackgroundIncomingOffersChanged,
+  });
+
+  static const backgroundIncomingOffersKey = 'app.backgroundIncomingOffers';
 
   final Future<void> Function(bool enabled)? onBackgroundDeliveryChanged;
+  final Future<void> Function(bool enabled)? onBackgroundIncomingOffersChanged;
   AppLanguage language = AppLanguage.system;
   ThemeMode themeMode = ThemeMode.system;
   bool backgroundDeliveryEnabled = false;
+  bool backgroundIncomingOffersEnabled = false;
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
@@ -23,6 +30,8 @@ final class AppPreferences extends ChangeNotifier {
     );
     backgroundDeliveryEnabled =
         preferences.getBool('app.backgroundDelivery') ?? false;
+    backgroundIncomingOffersEnabled =
+        preferences.getBool(backgroundIncomingOffersKey) ?? false;
     if (backgroundDeliveryEnabled) {
       await onBackgroundDeliveryChanged?.call(true);
     }
@@ -58,5 +67,14 @@ final class AppPreferences extends ChangeNotifier {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool('app.backgroundDelivery', value);
     await onBackgroundDeliveryChanged?.call(value);
+  }
+
+  Future<void> setBackgroundIncomingOffersEnabled(bool value) async {
+    if (backgroundIncomingOffersEnabled == value) return;
+    backgroundIncomingOffersEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(backgroundIncomingOffersKey, value);
+    await onBackgroundIncomingOffersChanged?.call(value);
   }
 }

@@ -23,8 +23,10 @@ The first Flutter application slice is implemented with Android as the primary v
 - private same-account delivery, five-minute offers, encrypted temporary file storage, integrity verification, and receiver acceptance.
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
 - encrypted per-profile notification history and visible background-check diagnostics.
+- opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and foreground confirmation;
+- a bounded incoming-offer queue so concurrent file and link offers remain independently reviewable.
 
-Foreground presence, clipboard relay, and shared-item delivery operate while the application is open. Android can periodically check for notification events in the background, but Android controls the timing and may defer the 15-minute schedule. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
+Foreground presence and clipboard relay operate while the application is open. Android can periodically check for notifications and incoming share offers in the background, but Android controls the timing and may defer the 15-minute schedule. Opening, copying, downloading or declining an offer remains an explicit user action. Android does not permit ordinary applications to read the system clipboard while they are in the background. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 
 ## Repository layout
 

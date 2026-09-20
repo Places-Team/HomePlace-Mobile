@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/network/server_address.dart';
+import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/link/link_client.dart';
 import 'package:homeplace/link/mobile_api.dart';
+import 'package:homeplace/link/mobile_models.dart';
 
 void main() {
   test('validates Link info against a mock HomePlace server', () async {
@@ -133,5 +135,88 @@ void main() {
 
     expect(result, isA<LinkSuccess>());
     expect((result as LinkSuccess).value.single.summary, 'Family dinner');
+  });
+
+  test('uploads and downloads a shared file through the Link API', () async {
+    final expected = List<int>.generate(4096, (index) => index % 251);
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(server.close);
+    final temp = await Directory.systemTemp.createTemp('homeplace-file-test-');
+    addTearDown(() => temp.delete(recursive: true));
+    final file = File('${temp.path}/family note.txt');
+    await file.writeAsBytes(expected);
+    var uploadVerified = false;
+    server.listen((request) async {
+      expect(
+        request.headers.value(HttpHeaders.authorizationHeader),
+        'Bearer test-credential',
+      );
+      if (request.uri.path == '/api/link/mobile/share/file') {
+        expect(request.method, 'POST');
+        expect(request.headers.value('x-homeplace-target'), 'target-1');
+        expect(
+          Uri.decodeComponent(
+            request.headers.value('x-homeplace-filename') ?? '',
+          ),
+          'family note.txt',
+        );
+        expect(
+          await request.fold<List<int>>([], (all, part) => all..addAll(part)),
+          expected,
+        );
+        uploadVerified = true;
+        request.response.statusCode = HttpStatus.created;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write('{"ok":true}');
+      } else if (request.uri.path == '/api/link/mobile/share/file/transfer-1') {
+        expect(request.method, 'GET');
+        request.response.statusCode = HttpStatus.ok;
+        request.response.headers.contentType = ContentType.binary;
+        request.response.add(expected);
+      } else {
+        request.response.statusCode = HttpStatus.notFound;
+      }
+      await request.response.close();
+    });
+    final normalized = ServerAddressNormalizer.normalize(
+      'http://127.0.0.1:${server.port}',
+    ) as ValidAddress;
+    final session = AuthenticatedLinkSession(
+      address: normalized.address,
+      credential: 'test-credential',
+      serverId: '9d55059f-5a47-4f23-a778-5714c6744907',
+      serverName: 'Mock Home',
+    );
+    const target = MobileShareTarget(
+      id: 'target-1',
+      name: 'Family tablet',
+      platform: 'android',
+      supportsText: true,
+      supportsUrl: true,
+      supportsFile: true,
+      online: true,
+      ownedByCurrentUser: true,
+    );
+
+    final sent = await const MobileApi().relayShare(
+      session,
+      target,
+      SharedContent(
+        kind: SharedContentKind.file,
+        path: file.path,
+        filename: 'family note.txt',
+        mimeType: 'text/plain',
+        size: expected.length,
+      ),
+    );
+    final received = await const MobileApi().downloadSharedFile(
+      session,
+      'transfer-1',
+    );
+
+    expect(sent, isA<LinkSuccess<void>>());
+    expect(uploadVerified, isTrue);
+    expect(received, isA<LinkSuccess<List<int>>>());
+    expect((received as LinkSuccess).value, expected);
   });
 }
