@@ -46,6 +46,7 @@ final class HomeController extends ChangeNotifier {
   double? fileTransferProgress;
   String? activeFileTransferId;
   LinkTransferCancellation? _fileTransferCancellation;
+  SavedSharedFile? lastSavedFile;
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
@@ -98,9 +99,7 @@ final class HomeController extends ChangeNotifier {
       if (session == null) return;
       final result = await _api.relayClipboard(session, text);
       if (result case LinkSuccess<int> success when success.value > 0) {
-        notice = 'clipboard_auto:${success.value}';
         error = null;
-        notifyListeners();
       }
     } finally {
       _autoClipboardBusy = false;
@@ -361,7 +360,7 @@ final class HomeController extends ChangeNotifier {
       if (success.value == 0) {
         error = 'clipboard_no_devices';
       } else {
-        notice = 'clipboard:${success.value}';
+        notice = null;
         error = null;
       }
     } else if (result case LinkFailure<int> failure) {
@@ -446,10 +445,11 @@ final class HomeController extends ChangeNotifier {
           offer,
           downloaded.file.path,
         );
-        if (!saved) {
+        if (saved == null) {
           error = 'This file offer is no longer available.';
         } else {
           savedSuccessfully = true;
+          lastSavedFile = saved;
           notice = 'file:${offer.filename ?? ''}';
           await _recordTransfer(
             TransferDirection.received,
@@ -489,6 +489,22 @@ final class HomeController extends ChangeNotifier {
   }
 
   void cancelFileTransfer() => _fileTransferCancellation?.cancel();
+
+  Future<void> openLastSavedFile(ConnectionController connection) async {
+    final saved = lastSavedFile;
+    if (saved == null) return;
+    try {
+      await connection.openSavedFile(saved);
+      error = null;
+    } on PlatformException catch (exception) {
+      error = exception.message?.trim().isNotEmpty == true
+          ? exception.message!.trim()
+          : 'The saved file could not be opened.';
+    } on Object {
+      error = 'The saved file could not be opened.';
+    }
+    notifyListeners();
+  }
 
   void _updateFileTransferProgress(int transferred, int total) {
     if (total <= 0) return;
@@ -595,6 +611,7 @@ final class HomeController extends ChangeNotifier {
   void clearMessage() {
     error = null;
     notice = null;
+    lastSavedFile = null;
     notifyListeners();
   }
 

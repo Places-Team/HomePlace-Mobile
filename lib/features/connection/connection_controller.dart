@@ -574,7 +574,7 @@ final class ConnectionController extends ChangeNotifier {
     return true;
   }
 
-  Future<bool> saveIncomingFile(
+  Future<SavedSharedFile?> saveIncomingFile(
     PendingShareOffer pending,
     String temporaryPath,
   ) async {
@@ -583,16 +583,20 @@ final class ConnectionController extends ChangeNotifier {
         ) ||
         pending.kind != SharedContentKind.file ||
         pending.filename == null) {
-      return false;
+      return null;
     }
-    await _sharing.saveFilePath(
+    final saved = await _sharing.saveFilePath(
       temporaryPath,
       pending.filename!,
       pending.mimeType ?? 'application/octet-stream',
     );
     _acknowledgeIncomingShare(pending.eventId);
-    return true;
+    unawaited(_heartbeat());
+    return saved;
   }
+
+  Future<void> openSavedFile(SavedSharedFile file) =>
+      _sharing.openSavedFile(file);
 
   Future<String> createIncomingTemporaryFilePath() =>
       _sharing.createTemporaryFilePath();

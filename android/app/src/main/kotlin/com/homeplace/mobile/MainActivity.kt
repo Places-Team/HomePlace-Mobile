@@ -13,6 +13,7 @@ import android.provider.OpenableColumns
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -87,6 +88,7 @@ class MainActivity : FlutterActivity() {
                         result.error("temporary_file_unavailable", "A protected temporary file could not be created.", null)
                     }
                     "saveFilePath" -> saveReceivedFilePath(call.arguments as? Map<*, *>, result)
+                    "openSavedFile" -> openSavedFile(call.arguments as? Map<*, *>, result)
                     else -> result.notImplemented()
                 }
             }
@@ -220,6 +222,7 @@ class MainActivity : FlutterActivity() {
         }
         val filename = rawName.replace(Regex("[\\\\/\\x00-\\x1f\\x7f]"), "_").take(180)
         shareExecutor.execute { runCatching {
+            val savedUri: Uri
             if (Build.VERSION.SDK_INT >= 29) {
                 val values = ContentValues().apply {
                     put(MediaStore.Downloads.DISPLAY_NAME, filename)
@@ -236,21 +239,49 @@ class MainActivity : FlutterActivity() {
                     values.clear()
                     values.put(MediaStore.Downloads.IS_PENDING, 0)
                     contentResolver.update(uri, values, null, null)
+                    savedUri = uri
                 } catch (error: Throwable) {
                     contentResolver.delete(uri, null, null)
                     throw error
                 }
             } else {
                 val directory = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "HomePlace").apply { mkdirs() }
+                val target = File(directory, filename)
                 safeSource.inputStream().use { input ->
-                    FileOutputStream(File(directory, filename)).use { output -> input.copyTo(output, 64 * 1024) }
+                    FileOutputStream(target).use { output -> input.copyTo(output, 64 * 1024) }
                 }
+                savedUri = FileProvider.getUriForFile(this, "$packageName.files", target)
             }
-        }.onSuccess { runOnUiThread { result.success(null) } }
+            savedUri.toString()
+        }.onSuccess { location -> runOnUiThread { result.success(location) } }
             .onFailure { error -> runOnUiThread {
                 result.error("save_failed", error.message ?: "The file could not be saved.", null)
             } }
         }
+    }
+
+    private fun openSavedFile(arguments: Map<*, *>?, result: MethodChannel.Result) {
+        val rawLocation = arguments?.get("location") as? String
+        val requestedMimeType = arguments?.get("mimeType") as? String
+        val mimeType = requestedMimeType
+            ?.takeIf { SAFE_MIME_TYPE.matches(it) }
+            ?: "application/octet-stream"
+        val uri = rawLocation?.let(Uri::parse)
+        if (uri == null || uri.scheme != "content") {
+            result.error("invalid_file", "The saved file location is invalid.", null)
+            return
+        }
+        runCatching {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newRawUri("HomePlace file", uri)
+            }
+            startActivity(Intent.createChooser(intent, null))
+        }.onSuccess { result.success(null) }
+            .onFailure {
+                result.error("open_failed", "No application can open this file type.", null)
+            }
     }
 
     override fun onDestroy() {

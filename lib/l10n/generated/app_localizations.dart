@@ -710,6 +710,48 @@ abstract class AppLocalizations {
   /// **'A live summary of the checks HomePlace already runs.'**
   String get monitoringBody;
 
+  /// No description provided for @monitorOverviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get monitorOverviewTab;
+
+  /// No description provided for @monitorServicesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get monitorServicesTab;
+
+  /// No description provided for @monitorEventsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get monitorEventsTab;
+
+  /// No description provided for @unknownState.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownState;
+
+  /// No description provided for @averageLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Average latency'**
+  String get averageLatency;
+
+  /// No description provided for @lastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {time}'**
+  String lastChecked(String time);
+
+  /// No description provided for @noRecentEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent monitoring events.'**
+  String get noRecentEvents;
+
   /// No description provided for @onlineCount.
   ///
   /// In en, this message translates to:
@@ -781,6 +823,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bringing your HomePlace together…'**
   String get loadingHome;
+
+  /// No description provided for @preparingShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing devices for secure sharing…'**
+  String get preparingShare;
 
   /// No description provided for @tryAgain.
   ///

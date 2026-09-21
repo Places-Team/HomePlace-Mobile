@@ -39,15 +39,19 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       widget.homeController ??
       HomeController(sessionProvider: widget.connection.authenticatedSession);
   late final bool ownsHome = widget.homeController == null;
-  late final PageController pages = PageController();
+  late final PageController pages;
   final Set<String> _automaticIncoming = {};
   bool _sendingShareBatch = false;
-  var tab = 0;
+  bool _shareTargetSheetOpen = false;
+  String? _presentedOutgoingBatch;
+  late int tab;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    tab = widget.connection.pendingOutgoingShares.isEmpty ? 0 : 3;
+    pages = PageController(initialPage: tab);
     home.bindClipboardReader(widget.connection.readClipboardTextForAutoRelay);
     if (ownsHome) home.initialize();
   }
@@ -72,6 +76,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     listenable: Listenable.merge([home, widget.connection]),
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
+      final outgoing = widget.connection.pendingOutgoingShares;
       final requested = widget.connection.pendingIncomingShares
           .where((offer) => offer.acceptRequested)
           .where((offer) => !_automaticIncoming.contains(offer.eventId))
@@ -88,7 +93,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         });
       }
       if (home.loading && home.overview == null) {
-        return _Loading(label: l10n.loadingHome);
+        return _Loading(
+          label: outgoing.isEmpty ? l10n.loadingHome : l10n.preparingShare,
+        );
       }
       if (home.overview == null) {
         return _LoadError(
@@ -100,6 +107,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         );
       }
       final overview = home.overview!;
+      _routeOutgoingShare(overview, outgoing);
       return Scaffold(
         extendBody: true,
         body: Stack(
@@ -153,6 +161,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           ? l10n.fileSaved(notice.substring(5))
                           : l10n.requestSent(notice),
                       error: false,
+                      actionLabel:
+                          notice.startsWith('file:') &&
+                              home.lastSavedFile != null
+                          ? l10n.open
+                          : null,
+                      onAction:
+                          notice.startsWith('file:') &&
+                              home.lastSavedFile != null
+                          ? () => home.openLastSavedFile(widget.connection)
+                          : null,
                       onClose: home.clearMessage,
                     ),
                   if (widget.connection.pendingOutgoingShares.isNotEmpty)
@@ -208,6 +226,51 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       );
     },
   );
+
+  void _routeOutgoingShare(
+    MobileOverview overview,
+    List<SharedContent> outgoing,
+  ) {
+    if (outgoing.isEmpty) {
+      _presentedOutgoingBatch = null;
+      return;
+    }
+    final signature = outgoing
+        .map(
+          (item) => switch (item.kind) {
+            SharedContentKind.file =>
+              'file:${item.path}:${item.filename}:${item.size}',
+            SharedContentKind.url => 'url:${item.value}',
+            SharedContentKind.text => 'text:${item.value}',
+          },
+        )
+        .join('|');
+    final shouldPresent =
+        !_shareTargetSheetOpen && _presentedOutgoingBatch != signature;
+    if (shouldPresent) _presentedOutgoingBatch = signature;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (tab != 3) {
+        setState(() => tab = 3);
+        if (pages.hasClients) {
+          await pages.animateToPage(
+            3,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+      if (!mounted || _shareTargetSheetOpen || !shouldPresent) {
+        return;
+      }
+      _shareTargetSheetOpen = true;
+      try {
+        await _showShareTargets(context, overview, List.of(outgoing));
+      } finally {
+        _shareTargetSheetOpen = false;
+      }
+    });
+  }
 
   Future<void> _showSettings(
     BuildContext context,
@@ -2146,105 +2209,224 @@ class _MonitorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final monitor = overview.monitoring;
-    return _ScrollPage(
-      onRefresh: home.refresh,
-      children: [
-        _PageHeading(
-          title: l10n.monitoringTitle,
-          subtitle: l10n.monitoringBody,
-        ),
-        const SizedBox(height: 20),
-        _Surface(
-          color: monitor.offline == 0
-              ? _mint.withValues(alpha: .12)
-              : _coral.withValues(alpha: .14),
-          child: Row(
-            children: [
-              _StatusRing(
-                online: monitor.online,
-                total: monitor.total,
-                healthy: monitor.offline == 0,
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      monitor.offline == 0
-                          ? l10n.allQuiet
-                          : l10n.needsAttention,
-                      style: Theme.of(context).textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w900),
-                    ),
-                    Text(l10n.onlineCount(monitor.online, monitor.total)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        if (monitor.services.isEmpty)
-          _EmptyCard(icon: Icons.monitor_heart_outlined, text: l10n.noMonitors)
-        else
-          _Surface(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: monitor.services
-                  .take(30)
-                  .map(
-                    (service) => ListTile(
-                      leading: Container(
-                        width: 11,
-                        height: 11,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: service.status == 'online'
-                              ? _mint
-                              : service.status == 'offline'
-                              ? _coral
-                              : Colors.grey,
-                        ),
-                      ),
-                      title: Text(
-                        service.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Text(
-                        service.latencyMs == null
-                            ? '—'
-                            : '${service.latencyMs} ms',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  )
-                  .toList(growable: false),
+    final latencies = monitor.services
+        .map((service) => service.latencyMs)
+        .whereType<int>()
+        .toList(growable: false);
+    final averageLatency = latencies.isEmpty
+        ? null
+        : latencies.reduce((a, b) => a + b) ~/ latencies.length;
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: _PageHeading(
+              title: l10n.monitoringTitle,
+              subtitle: l10n.monitoringBody,
             ),
           ),
-        if (monitor.recent.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Text(
-            l10n.recentEvents,
-            style: Theme.of(context).textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          ...monitor.recent.map(
-            (event) => Padding(
-              padding: const EdgeInsets.only(bottom: 9),
-              child: _AgendaRow(
-                color: event.severity == 'error' ? _coral : _violet,
-                title: event.title,
-                when: _formatWhen(context, event.at),
-                detail: event.detail,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(18),
               ),
+              child: TabBar(
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  color: _violet.withValues(alpha: .22),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                tabs: [
+                  Tab(text: l10n.monitorOverviewTab),
+                  Tab(text: l10n.monitorServicesTab),
+                  Tab(text: l10n.monitorEventsTab),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _ScrollPage(
+                  onRefresh: home.refresh,
+                  children: [
+                    _Surface(
+                      color: monitor.offline == 0
+                          ? _mint.withValues(alpha: .12)
+                          : _coral.withValues(alpha: .14),
+                      child: Row(
+                        children: [
+                          _StatusRing(
+                            online: monitor.online,
+                            total: monitor.total,
+                            healthy: monitor.offline == 0,
+                          ),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  monitor.offline == 0
+                                      ? l10n.allQuiet
+                                      : l10n.needsAttention,
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.w900),
+                                ),
+                                Text(
+                                  l10n.onlineCount(
+                                    monitor.online,
+                                    monitor.total,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _MetricCard(
+                            icon: Icons.cloud_done_rounded,
+                            color: _mint,
+                            value: '${monitor.online}',
+                            label: l10n.onlineNow,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _MetricCard(
+                            icon: Icons.cloud_off_rounded,
+                            color: _coral,
+                            value: '${monitor.offline}',
+                            label: l10n.needsAttention,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _MetricCard(
+                            icon: Icons.help_outline_rounded,
+                            color: Colors.blueGrey,
+                            value: '${monitor.unknown}',
+                            label: l10n.unknownState,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _MetricCard(
+                            icon: Icons.speed_rounded,
+                            color: _violet,
+                            value: averageLatency == null
+                                ? '—'
+                                : '$averageLatency ms',
+                            label: l10n.averageLatency,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 110),
+                  ],
+                ),
+                _ScrollPage(
+                  onRefresh: home.refresh,
+                  children: [
+                    if (monitor.services.isEmpty)
+                      _EmptyCard(
+                        icon: Icons.monitor_heart_outlined,
+                        text: l10n.noMonitors,
+                      )
+                    else
+                      _Surface(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: monitor.services
+                              .take(30)
+                              .map(
+                                (service) => ListTile(
+                                  leading: Container(
+                                    width: 11,
+                                    height: 11,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: service.status == 'online'
+                                          ? _mint
+                                          : service.status == 'offline'
+                                          ? _coral
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    service.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: service.checkedAt == null
+                                      ? null
+                                      : Text(
+                                          l10n.lastChecked(
+                                            _formatWhen(
+                                              context,
+                                              service.checkedAt!,
+                                            ),
+                                          ),
+                                        ),
+                                  trailing: Text(
+                                    service.latencyMs == null
+                                        ? '—'
+                                        : '${service.latencyMs} ms',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(growable: false),
+                        ),
+                      ),
+                    const SizedBox(height: 110),
+                  ],
+                ),
+                _ScrollPage(
+                  onRefresh: home.refresh,
+                  children: [
+                    if (monitor.recent.isEmpty)
+                      _EmptyCard(
+                        icon: Icons.history_rounded,
+                        text: l10n.noRecentEvents,
+                      )
+                    else
+                      ...monitor.recent.map(
+                        (event) => Padding(
+                          padding: const EdgeInsets.only(bottom: 9),
+                          child: _AgendaRow(
+                            color: event.severity == 'error' ? _coral : _violet,
+                            title: event.title,
+                            when: _formatWhen(context, event.at),
+                            detail: event.detail,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 110),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
-        const SizedBox(height: 110),
-      ],
+      ),
     );
   }
 }
@@ -2676,10 +2858,14 @@ class _MessageBanner extends StatelessWidget {
     required this.message,
     required this.error,
     required this.onClose,
+    this.actionLabel,
+    this.onAction,
   });
   final String message;
   final bool error;
   final VoidCallback onClose;
+  final String? actionLabel;
+  final VoidCallback? onAction;
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.fromLTRB(20, 4, 20, 4),
@@ -2693,6 +2879,8 @@ class _MessageBanner extends StatelessWidget {
         Expanded(
           child: Text(message, maxLines: 2, overflow: TextOverflow.ellipsis),
         ),
+        if (actionLabel != null && onAction != null)
+          TextButton(onPressed: onAction, child: Text(actionLabel!)),
         IconButton(
           onPressed: onClose,
           icon: const Icon(Icons.close_rounded),

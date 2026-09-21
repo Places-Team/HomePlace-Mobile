@@ -188,6 +188,7 @@ final class FakeClipboardService implements ClipboardService {
 
 final class FakeShareService implements ShareService {
   List<SharedContent> pending = const [];
+  SavedSharedFile? openedFile;
   @override
   bool get isSupported => true;
   @override
@@ -203,11 +204,17 @@ final class FakeShareService implements ShareService {
   Future<String> createTemporaryFilePath() async =>
       '${Directory.systemTemp.path}/homeplace-test-received.bin';
   @override
-  Future<void> saveFilePath(
+  Future<SavedSharedFile> saveFilePath(
     String path,
     String filename,
     String mimeType,
-  ) async {}
+  ) async => SavedSharedFile(
+    location: 'content://homeplace.test/$filename',
+    filename: filename,
+    mimeType: mimeType,
+  );
+  @override
+  Future<void> openSavedFile(SavedSharedFile file) async => openedFile = file;
 }
 
 final class FakeDescriptionProvider implements DeviceDescriptionProvider {

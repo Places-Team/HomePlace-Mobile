@@ -24,12 +24,13 @@ void main() {
       flush: true,
     );
 
-    await channel.invokeMethod<void>('saveFilePath', {
+    final location = await channel.invokeMethod<String>('saveFilePath', {
       'path': temporary.path,
       'filename': 'homeplace-integration-test.jpg',
       'mimeType': 'image/jpeg',
     });
 
+    expect(location, startsWith('content://'));
     expect(await temporary.length(), greaterThan(0));
     await temporary.delete();
   });
@@ -83,12 +84,13 @@ void main() {
       0,
     ], flush: true);
 
-    await channel.invokeMethod<void>('saveFilePath', {
+    final location = await channel.invokeMethod<String>('saveFilePath', {
       'path': temporary.path,
       'filename': 'homeplace-integration-test.zip',
       'mimeType': 'application/zip',
     });
 
+    expect(location, startsWith('content://'));
     expect(await temporary.length(), greaterThan(0));
     await temporary.delete();
   });

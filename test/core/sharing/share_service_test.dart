@@ -85,4 +85,16 @@ void main() {
 
     expect(parsed, hasLength(2));
   });
+
+  test('keeps only the non-sensitive handle needed to reopen a saved file', () {
+    const saved = SavedSharedFile(
+      location: 'content://media/external/downloads/42',
+      filename: 'archive.zip',
+      mimeType: 'application/zip',
+    );
+
+    expect(saved.location, startsWith('content://'));
+    expect(saved.filename, 'archive.zip');
+    expect(saved.mimeType, 'application/zip');
+  });
 }

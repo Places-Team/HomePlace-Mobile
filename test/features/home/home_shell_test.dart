@@ -9,6 +9,8 @@ import 'package:homeplace/features/home/home_shell.dart';
 import 'package:homeplace/l10n/generated/app_localizations.dart';
 import 'package:homeplace/link/mobile_models.dart';
 
+import '../connection/test_doubles.dart';
+
 void main() {
   testWidgets('dashboard tabs fit a compact Android viewport', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
@@ -66,7 +68,7 @@ void main() {
     home.dispose();
   });
 
-  testWidgets('labels household share targets before confirmation', (
+  testWidgets('opens system shares directly on the device chooser', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(420, 820);
@@ -90,8 +92,9 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
-    await tester.tap(find.text('Choose'));
     await tester.pumpAndSettle();
+    expect(find.text('Choose a device'), findsWidgets);
+    expect(find.text('Family tablet'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -104,6 +107,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('This device belongs to Alex'), findsOneWidget);
     expect(find.textContaining('send 2 items'), findsOneWidget);
+    connection.dispose();
+    home.dispose();
+  });
+
+  testWidgets('offers to open a file after it was saved', (tester) async {
+    final sharing = FakeShareService();
+    final connection = ConnectionController(shareService: sharing);
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview()
+      ..notice = 'file:archive.zip'
+      ..lastSavedFile = const SavedSharedFile(
+        location: 'content://homeplace.test/archive.zip',
+        filename: 'archive.zip',
+        mimeType: 'application/zip',
+      );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+
+    expect(sharing.openedFile?.filename, 'archive.zip');
     connection.dispose();
     home.dispose();
   });

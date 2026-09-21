@@ -41,6 +41,40 @@ void main() {
     controller.dispose();
   });
 
+  test(
+    'acknowledges an incoming file only after the platform saves it',
+    () async {
+      final sharing = FakeShareService();
+      final controller =
+          ConnectionController(
+              profileStore: MemoryProfileStore(),
+              notificationService: FakeNotificationService(),
+              shareService: sharing,
+            )
+            ..pendingIncomingShares = const [
+              PendingShareOffer(
+                eventId: 'file-event',
+                kind: SharedContentKind.file,
+                sourceName: 'Laptop',
+                transferId: 'transfer-1',
+                filename: 'archive.zip',
+                mimeType: 'application/zip',
+                size: 22,
+                sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+              ),
+            ];
+
+      final saved = await controller.saveIncomingFile(
+        controller.pendingIncomingShares.single,
+        '/tmp/verified-download',
+      );
+
+      expect(saved?.location, 'content://homeplace.test/archive.zip');
+      expect(controller.pendingIncomingShares, isEmpty);
+      controller.dispose();
+    },
+  );
+
   test('completes pairing and persists the connection securely', () async {
     final link = FakeLinkService();
     final profiles = MemoryProfileStore();

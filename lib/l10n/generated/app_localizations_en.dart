@@ -341,6 +341,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'A live summary of the checks HomePlace already runs.';
 
   @override
+  String get monitorOverviewTab => 'Overview';
+
+  @override
+  String get monitorServicesTab => 'Services';
+
+  @override
+  String get monitorEventsTab => 'Events';
+
+  @override
+  String get unknownState => 'Unknown';
+
+  @override
+  String get averageLatency => 'Average latency';
+
+  @override
+  String lastChecked(String time) {
+    return 'Checked $time';
+  }
+
+  @override
+  String get noRecentEvents => 'No recent monitoring events.';
+
+  @override
   String onlineCount(int online, int total) {
     return '$online of $total online';
   }
@@ -378,6 +401,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadingHome => 'Bringing your HomePlace together…';
+
+  @override
+  String get preparingShare => 'Preparing devices for secure sharing…';
 
   @override
   String get tryAgain => 'Try again';

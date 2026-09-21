@@ -341,6 +341,29 @@ class AppLocalizationsRu extends AppLocalizations {
       'Живая сводка проверок, которые уже выполняет HomePlace.';
 
   @override
+  String get monitorOverviewTab => 'Обзор';
+
+  @override
+  String get monitorServicesTab => 'Сервисы';
+
+  @override
+  String get monitorEventsTab => 'События';
+
+  @override
+  String get unknownState => 'Неизвестно';
+
+  @override
+  String get averageLatency => 'Средняя задержка';
+
+  @override
+  String lastChecked(String time) {
+    return 'Проверено: $time';
+  }
+
+  @override
+  String get noRecentEvents => 'Недавних событий мониторинга нет.';
+
+  @override
   String onlineCount(int online, int total) {
     return 'В сети $online из $total';
   }
@@ -378,6 +401,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get loadingHome => 'Собираем ваш HomePlace…';
+
+  @override
+  String get preparingShare => 'Готовим устройства для безопасной отправки…';
 
   @override
   String get tryAgain => 'Повторить';

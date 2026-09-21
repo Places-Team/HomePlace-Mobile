@@ -6,6 +6,18 @@ import '../../link/link_client.dart';
 
 enum SharedContentKind { text, url, file }
 
+final class SavedSharedFile {
+  const SavedSharedFile({
+    required this.location,
+    required this.filename,
+    required this.mimeType,
+  });
+
+  final String location;
+  final String filename;
+  final String mimeType;
+}
+
 final class SharedContent {
   const SharedContent({
     required this.kind,
@@ -91,7 +103,12 @@ abstract interface class ShareService {
   Future<void> initialize(void Function(SharedContent content) onShare);
   Future<void> openUrl(String url);
   Future<String> createTemporaryFilePath();
-  Future<void> saveFilePath(String path, String filename, String mimeType);
+  Future<SavedSharedFile> saveFilePath(
+    String path,
+    String filename,
+    String mimeType,
+  );
+  Future<void> openSavedFile(SavedSharedFile file);
 }
 
 final class PlatformShareService implements ShareService {
@@ -134,10 +151,33 @@ final class PlatformShareService implements ShareService {
   }
 
   @override
-  Future<void> saveFilePath(String path, String filename, String mimeType) =>
-      _channel.invokeMethod<void>('saveFilePath', {
-        'path': path,
-        'filename': filename,
-        'mimeType': mimeType,
+  Future<SavedSharedFile> saveFilePath(
+    String path,
+    String filename,
+    String mimeType,
+  ) async {
+    final location = await _channel.invokeMethod<String>('saveFilePath', {
+      'path': path,
+      'filename': filename,
+      'mimeType': mimeType,
+    });
+    if (location == null || location.isEmpty) {
+      throw PlatformException(
+        code: 'save_failed',
+        message: 'The saved file location is unavailable.',
+      );
+    }
+    return SavedSharedFile(
+      location: location,
+      filename: filename,
+      mimeType: mimeType,
+    );
+  }
+
+  @override
+  Future<void> openSavedFile(SavedSharedFile file) =>
+      _channel.invokeMethod<void>('openSavedFile', {
+        'location': file.location,
+        'mimeType': file.mimeType,
       });
 }
