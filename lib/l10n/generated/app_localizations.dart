@@ -722,17 +722,113 @@ abstract class AppLocalizations {
   /// **'Services'**
   String get monitorServicesTab;
 
+  /// No description provided for @monitorContainersTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Containers'**
+  String get monitorContainersTab;
+
   /// No description provided for @monitorEventsTab.
   ///
   /// In en, this message translates to:
   /// **'Events'**
   String get monitorEventsTab;
 
+  /// No description provided for @monitoredChecksExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability checks, not Docker containers.'**
+  String get monitoredChecksExplanation;
+
+  /// No description provided for @containerSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Docker containers'**
+  String get containerSummary;
+
+  /// No description provided for @totalContainers.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalContainers;
+
+  /// No description provided for @runningContainers.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get runningContainers;
+
+  /// No description provided for @stoppedContainers.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get stoppedContainers;
+
+  /// No description provided for @containerProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'Problems'**
+  String get containerProblems;
+
+  /// No description provided for @noContainers.
+  ///
+  /// In en, this message translates to:
+  /// **'No Docker containers are available from the configured hosts.'**
+  String get noContainers;
+
+  /// No description provided for @containerRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get containerRunning;
+
+  /// No description provided for @containerExited.
+  ///
+  /// In en, this message translates to:
+  /// **'Exited'**
+  String get containerExited;
+
+  /// No description provided for @containerPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get containerPaused;
+
+  /// No description provided for @containerRestarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting'**
+  String get containerRestarting;
+
+  /// No description provided for @containerDead.
+  ///
+  /// In en, this message translates to:
+  /// **'Dead'**
+  String get containerDead;
+
+  /// No description provided for @containerCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get containerCreated;
+
   /// No description provided for @unknownState.
   ///
   /// In en, this message translates to:
   /// **'Unknown'**
   String get unknownState;
+
+  /// No description provided for @serviceOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get serviceOnline;
+
+  /// No description provided for @serviceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get serviceOffline;
 
   /// No description provided for @averageLatency.
   ///
@@ -835,6 +931,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get tryAgain;
+
+  /// No description provided for @errorDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Something needs attention'**
+  String get errorDetails;
+
+  /// No description provided for @dismissError.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismissError;
 
   /// No description provided for @permissionsRequired.
   ///

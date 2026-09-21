@@ -24,7 +24,8 @@ The first Flutter application slice is implemented with Android as the primary v
 - confirmed Android downloads saved through MediaStore with an immediate system Open action and one-time server acknowledgement;
 - a dedicated transfer center for all pending incoming offers, queued outgoing items, retryable failures, and encrypted per-profile history;
 - exactly-once Android Share Sheet intake for up to ten items and 500 MB per batch, opening directly on device selection and confirmation;
-- a three-view Control area for health summary, per-service checks, latency, and recent monitoring events;
+- a four-view Control area that separates monitored service checks from Docker containers and shows health, host, state, latency, and recent events;
+- non-blocking error indicators in the top bar with details available on demand;
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
 - encrypted per-profile notification history and visible background-check diagnostics;
 - opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and foreground confirmation;

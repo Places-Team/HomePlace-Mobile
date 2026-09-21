@@ -347,10 +347,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monitorServicesTab => 'Services';
 
   @override
+  String get monitorContainersTab => 'Containers';
+
+  @override
   String get monitorEventsTab => 'Events';
 
   @override
+  String get monitoredChecksExplanation =>
+      'Availability checks, not Docker containers.';
+
+  @override
+  String get containerSummary => 'Docker containers';
+
+  @override
+  String get totalContainers => 'Total';
+
+  @override
+  String get runningContainers => 'Running';
+
+  @override
+  String get stoppedContainers => 'Stopped';
+
+  @override
+  String get containerProblems => 'Problems';
+
+  @override
+  String get noContainers =>
+      'No Docker containers are available from the configured hosts.';
+
+  @override
+  String get containerRunning => 'Running';
+
+  @override
+  String get containerExited => 'Exited';
+
+  @override
+  String get containerPaused => 'Paused';
+
+  @override
+  String get containerRestarting => 'Restarting';
+
+  @override
+  String get containerDead => 'Dead';
+
+  @override
+  String get containerCreated => 'Created';
+
+  @override
   String get unknownState => 'Unknown';
+
+  @override
+  String get serviceOnline => 'Online';
+
+  @override
+  String get serviceOffline => 'Offline';
 
   @override
   String get averageLatency => 'Average latency';
@@ -407,6 +457,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tryAgain => 'Try again';
+
+  @override
+  String get errorDetails => 'Something needs attention';
+
+  @override
+  String get dismissError => 'Dismiss';
 
   @override
   String get permissionsRequired =>

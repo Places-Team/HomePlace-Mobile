@@ -196,6 +196,7 @@ final class MobileEvent {
     required this.severity,
     required this.title,
     required this.at,
+    this.count = 1,
     this.detail,
   });
   factory MobileEvent.fromJson(Map<String, dynamic> json) => MobileEvent(
@@ -205,6 +206,7 @@ final class MobileEvent {
     title: json['title'] as String? ?? '',
     detail: json['detail'] as String?,
     at: DateTime.parse(json['at'] as String),
+    count: (json['count'] as num?)?.round() ?? 1,
   );
   final String id;
   final String type;
@@ -212,6 +214,65 @@ final class MobileEvent {
   final String title;
   final String? detail;
   final DateTime at;
+  final int count;
+}
+
+final class MobileContainerStatus {
+  const MobileContainerStatus({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.state,
+    required this.status,
+    required this.hostKey,
+    required this.hostLabel,
+    this.health,
+  });
+  factory MobileContainerStatus.fromJson(Map<String, dynamic> json) =>
+      MobileContainerStatus(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        image: json['image'] as String? ?? '',
+        state: json['state'] as String? ?? 'unknown',
+        status: json['status'] as String? ?? '',
+        health: json['health'] as String?,
+        hostKey: json['hostKey'] as String? ?? '',
+        hostLabel: json['hostLabel'] as String? ?? '',
+      );
+  final String id;
+  final String name;
+  final String image;
+  final String state;
+  final String status;
+  final String? health;
+  final String hostKey;
+  final String hostLabel;
+}
+
+final class MobileContainers {
+  const MobileContainers({
+    required this.total,
+    required this.running,
+    required this.stopped,
+    required this.problems,
+    required this.items,
+  });
+  factory MobileContainers.fromJson(Map<String, dynamic> json) =>
+      MobileContainers(
+        total: (json['total'] as num?)?.round() ?? 0,
+        running: (json['running'] as num?)?.round() ?? 0,
+        stopped: (json['stopped'] as num?)?.round() ?? 0,
+        problems: (json['problems'] as num?)?.round() ?? 0,
+        items: _maps(json['items'])
+            .map(MobileContainerStatus.fromJson)
+            .where((item) => item.id.isNotEmpty && item.name.isNotEmpty)
+            .toList(growable: false),
+      );
+  final int total;
+  final int running;
+  final int stopped;
+  final int problems;
+  final List<MobileContainerStatus> items;
 }
 
 final class MobileMonitoring {
@@ -222,6 +283,7 @@ final class MobileMonitoring {
     required this.unknown,
     required this.services,
     required this.recent,
+    required this.containers,
   });
   factory MobileMonitoring.fromJson(Map<String, dynamic> json) =>
       MobileMonitoring(
@@ -235,6 +297,9 @@ final class MobileMonitoring {
         recent: _maps(json['recent'])
             .map(MobileEvent.fromJson)
             .toList(growable: false),
+        containers: MobileContainers.fromJson(
+          json['containers'] as Map<String, dynamic>? ?? const {},
+        ),
       );
   final int total;
   final int online;
@@ -242,6 +307,7 @@ final class MobileMonitoring {
   final int unknown;
   final List<MobileServiceStatus> services;
   final List<MobileEvent> recent;
+  final MobileContainers containers;
 }
 
 final class MobileTelegram {

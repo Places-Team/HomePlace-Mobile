@@ -22,6 +22,11 @@ Approved devices may also use scoped mobile endpoints:
 
 The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal. Clipboard offers expire after five minutes. Addressed share events use `share.offer`, expire after 30 minutes so they survive a delayed Android background check, and are deleted when accepted or declined. The server includes a derived `sameAccount` boolean in share offers; clients must not infer account ownership from device names or local state. Android advertises `share.send`, `text.receive`, `url.open`, and `file.receive`; iOS does not advertise them until its Share Extension and receiving UI are implemented.
 
+The overview monitoring object keeps availability-checked dashboard services and
+Docker containers separate. `monitoring.total` is the number of configured
+availability checks, not the number of containers. `monitoring.containers`
+provides a read-only bounded list with host, image, runtime state, and health.
+
 The server ID returned by pairing and heartbeat must match the ID previewed before pairing. The client rejects incompatible protocol ranges and does not infer unavailable features.
 
 `docs/fixtures/link-info-v1.json` is a mobile test fixture. Update it and the Flutter contract tests whenever the canonical server response changes.

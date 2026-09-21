@@ -347,10 +347,60 @@ class AppLocalizationsRu extends AppLocalizations {
   String get monitorServicesTab => 'Сервисы';
 
   @override
+  String get monitorContainersTab => 'Контейнеры';
+
+  @override
   String get monitorEventsTab => 'События';
 
   @override
+  String get monitoredChecksExplanation =>
+      'Это проверки доступности, а не Docker-контейнеры.';
+
+  @override
+  String get containerSummary => 'Docker-контейнеры';
+
+  @override
+  String get totalContainers => 'Всего';
+
+  @override
+  String get runningContainers => 'Запущено';
+
+  @override
+  String get stoppedContainers => 'Остановлено';
+
+  @override
+  String get containerProblems => 'Проблемы';
+
+  @override
+  String get noContainers =>
+      'На настроенных Docker-хостах контейнеры не найдены.';
+
+  @override
+  String get containerRunning => 'Запущен';
+
+  @override
+  String get containerExited => 'Остановлен';
+
+  @override
+  String get containerPaused => 'На паузе';
+
+  @override
+  String get containerRestarting => 'Перезапускается';
+
+  @override
+  String get containerDead => 'Недоступен';
+
+  @override
+  String get containerCreated => 'Создан';
+
+  @override
   String get unknownState => 'Неизвестно';
+
+  @override
+  String get serviceOnline => 'В сети';
+
+  @override
+  String get serviceOffline => 'Не в сети';
 
   @override
   String get averageLatency => 'Средняя задержка';
@@ -407,6 +457,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tryAgain => 'Повторить';
+
+  @override
+  String get errorDetails => 'Требуется внимание';
+
+  @override
+  String get dismissError => 'Скрыть';
 
   @override
   String get permissionsRequired =>

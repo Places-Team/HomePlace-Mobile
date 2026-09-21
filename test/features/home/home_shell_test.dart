@@ -64,6 +64,14 @@ void main() {
       expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
+    await tester.tap(find.text('Monitor'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Availability checks'), findsOneWidget);
+    tester.view.physicalSize = const Size(800, 640);
+    await tester.pump();
+    DefaultTabController.of(tester.element(find.byType(TabBar))).animateTo(1);
+    await tester.pumpAndSettle();
+    expect(find.text('Stopped'), findsOneWidget);
     connection.dispose();
     home.dispose();
   });
@@ -136,6 +144,32 @@ void main() {
     await tester.pump();
 
     expect(sharing.openedFile?.filename, 'archive.zip');
+    connection.dispose();
+    home.dispose();
+  });
+
+  testWidgets('keeps errors behind the top attention indicator', (
+    tester,
+  ) async {
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview()
+      ..error = 'HomePlace could not refresh securely.';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+
+    expect(find.text('HomePlace could not refresh securely.'), findsNothing);
+    await tester.tap(find.byIcon(Icons.error_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('HomePlace could not refresh securely.'), findsOneWidget);
     connection.dispose();
     home.dispose();
   });
@@ -353,6 +387,33 @@ MobileOverview _overview() {
         },
       ],
       'recent': [],
+      'containers': {
+        'total': 2,
+        'running': 1,
+        'stopped': 1,
+        'problems': 1,
+        'items': [
+          {
+            'id': 'main:homeplace',
+            'name': 'homeplace',
+            'image': 'homeplace:latest',
+            'state': 'running',
+            'status': 'Up 2 hours',
+            'health': 'healthy',
+            'hostKey': 'main',
+            'hostLabel': 'Server',
+          },
+          {
+            'id': 'main:worker',
+            'name': 'worker',
+            'image': 'worker:latest',
+            'state': 'restarting',
+            'status': 'Restarting',
+            'hostKey': 'main',
+            'hostLabel': 'Server',
+          },
+        ],
+      },
     },
     'shareTargets': [
       {

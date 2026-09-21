@@ -39,6 +39,24 @@ void main() {
         'unknown': 0,
         'services': [],
         'recent': [],
+        'containers': {
+          'total': 2,
+          'running': 1,
+          'stopped': 1,
+          'problems': 1,
+          'items': [
+            {
+              'id': 'main:web',
+              'name': 'web',
+              'image': 'homeplace:latest',
+              'state': 'running',
+              'status': 'Up 2 hours',
+              'health': 'healthy',
+              'hostKey': 'main',
+              'hostLabel': 'Server',
+            },
+          ],
+        },
       },
       'shareTargets': [
         {
@@ -61,6 +79,8 @@ void main() {
     expect(overview.calendar.events.single.summary, 'Dinner');
     expect(overview.telegram.enabled, isTrue);
     expect(overview.monitoring.offline, 1);
+    expect(overview.monitoring.containers.total, 2);
+    expect(overview.monitoring.containers.items.single.name, 'web');
     expect(overview.shareTargets.single.name, 'Family tablet');
     expect(overview.shareTargets.single.supportsFile, isTrue);
     expect(overview.shareTargets.single.ownerName, 'Olmae family');

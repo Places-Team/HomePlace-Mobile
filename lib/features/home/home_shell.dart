@@ -130,20 +130,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     serverName:
                         widget.connection.profile?.serverName ?? l10n.appName,
                     refreshing: home.refreshing,
+                    hasError: home.error != null,
                     onRefresh: home.refresh,
+                    onError: home.error == null
+                        ? null
+                        : () => _showCurrentError(context, l10n),
                     onSettings: () => _showSettings(context, l10n),
                   ),
-                  if (home.error case final message?)
-                    _MessageBanner(
-                      message: message == 'clipboard_empty'
-                          ? l10n.clipboardEmpty
-                          : message == 'clipboard_no_devices'
-                          ? l10n.clipboardNoDevices
-                          : message,
-                      error: true,
-                      onClose: home.clearMessage,
-                    )
-                  else if (home.notice case final notice?)
+                  if (home.notice case final notice?)
                     _MessageBanner(
                       message: notice == 'telegram'
                           ? l10n.telegramSent
@@ -226,6 +220,38 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       );
     },
   );
+
+  Future<void> _showCurrentError(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final raw = home.error;
+    if (raw == null) return;
+    final message = raw == 'clipboard_empty'
+        ? l10n.clipboardEmpty
+        : raw == 'clipboard_no_devices'
+        ? l10n.clipboardNoDevices
+        : raw;
+    final dismiss = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.error_outline_rounded, color: _coral),
+        title: Text(l10n.errorDetails),
+        content: SelectableText(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.close),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.dismissError),
+          ),
+        ],
+      ),
+    );
+    if (dismiss == true) home.clearMessage();
+  }
 
   void _routeOutgoingShare(
     MobileOverview overview,
@@ -749,12 +775,16 @@ class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.serverName,
     required this.refreshing,
+    required this.hasError,
     required this.onRefresh,
+    required this.onError,
     required this.onSettings,
   });
   final String serverName;
   final bool refreshing;
+  final bool hasError;
   final VoidCallback onRefresh;
+  final VoidCallback? onError;
   final VoidCallback onSettings;
 
   @override
@@ -793,6 +823,16 @@ class _TopBar extends StatelessWidget {
             ],
           ),
         ),
+        if (hasError)
+          IconButton.filledTonal(
+            tooltip: AppLocalizations.of(context).errorDetails,
+            onPressed: onError,
+            style: IconButton.styleFrom(
+              foregroundColor: _coral,
+              backgroundColor: _coral.withValues(alpha: .14),
+            ),
+            icon: const Icon(Icons.error_outline_rounded),
+          ),
         IconButton(
           tooltip: AppLocalizations.of(context).refresh,
           onPressed: refreshing ? null : onRefresh,
@@ -2209,6 +2249,7 @@ class _MonitorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final monitor = overview.monitoring;
+    final containers = monitor.containers;
     final latencies = monitor.services
         .map((service) => service.latencyMs)
         .whereType<int>()
@@ -2217,7 +2258,7 @@ class _MonitorPage extends StatelessWidget {
         ? null
         : latencies.reduce((a, b) => a + b) ~/ latencies.length;
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -2236,6 +2277,8 @@ class _MonitorPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
               ),
               child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 dividerColor: Colors.transparent,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
@@ -2244,6 +2287,7 @@ class _MonitorPage extends StatelessWidget {
                 ),
                 tabs: [
                   Tab(text: l10n.monitorOverviewTab),
+                  Tab(text: l10n.monitorContainersTab),
                   Tab(text: l10n.monitorServicesTab),
                   Tab(text: l10n.monitorEventsTab),
                 ],
@@ -2284,6 +2328,11 @@ class _MonitorPage extends StatelessWidget {
                                     monitor.online,
                                     monitor.total,
                                   ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  l10n.monitoredChecksExplanation,
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
@@ -2337,6 +2386,138 @@ class _MonitorPage extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    _Surface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.containerSummary,
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _CompactMetric(
+                                value: '${containers.total}',
+                                label: l10n.totalContainers,
+                                color: _violet,
+                              ),
+                              _CompactMetric(
+                                value: '${containers.running}',
+                                label: l10n.runningContainers,
+                                color: _mint,
+                              ),
+                              _CompactMetric(
+                                value: '${containers.problems}',
+                                label: l10n.containerProblems,
+                                color: containers.problems > 0 ? _coral : _mint,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 110),
+                  ],
+                ),
+                _ScrollPage(
+                  onRefresh: home.refresh,
+                  children: [
+                    if (containers.items.isEmpty)
+                      _EmptyCard(
+                        icon: Icons.developer_board_outlined,
+                        text: l10n.noContainers,
+                      )
+                    else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MetricCard(
+                              icon: Icons.play_circle_outline_rounded,
+                              color: _mint,
+                              value: '${containers.running}',
+                              label: l10n.runningContainers,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _MetricCard(
+                              icon: Icons.stop_circle_outlined,
+                              color: containers.stopped > 0
+                                  ? _coral
+                                  : Colors.blueGrey,
+                              value: '${containers.stopped}',
+                              label: l10n.stoppedContainers,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _Surface(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: containers.items
+                              .map((container) {
+                                final problem =
+                                    container.state == 'restarting' ||
+                                    container.state == 'dead' ||
+                                    container.health == 'unhealthy';
+                                final running = container.state == 'running';
+                                return ListTile(
+                                  leading: Container(
+                                    width: 11,
+                                    height: 11,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: problem
+                                          ? _coral
+                                          : running
+                                          ? _mint
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    container.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    '${container.hostLabel} · ${container.image}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        _containerState(l10n, container.state),
+                                        style: TextStyle(
+                                          color: problem
+                                              ? _coral
+                                              : running
+                                              ? _mint
+                                              : null,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      if (container.health != null)
+                                        Text(
+                                          container.health!,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall,
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              })
+                              .toList(growable: false),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 110),
                   ],
                 ),
@@ -2383,13 +2564,25 @@ class _MonitorPage extends StatelessWidget {
                                             ),
                                           ),
                                         ),
-                                  trailing: Text(
-                                    service.latencyMs == null
-                                        ? '—'
-                                        : '${service.latencyMs} ms',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                  trailing: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        _serviceState(l10n, service.status),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      Text(
+                                        service.latencyMs == null
+                                            ? '—'
+                                            : '${service.latencyMs} ms',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               )
@@ -2413,7 +2606,9 @@ class _MonitorPage extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 9),
                           child: _AgendaRow(
                             color: event.severity == 'error' ? _coral : _violet,
-                            title: event.title,
+                            title: event.count > 1
+                                ? '${event.title} ×${event.count}'
+                                : event.title,
                             when: _formatWhen(context, event.at),
                             detail: event.detail,
                           ),
@@ -2634,6 +2829,37 @@ class _MetricCard extends StatelessWidget {
               ?.copyWith(fontWeight: FontWeight.w900),
         ),
         Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ],
+    ),
+  );
+}
+
+class _CompactMetric extends StatelessWidget {
+  const _CompactMetric({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      children: [
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.w900),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
       ],
     ),
   );
@@ -3382,6 +3608,22 @@ String _customRepeatLabel(AppLocalizations l10n, String repeat) {
   };
   return l10n.repeatInterval(int.parse(match.group(1)!), unit);
 }
+
+String _containerState(AppLocalizations l10n, String state) => switch (state) {
+  'running' => l10n.containerRunning,
+  'exited' => l10n.containerExited,
+  'paused' => l10n.containerPaused,
+  'restarting' => l10n.containerRestarting,
+  'dead' => l10n.containerDead,
+  'created' => l10n.containerCreated,
+  _ => state,
+};
+
+String _serviceState(AppLocalizations l10n, String state) => switch (state) {
+  'online' => l10n.serviceOnline,
+  'offline' => l10n.serviceOffline,
+  _ => l10n.unknownState,
+};
 
 DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
 

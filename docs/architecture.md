@@ -24,7 +24,12 @@ After pairing, `HomeController` reads the authenticated mobile overview and refr
 
 On Android, `ACTION_SEND` and `ACTION_SEND_MULTIPLE` intents are reduced to bounded text, HTTP(S) URLs, or private cache files. A batch contains at most ten items and 500 MB total. Shared Dart UI queues every item in the transfer center, moves directly to Transfers, filters the server-provided authorized device list by real receiver capability, identifies household targets, and presents explicit named-recipient selection and confirmation before upload. Successfully sent items leave the queue; a failed item and everything after it remain available for retry. The receiving device accepts or declines each server offer from the transfer center or private notification actions. Files up to 500 MB are streamed in both directions. Android creates the destination temporary file inside the application's canonical cache directory before Flutter downloads into it; exact size and SHA-256 are verified before the Android host copies it to `Downloads/HomePlace` and returns a scoped `content://` handle for the Open action. The event is acknowledged only after that save succeeds. An opt-in foreground-only seamless path can request this acceptance automatically only when the canonical server marks both devices as belonging to the same account.
 
-The Control screen splits the canonical dashboard monitoring response into summary, service, and event views. It derives aggregate counts and average latency only from the current server response and does not create a competing monitoring data source.
+The Control screen splits the canonical dashboard response into summary,
+container, monitored-service, and event views. Availability-check totals never
+claim to be container totals. Container state and health come from the server's
+configured read-only Docker endpoints. The client derives aggregate counts and
+average latency only from the current response and does not create a competing
+monitoring data source.
 
 ## Native boundaries
 
