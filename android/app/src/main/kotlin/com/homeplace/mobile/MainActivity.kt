@@ -26,7 +26,8 @@ import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private var shareChannel: MethodChannel? = null
-    private var pendingShare: Map<String, Any>? = null
+    private val pendingShares = ArrayDeque<Map<String, Any>>()
+    private var shareReceiverReady = false
     private val shareExecutor = Executors.newSingleThreadExecutor()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -66,7 +67,11 @@ class MainActivity : FlutterActivity() {
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHARE_CHANNEL).also { channel ->
             channel.setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "takePending" -> result.success(pendingShare.also { pendingShare = null })
+                    "takePending" -> {
+                        shareReceiverReady = true
+                        result.success(pendingShares.toList())
+                        pendingShares.clear()
+                    }
                     "openUrl" -> {
                         val value = call.argument<String>("url")
                         if (value == null || !isSafeWebUrl(value)) {
@@ -141,8 +146,11 @@ class MainActivity : FlutterActivity() {
 
     private fun deliverShare(content: Map<String, Any>?) {
         if (content == null) return
-        pendingShare = content
-        shareChannel?.invokeMethod("shareReceived", content)
+        if (shareReceiverReady) {
+            shareChannel?.invokeMethod("shareReceived", content)
+        } else {
+            pendingShares.addLast(content)
+        }
     }
 
     private fun captureText(incoming: Intent): Map<String, Any>? {
@@ -246,6 +254,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        shareReceiverReady = false
         shareExecutor.shutdownNow()
         super.onDestroy()
     }

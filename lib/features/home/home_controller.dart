@@ -375,6 +375,7 @@ final class HomeController extends ChangeNotifier {
     MobileShareTarget target,
     SharedContent content,
   ) async {
+    if (busyId == 'share') return false;
     final session = await sessionProvider();
     if (session == null) return false;
     busyId = 'share';

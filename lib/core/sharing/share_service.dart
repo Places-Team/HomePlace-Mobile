@@ -66,6 +66,24 @@ final class SharedContent {
         return null;
     }
   }
+
+  static List<SharedContent> listFromPlatform(Object? raw) {
+    final values = raw is List ? raw : [raw];
+    final seen = <String>{};
+    return values
+        .expand((value) {
+          final content = fromPlatform(value);
+          if (content == null) return const <SharedContent>[];
+          final identity = switch (content.kind) {
+            SharedContentKind.file =>
+              'file:${content.path}:${content.filename}:${content.size}',
+            SharedContentKind.url => 'url:${content.value}',
+            SharedContentKind.text => 'text:${content.value}',
+          };
+          return seen.add(identity) ? [content] : const <SharedContent>[];
+        })
+        .toList(growable: false);
+  }
 }
 
 abstract interface class ShareService {
@@ -88,14 +106,15 @@ final class PlatformShareService implements ShareService {
     if (!isSupported) return;
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'shareReceived') {
-        final content = SharedContent.fromPlatform(call.arguments);
-        if (content != null) onShare(content);
+        for (final content in SharedContent.listFromPlatform(call.arguments)) {
+          onShare(content);
+        }
       }
     });
-    final content = SharedContent.fromPlatform(
-      await _channel.invokeMethod<Object?>('takePending'),
-    );
-    if (content != null) onShare(content);
+    final pending = await _channel.invokeMethod<Object?>('takePending');
+    for (final content in SharedContent.listFromPlatform(pending)) {
+      onShare(content);
+    }
   }
 
   @override

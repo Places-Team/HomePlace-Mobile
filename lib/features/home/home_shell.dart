@@ -41,6 +41,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late final bool ownsHome = widget.homeController == null;
   late final PageController pages = PageController();
   final Set<String> _automaticIncoming = {};
+  bool _sendingShareBatch = false;
   var tab = 0;
 
   @override
@@ -553,6 +554,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           : Icons.group_rounded,
                     ),
                     onTap: () async {
+                      if (_sendingShareBatch) return;
                       final confirmed = await showDialog<bool>(
                         context: sheetContext,
                         builder: (dialogContext) => AlertDialog(
@@ -590,16 +592,29 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           ],
                         ),
                       );
-                      if (confirmed != true || !mounted) return;
-                      for (final content in contents) {
-                        final sent = await home.sendSharedContent(
-                          target,
-                          content,
-                        );
-                        if (!sent) break;
-                        widget.connection.clearOutgoingShare(content);
+                      if (confirmed != true || !mounted || _sendingShareBatch) {
+                        return;
                       }
-                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      _sendingShareBatch = true;
+                      var allSent = true;
+                      try {
+                        for (final content in contents) {
+                          final sent = await home.sendSharedContent(
+                            target,
+                            content,
+                          );
+                          if (!sent) {
+                            allSent = false;
+                            break;
+                          }
+                          widget.connection.clearOutgoingShare(content);
+                        }
+                      } finally {
+                        _sendingShareBatch = false;
+                      }
+                      if (allSent && sheetContext.mounted) {
+                        Navigator.pop(sheetContext);
+                      }
                     },
                   ),
                 ),

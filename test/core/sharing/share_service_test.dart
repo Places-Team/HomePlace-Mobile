@@ -51,4 +51,38 @@ void main() {
       isNull,
     );
   });
+
+  test('deduplicates the same pending Android share delivery', () {
+    final pending = {
+      'type': 'file',
+      'path': '/private/cache/photo.jpg',
+      'filename': 'photo.jpg',
+      'mimeType': 'image/jpeg',
+      'size': 2048,
+    };
+
+    final parsed = SharedContent.listFromPlatform([pending, pending]);
+
+    expect(parsed, hasLength(1));
+    expect(parsed.single.filename, 'photo.jpg');
+  });
+
+  test('keeps distinct files in one Android share batch', () {
+    final parsed = SharedContent.listFromPlatform([
+      {
+        'type': 'file',
+        'path': '/private/cache/one.bin',
+        'filename': 'photo.jpg',
+        'size': 2048,
+      },
+      {
+        'type': 'file',
+        'path': '/private/cache/two.bin',
+        'filename': 'photo.jpg',
+        'size': 2048,
+      },
+    ]);
+
+    expect(parsed, hasLength(2));
+  });
 }
