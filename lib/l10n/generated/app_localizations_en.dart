@@ -760,14 +760,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backgroundIncomingOffersBody =>
-      'Check for clipboard, text, links and files while HomePlace is closed. Tap a private notification to review and confirm. Clipboard sending still requires the app open.';
+      'Check for clipboard, text, links and files while HomePlace is closed. Accepting a file queues a verified background download; text, links and clipboard still open HomePlace for confirmation.';
 
   @override
   String get seamlessOwnAccountTransfers => 'Seamless files from my devices';
 
   @override
   String get seamlessOwnAccountTransfersBody =>
-      'Automatically accept and save verified files sent by another device on your account while HomePlace is open. Family devices, links, text and clipboard still require confirmation.';
+      'Automatically accept and save verified files sent by another device on your account, including during enabled background checks. Family devices, links, text and clipboard still require confirmation.';
 
   @override
   String get notificationPermissionRequired =>

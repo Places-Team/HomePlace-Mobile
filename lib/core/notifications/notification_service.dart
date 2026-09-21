@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../background/background_tasks.dart';
+
 enum IncomingNotificationActionKind { accept, decline }
 
 final class IncomingNotificationAction {
@@ -21,6 +23,7 @@ final class IncomingNotificationAction {
 abstract interface class NotificationService {
   Future<void> initialize();
   Future<List<IncomingNotificationAction>> takeIncomingActions();
+  Future<void> restoreIncomingActions(List<IncomingNotificationAction> actions);
   Future<bool> requestPermission();
   Future<bool> isAvailable();
   Future<void> show(String id, String title, String body);
@@ -30,27 +33,33 @@ abstract interface class NotificationService {
     String title,
     String body,
     String acceptLabel,
-    String declineLabel,
-  );
+    String declineLabel, {
+    required bool acceptInBackground,
+  });
 }
 
 @pragma('vm:entry-point')
 void homePlaceNotificationResponse(NotificationResponse response) async {
   DartPluginRegistrant.ensureInitialized();
-  await _IncomingNotificationActionStore.record(response);
+  final processInBackground = await _IncomingNotificationActionStore.record(
+    response,
+  );
+  if (processInBackground) await scheduleIncomingActionProcessing();
 }
 
 final class _IncomingNotificationActionStore {
   static const _key = 'homeplace.incomingNotificationActions';
 
-  static Future<void> record(NotificationResponse response) async {
+  static Future<bool> record(NotificationResponse response) async {
     final kind = switch (response.actionId) {
       'accept_incoming' => IncomingNotificationActionKind.accept,
       'decline_incoming' => IncomingNotificationActionKind.decline,
       _ => null,
     };
     final parts = response.payload?.split('|') ?? const [];
-    if (kind == null || parts.length != 3 || parts.first != 'incoming') return;
+    if (kind == null || parts.length != 4 || parts.first != 'incoming') {
+      return false;
+    }
     final preferences = await SharedPreferences.getInstance();
     final entry = '${kind.name}|${parts[1]}|${parts[2]}';
     final current = preferences.getStringList(_key) ?? const [];
@@ -62,6 +71,8 @@ final class _IncomingNotificationActionStore {
       _key,
       updated.length <= 20 ? updated : updated.sublist(updated.length - 20),
     );
+    return kind == IncomingNotificationActionKind.decline ||
+        parts[3] == 'background';
   }
 
   static Future<List<IncomingNotificationAction>> take() async {
@@ -87,6 +98,25 @@ final class _IncomingNotificationActionStore {
           ];
         })
         .toList(growable: false);
+  }
+
+  static Future<void> restore(List<IncomingNotificationAction> actions) async {
+    if (actions.isEmpty) return;
+    final preferences = await SharedPreferences.getInstance();
+    final current = preferences.getStringList(_key) ?? const [];
+    final restored = [
+      ...current.where(
+        (entry) =>
+            !actions.any((action) => entry.split('|').last == action.eventId),
+      ),
+      ...actions.map(
+        (action) => '${action.kind.name}|${action.serverId}|${action.eventId}',
+      ),
+    ];
+    await preferences.setStringList(
+      _key,
+      restored.length <= 20 ? restored : restored.sublist(restored.length - 20),
+    );
   }
 }
 
@@ -116,6 +146,11 @@ final class LocalNotificationService implements NotificationService {
   @override
   Future<List<IncomingNotificationAction>> takeIncomingActions() =>
       _IncomingNotificationActionStore.take();
+
+  @override
+  Future<void> restoreIncomingActions(
+    List<IncomingNotificationAction> actions,
+  ) => _IncomingNotificationActionStore.restore(actions);
 
   @override
   Future<bool> requestPermission() async {
@@ -175,8 +210,9 @@ final class LocalNotificationService implements NotificationService {
     String title,
     String body,
     String acceptLabel,
-    String declineLabel,
-  ) => _plugin.show(
+    String declineLabel, {
+    required bool acceptInBackground,
+  }) => _plugin.show(
     id.hashCode & 0x7fffffff,
     title,
     body,
@@ -194,7 +230,7 @@ final class LocalNotificationService implements NotificationService {
           AndroidNotificationAction(
             'accept_incoming',
             acceptLabel,
-            showsUserInterface: true,
+            showsUserInterface: !acceptInBackground,
             cancelNotification: true,
           ),
           AndroidNotificationAction(
@@ -206,6 +242,7 @@ final class LocalNotificationService implements NotificationService {
         ],
       ),
     ),
-    payload: 'incoming|$serverId|$id',
+    payload:
+        'incoming|$serverId|$id|${acceptInBackground ? 'background' : 'foreground'}',
   );
 }

@@ -7,6 +7,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -30,6 +31,28 @@ class MainActivity : FlutterActivity() {
     private val pendingShares = ArrayDeque<Map<String, Any>>()
     private var shareReceiverReady = false
     private val shareExecutor = Executors.newSingleThreadExecutor()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        preferHighestRefreshRate()
+    }
+
+    private fun preferHighestRefreshRate() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val activeDisplay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display
+        } else {
+            @Suppress("DEPRECATION") windowManager.defaultDisplay
+        } ?: return
+        val currentMode = activeDisplay.mode
+        val preferred = activeDisplay.supportedModes
+            .filter { it.physicalWidth == currentMode.physicalWidth && it.physicalHeight == currentMode.physicalHeight }
+            .maxByOrNull { it.refreshRate }
+            ?: return
+        window.attributes = window.attributes.apply {
+            preferredDisplayModeId = preferred.modeId
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

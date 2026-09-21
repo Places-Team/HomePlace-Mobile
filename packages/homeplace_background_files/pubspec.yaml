@@ -1,0 +1,19 @@
+name: homeplace_background_files
+description: Android background file storage bridge for HomePlace.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.3
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.homeplace.mobile.backgroundfiles
+        pluginClass: HomePlaceBackgroundFilesPlugin

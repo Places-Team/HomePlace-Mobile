@@ -1,21 +1,19 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../link/link_client.dart';
 import '../../link/models.dart';
+import 'background_tasks.dart';
 import '../network/server_address.dart';
 import '../notifications/notification_service.dart';
 import '../settings/app_preferences.dart';
 import '../storage/connection_profile.dart';
 import '../storage/credential_store.dart';
 import '../storage/notification_history_store.dart';
-
-const backgroundHeartbeatTask = 'homeplace.backgroundHeartbeat';
-const _backgroundHeartbeatUniqueName = 'homeplace-periodic-heartbeat';
-const _backgroundHeartbeatNowUniqueName = 'homeplace-heartbeat-now';
 
 final class BackgroundDeliveryStatus {
   const BackgroundDeliveryStatus({
@@ -62,6 +60,90 @@ abstract interface class BackgroundAcknowledgementStore {
 abstract interface class BackgroundOfferNoticeStore {
   Future<List<String>> read(String serverId);
   Future<void> write(String serverId, List<String> eventIds);
+}
+
+abstract interface class BackgroundFileStore {
+  Future<String> createTemporaryFilePath();
+  Future<String> saveFilePath(String path, String filename, String mimeType);
+}
+
+abstract interface class BackgroundFileTransferClient {
+  Future<LinkResult<DownloadedLinkFile>> download(
+    ServerAddress address,
+    String credential,
+    BackgroundFileOffer offer,
+    String destinationPath,
+  );
+}
+
+final class PlatformBackgroundFileStore implements BackgroundFileStore {
+  const PlatformBackgroundFileStore();
+
+  static const _channel = MethodChannel(
+    'com.homeplace.mobile/background_files',
+  );
+
+  @override
+  Future<String> createTemporaryFilePath() async {
+    final path = await _channel.invokeMethod<String>('createTemporaryFile');
+    if (path == null || path.isEmpty) {
+      throw PlatformException(code: 'temporary_file_unavailable');
+    }
+    return path;
+  }
+
+  @override
+  Future<String> saveFilePath(
+    String path,
+    String filename,
+    String mimeType,
+  ) async {
+    final location = await _channel.invokeMethod<String>('saveFilePath', {
+      'path': path,
+      'filename': filename,
+      'mimeType': mimeType,
+    });
+    if (location == null || location.isEmpty) {
+      throw PlatformException(code: 'save_failed');
+    }
+    return location;
+  }
+}
+
+final class HttpBackgroundFileTransferClient
+    implements BackgroundFileTransferClient {
+  const HttpBackgroundFileTransferClient();
+
+  @override
+  Future<LinkResult<DownloadedLinkFile>> download(
+    ServerAddress address,
+    String credential,
+    BackgroundFileOffer offer,
+    String destinationPath,
+  ) => const HttpLinkService().downloadFileToTemporary(
+    address,
+    '/api/link/mobile/share/file/${Uri.encodeComponent(offer.transferId)}',
+    credential,
+    destination: File(destinationPath),
+    expectedSize: offer.size,
+    expectedSha256: offer.sha256,
+  );
+}
+
+final class BackgroundFileOffer {
+  const BackgroundFileOffer({
+    required this.transferId,
+    required this.filename,
+    required this.mimeType,
+    required this.size,
+    required this.sha256,
+  });
+
+  final String transferId;
+  final String filename;
+  final String mimeType;
+  final int size;
+  final String sha256;
 }
 
 final class SharedPreferencesOfferNoticeStore
@@ -117,7 +199,10 @@ final class BackgroundHeartbeatRunner {
     this.acknowledgementStore = const _DefaultAcknowledgementStore(),
     this.notificationHistoryStore = const PlatformNotificationHistoryStore(),
     this.offerNoticeStore = const _DefaultOfferNoticeStore(),
+    this.fileStore = const PlatformBackgroundFileStore(),
+    this.fileTransferClient = const HttpBackgroundFileTransferClient(),
     this.includeIncomingOffers = false,
+    this.seamlessOwnAccountTransfers = false,
     this.useRussianLabels = false,
   });
 
@@ -128,7 +213,10 @@ final class BackgroundHeartbeatRunner {
   final BackgroundAcknowledgementStore acknowledgementStore;
   final NotificationHistoryStore notificationHistoryStore;
   final BackgroundOfferNoticeStore offerNoticeStore;
+  final BackgroundFileStore fileStore;
+  final BackgroundFileTransferClient fileTransferClient;
   final bool includeIncomingOffers;
+  final bool seamlessOwnAccountTransfers;
   final bool useRussianLabels;
 
   Future<int> run() async {
@@ -136,9 +224,25 @@ final class BackgroundHeartbeatRunner {
     await notifications.initialize();
     if (!await notifications.isAvailable()) return 0;
 
+    final actions = includeIncomingOffers
+        ? await notifications.takeIncomingActions()
+        : const <IncomingNotificationAction>[];
+    final profiles = await profileStore.readAll();
     var successfulProfiles = 0;
-    for (final profile in await profileStore.readAll()) {
-      if (await _pollProfile(profile, notifications)) successfulProfiles++;
+    for (final profile in profiles) {
+      final profileActions = actions
+          .where((action) => action.serverId == profile.serverId)
+          .toList(growable: false);
+      if (await _pollProfile(profile, notifications, profileActions)) {
+        successfulProfiles++;
+      }
+    }
+    final knownServers = profiles.map((profile) => profile.serverId).toSet();
+    final unmatched = actions
+        .where((action) => !knownServers.contains(action.serverId))
+        .toList(growable: false);
+    if (unmatched.isNotEmpty) {
+      await notifications.restoreIncomingActions(unmatched);
     }
     return successfulProfiles;
   }
@@ -146,9 +250,13 @@ final class BackgroundHeartbeatRunner {
   Future<bool> _pollProfile(
     ConnectionProfile profile,
     NotificationService notifications,
+    List<IncomingNotificationAction> actions,
   ) async {
     final normalized = ServerAddressNormalizer.normalize(profile.preferredUrl);
-    if (normalized is! ValidAddress) return false;
+    if (normalized is! ValidAddress) {
+      await notifications.restoreIncomingActions(actions);
+      return false;
+    }
     var address = normalized.address;
     if (profile.certificateFingerprint case final fingerprint?) {
       address = address.trustFingerprint(fingerprint);
@@ -158,10 +266,14 @@ final class BackgroundHeartbeatRunner {
     if (info is! LinkSuccess<ServerInfo> ||
         verifyServerIdentity(profile.serverId, info.value)
             is IdentityMismatch) {
+      await notifications.restoreIncomingActions(actions);
       return false;
     }
     final credential = await credentialStore.read(profile.serverId);
-    if (credential == null) return false;
+    if (credential == null) {
+      await notifications.restoreIncomingActions(actions);
+      return false;
+    }
 
     final pendingAcknowledgements = await acknowledgementStore.read(
       profile.serverId,
@@ -173,13 +285,18 @@ final class BackgroundHeartbeatRunner {
     );
     if (result is! LinkSuccess<HeartbeatResponse> ||
         result.value.serverId != profile.serverId) {
+      await notifications.restoreIncomingActions(actions);
       return false;
     }
     if (pendingAcknowledgements.isNotEmpty) {
       await acknowledgementStore.write(profile.serverId, const []);
     }
 
-    final delivered = <String>[];
+    final resolved = <String>[];
+    final retryActions = <IncomingNotificationAction>[];
+    final actionsByEvent = {
+      for (final action in actions) action.eventId: action,
+    };
     final previouslyNotifiedOffers = includeIncomingOffers
         ? (await offerNoticeStore.read(profile.serverId)).toSet()
         : const <String>{};
@@ -189,14 +306,56 @@ final class BackgroundHeartbeatRunner {
         final offerDescription = _incomingOfferDescription(event);
         if (offerDescription != null) {
           currentOfferIds.add(event.id);
-          if (!previouslyNotifiedOffers.contains(event.id)) {
+          final action = actionsByEvent[event.id];
+          if (action?.kind == IncomingNotificationActionKind.decline) {
+            resolved.add(event.id);
+            continue;
+          }
+          if (action?.kind == IncomingNotificationActionKind.accept &&
+              offerDescription.acceptInBackground) {
+            final offer = _backgroundFileOffer(event);
+            final saved =
+                offer != null &&
+                await _downloadAcceptedFile(
+                  event.id,
+                  address,
+                  credential,
+                  offer,
+                  notifications,
+                );
+            if (saved) {
+              resolved.add(event.id);
+            } else {
+              retryActions.add(action!);
+            }
+            continue;
+          }
+          if (action == null &&
+              seamlessOwnAccountTransfers &&
+              event.payload['sameAccount'] == true &&
+              offerDescription.acceptInBackground) {
+            final offer = _backgroundFileOffer(event);
+            final saved =
+                offer != null &&
+                await _downloadAcceptedFile(
+                  event.id,
+                  address,
+                  credential,
+                  offer,
+                  notifications,
+                );
+            if (saved) resolved.add(event.id);
+            if (saved) continue;
+          }
+          if (!previouslyNotifiedOffers.contains(event.id) && action == null) {
             await notifications.showIncomingOffer(
               event.id,
               profile.serverId,
               useRussianLabels ? 'Новое в HomePlace' : 'New in HomePlace',
-              offerDescription,
+              offerDescription.text,
               useRussianLabels ? 'Принять' : 'Accept',
               useRussianLabels ? 'Отклонить' : 'Decline',
+              acceptInBackground: offerDescription.acceptInBackground,
             );
           }
           continue;
@@ -228,26 +387,31 @@ final class BackgroundHeartbeatRunner {
       } on Object {
         // Notification delivery must not depend on optional local history.
       }
-      delivered.add(event.id);
+      resolved.add(event.id);
     }
     if (includeIncomingOffers) {
       await offerNoticeStore.write(profile.serverId, currentOfferIds);
     }
-    if (delivered.isEmpty) return true;
+    if (retryActions.isNotEmpty) {
+      await notifications.restoreIncomingActions(retryActions);
+    }
+    if (resolved.isEmpty) return true;
 
     final acknowledgement = await linkService.heartbeat(
       address,
       credential,
-      delivered,
+      resolved,
     );
     if (acknowledgement is! LinkSuccess<HeartbeatResponse> ||
         acknowledgement.value.serverId != profile.serverId) {
-      await acknowledgementStore.write(profile.serverId, delivered);
+      await acknowledgementStore.write(profile.serverId, resolved);
     }
     return true;
   }
 
-  String? _incomingOfferDescription(DeviceEvent event) {
+  ({String text, bool acceptInBackground})? _incomingOfferDescription(
+    DeviceEvent event,
+  ) {
     if (event.type == 'clipboard.offer') {
       final text = event.payload['text'];
       final source = event.payload['sourceName'];
@@ -258,9 +422,12 @@ final class BackgroundHeartbeatRunner {
           source.trim().isEmpty) {
         return null;
       }
-      return useRussianLabels
-          ? 'Буфер обмена от $source ждёт подтверждения'
-          : 'Clipboard from $source is waiting for approval';
+      return (
+        text: useRussianLabels
+            ? 'Буфер обмена от $source ждёт подтверждения'
+            : 'Clipboard from $source is waiting for approval',
+        acceptInBackground: false,
+      );
     }
     if (event.type != 'share.offer') return null;
     final type = event.payload['type'];
@@ -303,9 +470,92 @@ final class BackgroundHeartbeatRunner {
       'file' => useRussianLabels ? 'Файл' : 'File',
       _ => useRussianLabels ? 'Текст' : 'Text',
     };
-    return useRussianLabels
-        ? '$label от $source ждёт подтверждения'
-        : '$label from $source is waiting for approval';
+    return (
+      text: useRussianLabels
+          ? '$label от $source ждёт подтверждения'
+          : '$label from $source is waiting for approval',
+      acceptInBackground: type == 'file',
+    );
+  }
+
+  BackgroundFileOffer? _backgroundFileOffer(DeviceEvent event) {
+    if (event.type != 'share.offer' || event.payload['type'] != 'file') {
+      return null;
+    }
+    final transferId = event.payload['transferId'];
+    final filename = event.payload['filename'];
+    final mimeType = event.payload['mimeType'];
+    final size = event.payload['size'];
+    final sha256 = event.payload['sha256'];
+    if (transferId is! String ||
+        transferId.isEmpty ||
+        filename is! String ||
+        filename.isEmpty ||
+        filename.length > 180 ||
+        size is! int ||
+        size < 1 ||
+        size > maxShareFileBytes ||
+        sha256 is! String ||
+        !RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(sha256)) {
+      return null;
+    }
+    final safeMimeType =
+        mimeType is String &&
+            RegExp(
+              r'^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,99}$',
+            ).hasMatch(mimeType)
+        ? mimeType
+        : 'application/octet-stream';
+    return BackgroundFileOffer(
+      transferId: transferId,
+      filename: filename,
+      mimeType: safeMimeType,
+      size: size,
+      sha256: sha256.toLowerCase(),
+    );
+  }
+
+  Future<bool> _downloadAcceptedFile(
+    String eventId,
+    ServerAddress address,
+    String credential,
+    BackgroundFileOffer offer,
+    NotificationService notifications,
+  ) async {
+    String? temporaryPath;
+    try {
+      temporaryPath = await fileStore.createTemporaryFilePath();
+      final result = await fileTransferClient.download(
+        address,
+        credential,
+        offer,
+        temporaryPath,
+      );
+      if (result is! LinkSuccess<DownloadedLinkFile>) return false;
+      await fileStore.saveFilePath(
+        result.value.file.path,
+        offer.filename,
+        offer.mimeType,
+      );
+      await notifications.show(
+        'saved:$eventId',
+        useRussianLabels ? 'Файл загружен' : 'File downloaded',
+        useRussianLabels
+            ? '${offer.filename} сохранён в Downloads/HomePlace'
+            : '${offer.filename} was saved to Downloads/HomePlace',
+      );
+      return true;
+    } on Object {
+      return false;
+    } finally {
+      if (temporaryPath != null) {
+        try {
+          await File(temporaryPath).delete();
+        } on Object {
+          // A failed cleanup must not acknowledge an unverified transfer.
+        }
+      }
+    }
   }
 }
 
@@ -320,11 +570,11 @@ final class AndroidBackgroundDeliveryScheduler {
   Future<void> setEnabled(bool enabled) async {
     if (!Platform.isAndroid) return;
     if (!enabled) {
-      await Workmanager().cancelByUniqueName(_backgroundHeartbeatUniqueName);
+      await Workmanager().cancelByUniqueName(backgroundHeartbeatUniqueName);
       return;
     }
     await Workmanager().registerPeriodicTask(
-      _backgroundHeartbeatUniqueName,
+      backgroundHeartbeatUniqueName,
       backgroundHeartbeatTask,
       frequency: const Duration(minutes: 15),
       constraints: Constraints(networkType: NetworkType.connected),
@@ -335,7 +585,7 @@ final class AndroidBackgroundDeliveryScheduler {
   Future<void> refreshNow() async {
     if (!Platform.isAndroid) return;
     await Workmanager().registerOneOffTask(
-      _backgroundHeartbeatNowUniqueName,
+      backgroundHeartbeatNowUniqueName,
       backgroundHeartbeatTask,
       constraints: Constraints(networkType: NetworkType.connected),
       existingWorkPolicy: ExistingWorkPolicy.replace,
@@ -353,10 +603,14 @@ void backgroundCallbackDispatcher() {
       final includeIncomingOffers =
           preferences.getBool(AppPreferences.backgroundIncomingOffersKey) ??
           false;
+      final seamlessOwnAccountTransfers =
+          preferences.getBool(AppPreferences.seamlessOwnAccountTransfersKey) ??
+          false;
       final useRussianLabels =
           preferences.getString('app.language') == 'russian';
       final successfulProfiles = await BackgroundHeartbeatRunner(
         includeIncomingOffers: includeIncomingOffers,
+        seamlessOwnAccountTransfers: seamlessOwnAccountTransfers,
         useRussianLabels: useRussianLabels,
       ).run();
       await const BackgroundDeliveryStatusStore().write(successfulProfiles);

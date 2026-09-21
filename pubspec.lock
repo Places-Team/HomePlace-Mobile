@@ -239,6 +239,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  homeplace_background_files:
+    dependency: "direct main"
+    description:
+      path: "packages/homeplace_background_files"
+      relative: true
+    source: path
+    version: "1.0.0"
   hooks:
     dependency: transitive
     description:

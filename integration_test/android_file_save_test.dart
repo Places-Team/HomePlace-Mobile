@@ -48,6 +48,7 @@ void main() {
       'A file is waiting for your decision.',
       'Accept',
       'Decline',
+      acceptInBackground: true,
     );
   });
 
@@ -92,6 +93,26 @@ void main() {
 
     expect(location, startsWith('content://'));
     expect(await temporary.length(), greaterThan(0));
+    await temporary.delete();
+  });
+
+  testWidgets('headless Android file bridge saves through MediaStore', (
+    tester,
+  ) async {
+    if (!Platform.isAndroid) return;
+    const channel = MethodChannel('com.homeplace.mobile/background_files');
+    final path = await channel.invokeMethod<String>('createTemporaryFile');
+    expect(path, isNotNull);
+    final temporary = File(path!);
+    await temporary.writeAsBytes(const [1, 2, 3, 4], flush: true);
+
+    final location = await channel.invokeMethod<String>('saveFilePath', {
+      'path': temporary.path,
+      'filename': 'homeplace-background-integration-test.bin',
+      'mimeType': 'application/octet-stream',
+    });
+
+    expect(location, startsWith('content://'));
     await temporary.delete();
   });
 }

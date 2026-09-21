@@ -133,6 +133,7 @@ final class FakeNotificationService implements NotificationService {
   final List<String> delivered = [];
   final List<String> incomingOffers = [];
   final List<IncomingNotificationAction> pendingActions = [];
+  final List<IncomingNotificationAction> restoredActions = [];
 
   @override
   Future<void> initialize() async {}
@@ -142,6 +143,14 @@ final class FakeNotificationService implements NotificationService {
     final actions = List<IncomingNotificationAction>.of(pendingActions);
     pendingActions.clear();
     return actions;
+  }
+
+  @override
+  Future<void> restoreIncomingActions(
+    List<IncomingNotificationAction> actions,
+  ) async {
+    restoredActions.addAll(actions);
+    pendingActions.addAll(actions);
   }
 
   @override
@@ -162,9 +171,12 @@ final class FakeNotificationService implements NotificationService {
     String title,
     String body,
     String acceptLabel,
-    String declineLabel,
-  ) async {
-    incomingOffers.add('$id:$serverId:$title:$body:$acceptLabel:$declineLabel');
+    String declineLabel, {
+    required bool acceptInBackground,
+  }) async {
+    incomingOffers.add(
+      '$id:$serverId:$title:$body:$acceptLabel:$declineLabel:$acceptInBackground',
+    );
   }
 }
 

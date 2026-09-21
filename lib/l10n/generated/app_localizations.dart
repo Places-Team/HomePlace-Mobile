@@ -1437,7 +1437,7 @@ abstract class AppLocalizations {
   /// No description provided for @backgroundIncomingOffersBody.
   ///
   /// In en, this message translates to:
-  /// **'Check for clipboard, text, links and files while HomePlace is closed. Tap a private notification to review and confirm. Clipboard sending still requires the app open.'**
+  /// **'Check for clipboard, text, links and files while HomePlace is closed. Accepting a file queues a verified background download; text, links and clipboard still open HomePlace for confirmation.'**
   String get backgroundIncomingOffersBody;
 
   /// No description provided for @seamlessOwnAccountTransfers.
@@ -1449,7 +1449,7 @@ abstract class AppLocalizations {
   /// No description provided for @seamlessOwnAccountTransfersBody.
   ///
   /// In en, this message translates to:
-  /// **'Automatically accept and save verified files sent by another device on your account while HomePlace is open. Family devices, links, text and clipboard still require confirmation.'**
+  /// **'Automatically accept and save verified files sent by another device on your account, including during enabled background checks. Family devices, links, text and clipboard still require confirmation.'**
   String get seamlessOwnAccountTransfersBody;
 
   /// No description provided for @notificationPermissionRequired.
