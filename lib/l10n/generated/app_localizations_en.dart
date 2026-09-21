@@ -512,12 +512,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String confirmShareBody(String device) {
-    return 'HomePlace will send it only to $device. The offer expires in five minutes.';
+    return 'HomePlace will send it only to $device. The offer expires in 30 minutes.';
   }
 
   @override
   String confirmMultipleShareBody(int count, String device) {
-    return 'HomePlace will send $count items only to $device. Each offer expires in five minutes.';
+    return 'HomePlace will send $count items only to $device. Each offer expires in 30 minutes.';
   }
 
   @override
@@ -526,12 +526,12 @@ class AppLocalizationsEn extends AppLocalizations {
     String owner,
     String device,
   ) {
-    return 'This device belongs to $owner. HomePlace will send $count items only to $device after you confirm. Each offer expires in five minutes.';
+    return 'This device belongs to $owner. HomePlace will send $count items only to $device after you confirm. Each offer expires in 30 minutes.';
   }
 
   @override
   String confirmHouseholdShareBody(String owner, String device) {
-    return 'This device belongs to $owner. HomePlace will send the item only to $device after you confirm. The offer expires in five minutes.';
+    return 'This device belongs to $owner. HomePlace will send the item only to $device after you confirm. The offer expires in 30 minutes.';
   }
 
   @override

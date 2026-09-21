@@ -18,9 +18,9 @@ Approved devices may also use scoped mobile endpoints:
 - `POST /api/link/mobile/telegram` for an explicit delivery check;
 - `POST /api/link/mobile/clipboard` to relay bounded text to the same user's capable devices.
 - `POST /api/link/mobile/share` for confirmed text and URL offers to one same-account device;
-- `POST /api/link/mobile/share/file` and `GET /api/link/mobile/share/file/{id}` for five-minute encrypted, streamed file offers up to 500 MB.
+- `POST /api/link/mobile/share/file` and `GET /api/link/mobile/share/file/{id}` for 30-minute encrypted, streamed file offers up to 500 MB.
 
-The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal. Share events use `share.offer`, expire after five minutes, and are deleted when accepted or declined. The server includes a derived `sameAccount` boolean in share offers; clients must not infer account ownership from device names or local state. Android advertises `share.send`, `text.receive`, `url.open`, and `file.receive`; iOS does not advertise them until its Share Extension and receiving UI are implemented.
+The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal. Clipboard offers expire after five minutes. Addressed share events use `share.offer`, expire after 30 minutes so they survive a delayed Android background check, and are deleted when accepted or declined. The server includes a derived `sameAccount` boolean in share offers; clients must not infer account ownership from device names or local state. Android advertises `share.send`, `text.receive`, `url.open`, and `file.receive`; iOS does not advertise them until its Share Extension and receiving UI are implemented.
 
 The server ID returned by pairing and heartbeat must match the ID previewed before pairing. The client rejects incompatible protocol ranges and does not infer unavailable features.
 

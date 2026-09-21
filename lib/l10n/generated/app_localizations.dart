@@ -1019,19 +1019,19 @@ abstract class AppLocalizations {
   /// No description provided for @confirmShareBody.
   ///
   /// In en, this message translates to:
-  /// **'HomePlace will send it only to {device}. The offer expires in five minutes.'**
+  /// **'HomePlace will send it only to {device}. The offer expires in 30 minutes.'**
   String confirmShareBody(String device);
 
   /// No description provided for @confirmMultipleShareBody.
   ///
   /// In en, this message translates to:
-  /// **'HomePlace will send {count} items only to {device}. Each offer expires in five minutes.'**
+  /// **'HomePlace will send {count} items only to {device}. Each offer expires in 30 minutes.'**
   String confirmMultipleShareBody(int count, String device);
 
   /// No description provided for @confirmMultipleHouseholdShareBody.
   ///
   /// In en, this message translates to:
-  /// **'This device belongs to {owner}. HomePlace will send {count} items only to {device} after you confirm. Each offer expires in five minutes.'**
+  /// **'This device belongs to {owner}. HomePlace will send {count} items only to {device} after you confirm. Each offer expires in 30 minutes.'**
   String confirmMultipleHouseholdShareBody(
     int count,
     String owner,
@@ -1041,7 +1041,7 @@ abstract class AppLocalizations {
   /// No description provided for @confirmHouseholdShareBody.
   ///
   /// In en, this message translates to:
-  /// **'This device belongs to {owner}. HomePlace will send the item only to {device} after you confirm. The offer expires in five minutes.'**
+  /// **'This device belongs to {owner}. HomePlace will send the item only to {device} after you confirm. The offer expires in 30 minutes.'**
   String confirmHouseholdShareBody(String owner, String device);
 
   /// No description provided for @send.

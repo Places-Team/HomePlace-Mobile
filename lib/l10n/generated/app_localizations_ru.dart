@@ -513,12 +513,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String confirmShareBody(String device) {
-    return 'HomePlace отправит его только на устройство «$device». Предложение исчезнет через пять минут.';
+    return 'HomePlace отправит его только на устройство «$device». Предложение исчезнет через 30 минут.';
   }
 
   @override
   String confirmMultipleShareBody(int count, String device) {
-    return 'HomePlace отправит $count объектов только на устройство «$device». Каждое предложение исчезнет через пять минут.';
+    return 'HomePlace отправит $count объектов только на устройство «$device». Каждое предложение исчезнет через 30 минут.';
   }
 
   @override
@@ -527,12 +527,12 @@ class AppLocalizationsRu extends AppLocalizations {
     String owner,
     String device,
   ) {
-    return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит $count объектов только на «$device». Каждое предложение исчезнет через пять минут.';
+    return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит $count объектов только на «$device». Каждое предложение исчезнет через 30 минут.';
   }
 
   @override
   String confirmHouseholdShareBody(String owner, String device) {
-    return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит объект только на «$device». Предложение исчезнет через пять минут.';
+    return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит объект только на «$device». Предложение исчезнет через 30 минут.';
   }
 
   @override

@@ -20,7 +20,7 @@ The first Flutter application slice is implemented with Android as the primary v
 - compact service health and recent-event monitoring;
 - explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied;
 - Android Share Sheet support for text, safe web links, and streamed files up to 500 MB, with an explicit recipient and send confirmation;
-- private same-account or explicitly enabled household delivery, five-minute offers, encrypted temporary server storage, Accept/Decline notification actions, transfer progress, cancellation, and SHA-256 verification;
+- private same-account or explicitly enabled household delivery, 30-minute addressed offers, encrypted temporary server storage, Accept/Decline notification actions, transfer progress, cancellation, and SHA-256 verification;
 - a dedicated transfer center for all pending incoming offers, queued outgoing items, retryable failures, and encrypted per-profile history;
 - exactly-once Android Share Sheet intake for up to ten items and 500 MB per batch, followed by one explicit device selection and confirmation;
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
