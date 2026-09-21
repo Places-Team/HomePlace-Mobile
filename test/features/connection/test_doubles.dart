@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:homeplace/core/network/server_address.dart';
 import 'package:homeplace/core/clipboard/clipboard_service.dart';
 import 'package:homeplace/core/notifications/notification_service.dart';
@@ -130,9 +132,17 @@ final class FakeNotificationService implements NotificationService {
   final bool permissionGranted;
   final List<String> delivered = [];
   final List<String> incomingOffers = [];
+  final List<IncomingNotificationAction> pendingActions = [];
 
   @override
   Future<void> initialize() async {}
+
+  @override
+  Future<List<IncomingNotificationAction>> takeIncomingActions() async {
+    final actions = List<IncomingNotificationAction>.of(pendingActions);
+    pendingActions.clear();
+    return actions;
+  }
 
   @override
   Future<bool> isAvailable() async => permissionGranted;
@@ -148,11 +158,13 @@ final class FakeNotificationService implements NotificationService {
   @override
   Future<void> showIncomingOffer(
     String id,
+    String serverId,
     String title,
     String body,
-    String reviewLabel,
+    String acceptLabel,
+    String declineLabel,
   ) async {
-    incomingOffers.add('$id:$title:$body:$reviewLabel');
+    incomingOffers.add('$id:$serverId:$title:$body:$acceptLabel:$declineLabel');
   }
 }
 
@@ -187,6 +199,9 @@ final class FakeShareService implements ShareService {
 
   @override
   Future<void> openUrl(String url) async {}
+  @override
+  Future<String> createTemporaryFilePath() async =>
+      '${Directory.systemTemp.path}/homeplace-test-received.bin';
   @override
   Future<void> saveFilePath(
     String path,

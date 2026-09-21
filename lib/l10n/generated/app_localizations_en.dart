@@ -681,6 +681,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Check for clipboard, text, links and files while HomePlace is closed. Tap a private notification to review and confirm. Clipboard sending still requires the app open.';
 
   @override
+  String get seamlessOwnAccountTransfers => 'Seamless files from my devices';
+
+  @override
+  String get seamlessOwnAccountTransfersBody =>
+      'Automatically accept and save verified files sent by another device on your account while HomePlace is open. Family devices, links, text and clipboard still require confirmation.';
+
+  @override
   String get notificationPermissionRequired =>
       'Allow HomePlace notifications in Android settings to enable background delivery.';
 

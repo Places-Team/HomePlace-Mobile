@@ -215,6 +215,7 @@ final class MobileApi {
   Future<LinkResult<DownloadedLinkFile>> downloadSharedFile(
     AuthenticatedLinkSession session,
     String transferId, {
+    required String destinationPath,
     required int expectedSize,
     required String expectedSha256,
     void Function(int transferred, int total)? onProgress,
@@ -223,6 +224,7 @@ final class MobileApi {
     session.address,
     '/api/link/mobile/share/file/${Uri.encodeComponent(transferId)}',
     session.credential,
+    destination: File(destinationPath),
     expectedSize: expectedSize,
     expectedSha256: expectedSha256,
     onProgress: onProgress,

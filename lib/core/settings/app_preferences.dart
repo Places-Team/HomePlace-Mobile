@@ -7,16 +7,22 @@ final class AppPreferences extends ChangeNotifier {
   AppPreferences({
     this.onBackgroundDeliveryChanged,
     this.onBackgroundIncomingOffersChanged,
+    this.onSeamlessOwnAccountTransfersChanged,
   });
 
   static const backgroundIncomingOffersKey = 'app.backgroundIncomingOffers';
+  static const seamlessOwnAccountTransfersKey =
+      'app.seamlessOwnAccountTransfers';
 
   final Future<void> Function(bool enabled)? onBackgroundDeliveryChanged;
   final Future<void> Function(bool enabled)? onBackgroundIncomingOffersChanged;
+  final Future<void> Function(bool enabled)?
+  onSeamlessOwnAccountTransfersChanged;
   AppLanguage language = AppLanguage.system;
   ThemeMode themeMode = ThemeMode.system;
   bool backgroundDeliveryEnabled = false;
   bool backgroundIncomingOffersEnabled = false;
+  bool seamlessOwnAccountTransfersEnabled = false;
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
@@ -32,9 +38,14 @@ final class AppPreferences extends ChangeNotifier {
         preferences.getBool('app.backgroundDelivery') ?? false;
     backgroundIncomingOffersEnabled =
         preferences.getBool(backgroundIncomingOffersKey) ?? false;
+    seamlessOwnAccountTransfersEnabled =
+        preferences.getBool(seamlessOwnAccountTransfersKey) ?? false;
     if (backgroundDeliveryEnabled) {
       await onBackgroundDeliveryChanged?.call(true);
     }
+    await onSeamlessOwnAccountTransfersChanged?.call(
+      seamlessOwnAccountTransfersEnabled,
+    );
     notifyListeners();
   }
 
@@ -76,5 +87,14 @@ final class AppPreferences extends ChangeNotifier {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(backgroundIncomingOffersKey, value);
     await onBackgroundIncomingOffersChanged?.call(value);
+  }
+
+  Future<void> setSeamlessOwnAccountTransfersEnabled(bool value) async {
+    if (seamlessOwnAccountTransfersEnabled == value) return;
+    seamlessOwnAccountTransfersEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(seamlessOwnAccountTransfersKey, value);
+    await onSeamlessOwnAccountTransfersChanged?.call(value);
   }
 }

@@ -61,6 +61,8 @@ final class PendingShareOffer {
     this.mimeType,
     this.size,
     this.sha256,
+    this.sameAccount = false,
+    this.acceptRequested = false,
   });
   final String eventId;
   final SharedContentKind kind;
@@ -71,6 +73,8 @@ final class PendingShareOffer {
   final String? mimeType;
   final int? size;
   final String? sha256;
+  final bool sameAccount;
+  final bool acceptRequested;
 }
 
 abstract interface class DeviceDescriptionProvider {
@@ -162,17 +166,33 @@ final class ConnectionController extends ChangeNotifier {
   bool _polling = false;
   bool _disposed = false;
   List<String> _acknowledgedEventIds = const [];
+  List<IncomingNotificationAction> _incomingNotificationActions = const [];
+  bool _seamlessOwnAccountTransfersEnabled = false;
 
   Future<void> initialize() async {
     await _notifications.initialize();
+    _incomingNotificationActions = await _notifications.takeIncomingActions();
     profiles = await _profiles.readAll();
     if (profiles.isNotEmpty) {
-      await _activateProfile(profiles.last, persistSelection: false);
+      final requestedServerId =
+          _incomingNotificationActions.lastOrNull?.serverId;
+      final requestedProfile = profiles
+          .where((candidate) => candidate.serverId == requestedServerId)
+          .lastOrNull;
+      await _activateProfile(
+        requestedProfile ?? profiles.last,
+        persistSelection: false,
+      );
     }
     await _sharing.initialize((content) {
       _enqueueOutgoingShare(content);
       notifyListeners();
     });
+  }
+
+  Future<void> setSeamlessOwnAccountTransfersEnabled(bool enabled) async {
+    _seamlessOwnAccountTransfersEnabled = enabled;
+    if (enabled) await refreshEvents();
   }
 
   Future<bool> switchProfile(ConnectionProfile candidate) =>
@@ -574,6 +594,9 @@ final class ConnectionController extends ChangeNotifier {
     return true;
   }
 
+  Future<String> createIncomingTemporaryFilePath() =>
+      _sharing.createTemporaryFilePath();
+
   void dismissIncomingShare(PendingShareOffer pending) =>
       _acknowledgeIncomingShare(pending.eventId);
 
@@ -705,6 +728,13 @@ final class ConnectionController extends ChangeNotifier {
       }
       final credential = await _credentials.read(connectedProfile.serverId);
       if (credential == null) return;
+      final newActions = await _notifications.takeIncomingActions();
+      if (newActions.isNotEmpty) {
+        _incomingNotificationActions = [
+          ..._incomingNotificationActions,
+          ...newActions,
+        ];
+      }
       final result = await _link.heartbeat(
         address,
         credential,
@@ -747,6 +777,14 @@ final class ConnectionController extends ChangeNotifier {
       }
       final acknowledged = <String>[];
       for (final event in response.events) {
+        final action = _takeIncomingNotificationAction(
+          connectedProfile.serverId,
+          event.id,
+        );
+        if (action == IncomingNotificationActionKind.decline) {
+          acknowledged.add(event.id);
+          continue;
+        }
         if (event.type == 'clipboard.offer') {
           final text = event.payload['text'];
           final sourceName = event.payload['sourceName'];
@@ -754,6 +792,11 @@ final class ConnectionController extends ChangeNotifier {
               text.isNotEmpty &&
               text.length <= 8000 &&
               sourceName is String) {
+            if (action == IncomingNotificationActionKind.accept) {
+              await _clipboard.writeText(text);
+              acknowledged.add(event.id);
+              continue;
+            }
             pendingClipboard = PendingClipboard(
               eventId: event.id,
               text: text,
@@ -765,6 +808,7 @@ final class ConnectionController extends ChangeNotifier {
         if (event.type == 'share.offer') {
           final type = event.payload['type'];
           final sourceName = event.payload['sourceName'];
+          final sameAccount = event.payload['sameAccount'] == true;
           if (sourceName is! String) continue;
           if ((type == 'text' || type == 'url') &&
               event.payload['value'] is String) {
@@ -787,6 +831,9 @@ final class ConnectionController extends ChangeNotifier {
                     : SharedContentKind.text,
                 sourceName: sourceName,
                 value: value,
+                sameAccount: sameAccount,
+                acceptRequested:
+                    action == IncomingNotificationActionKind.accept,
               ),
             );
           } else if (type == 'file') {
@@ -811,6 +858,10 @@ final class ConnectionController extends ChangeNotifier {
                   mimeType: event.payload['mimeType'] as String?,
                   size: size,
                   sha256: sha256,
+                  sameAccount: sameAccount,
+                  acceptRequested:
+                      action == IncomingNotificationActionKind.accept ||
+                      (sameAccount && _seamlessOwnAccountTransfersEnabled),
                 ),
               );
             }
@@ -839,6 +890,22 @@ final class ConnectionController extends ChangeNotifier {
     } finally {
       _heartbeating = false;
     }
+  }
+
+  IncomingNotificationActionKind? _takeIncomingNotificationAction(
+    String serverId,
+    String eventId,
+  ) {
+    final index = _incomingNotificationActions.indexWhere(
+      (action) => action.serverId == serverId && action.eventId == eventId,
+    );
+    if (index < 0) return null;
+    final action = _incomingNotificationActions[index];
+    _incomingNotificationActions = [
+      ..._incomingNotificationActions.take(index),
+      ..._incomingNotificationActions.skip(index + 1),
+    ];
+    return action.kind;
   }
 
   void _enqueueIncomingShare(PendingShareOffer offer) {

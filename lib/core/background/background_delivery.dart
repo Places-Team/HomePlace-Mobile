@@ -192,9 +192,11 @@ final class BackgroundHeartbeatRunner {
           if (!previouslyNotifiedOffers.contains(event.id)) {
             await notifications.showIncomingOffer(
               event.id,
+              profile.serverId,
               useRussianLabels ? 'Новое в HomePlace' : 'New in HomePlace',
               offerDescription,
-              useRussianLabels ? 'Посмотреть' : 'Review',
+              useRussianLabels ? 'Принять' : 'Accept',
+              useRussianLabels ? 'Отклонить' : 'Decline',
             );
           }
           continue;

@@ -27,4 +27,27 @@ void main() {
       );
     },
   );
+
+  test('seamless own-account transfers are opt-in and persisted', () async {
+    SharedPreferences.setMockInitialValues({});
+    bool? enabled;
+    final preferences = AppPreferences(
+      onSeamlessOwnAccountTransfersChanged: (value) async {
+        enabled = value;
+      },
+    );
+
+    await preferences.initialize();
+    expect(preferences.seamlessOwnAccountTransfersEnabled, isFalse);
+
+    await preferences.setSeamlessOwnAccountTransfersEnabled(true);
+
+    expect(enabled, isTrue);
+    expect(
+      (await SharedPreferences.getInstance()).getBool(
+        AppPreferences.seamlessOwnAccountTransfersKey,
+      ),
+      isTrue,
+    );
+  });
 }

@@ -213,7 +213,7 @@ final class HttpLinkService implements LinkService {
         'x-homeplace-filename-base64',
         base64Encode(utf8.encode(filename)),
       );
-      request.headers.contentType = ContentType.parse(mimeType);
+      request.headers.contentType = _safeContentType(mimeType);
       var transferred = 0;
       await request.addStream(
         file.openRead().map((chunk) {
@@ -259,10 +259,19 @@ final class HttpLinkService implements LinkService {
     }
   }
 
+  ContentType _safeContentType(String value) {
+    try {
+      return ContentType.parse(value);
+    } on FormatException {
+      return ContentType.binary;
+    }
+  }
+
   Future<LinkResult<DownloadedLinkFile>> downloadFileToTemporary(
     ServerAddress address,
     String path,
     String credential, {
+    required File destination,
     required int expectedSize,
     required String expectedSha256,
     void Function(int transferred, int total)? onProgress,
@@ -277,7 +286,7 @@ final class HttpLinkService implements LinkService {
       );
     }
     final client = _clientFor(address);
-    File? temporary;
+    File? temporary = destination;
     try {
       final request = await client
           .getUrl(address.uri.resolve(path))
@@ -316,10 +325,6 @@ final class HttpLinkService implements LinkService {
         );
       }
 
-      final directory = await Directory.systemTemp.createTemp(
-        'homeplace-received-',
-      );
-      temporary = File('${directory.path}/transfer.bin');
       final output = temporary.openWrite();
       var transferred = 0;
       try {
@@ -384,7 +389,7 @@ final class HttpLinkService implements LinkService {
     } finally {
       if (temporary != null) {
         try {
-          await temporary.parent.delete(recursive: true);
+          await temporary.delete();
         } on Object {
           // A failed transfer must not replace its useful network error.
         }

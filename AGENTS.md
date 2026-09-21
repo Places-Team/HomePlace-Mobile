@@ -12,4 +12,5 @@
 - Validate Android first, then iOS.
 - Keep device capabilities and server action permissions separate. Clipboard reads must stay foreground-only and incoming clipboard writes must require an explicit user action.
 - Keep Share Sheet content ephemeral and consent-driven. Require a named same-account target and send confirmation, require receiver acceptance, and never broaden delivery to every account on an installation.
+- Seamless receiving is opt-in, foreground-only, and limited to integrity-checked files with a server-derived same-account marker. Household devices, URLs, text, and clipboard always require a specific user action.
 - Commit with `Olmae <sviteyo@gmail.com>` and push completed, validated milestones to the configured upstream.

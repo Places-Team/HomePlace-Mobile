@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:homeplace/core/notifications/notification_service.dart';
 import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/core/storage/connection_profile.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
@@ -291,6 +292,148 @@ void main() {
     ]);
     controller.dismissIncomingShare(controller.pendingIncomingShares.first);
     expect(controller.pendingIncomingShares.single.filename, 'second.txt');
+    controller.dispose();
+  });
+
+  test('seamless mode only requests files from the same account', () async {
+    const profile = ConnectionProfile(
+      serverId: testServerId,
+      serverName: 'Test Home',
+      preferredUrl: 'https://home.example.test',
+      deviceId: 'device-1',
+      secure: true,
+    );
+    final profiles = MemoryProfileStore()..profiles.add(profile);
+    final credentials = MemoryCredentialStore()
+      ..values[testServerId] = 'device-credential';
+    final link = FakeLinkService()
+      ..heartbeatResults.add(
+        const LinkSuccess(
+          HeartbeatResponse(
+            serverId: testServerId,
+            events: [
+              DeviceEvent(
+                id: 'own-file',
+                type: 'share.offer',
+                payload: {
+                  'type': 'file',
+                  'sourceName': 'My tablet',
+                  'sameAccount': true,
+                  'transferId': 'transfer-own',
+                  'filename': 'photo.jpg',
+                  'size': 6,
+                  'sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                },
+              ),
+              DeviceEvent(
+                id: 'family-file',
+                type: 'share.offer',
+                payload: {
+                  'type': 'file',
+                  'sourceName': 'Family tablet',
+                  'sameAccount': false,
+                  'transferId': 'transfer-family',
+                  'filename': 'family.jpg',
+                  'size': 6,
+                  'sha256': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    final controller = ConnectionController(
+      linkService: link,
+      profileStore: profiles,
+      credentialStore: credentials,
+      notificationService: FakeNotificationService(),
+      clipboardService: FakeClipboardService(),
+      shareService: FakeShareService(),
+    );
+    await controller.setSeamlessOwnAccountTransfersEnabled(true);
+
+    await controller.initialize();
+    for (
+      var attempt = 0;
+      attempt < 10 && controller.pendingIncomingShares.length < 2;
+      attempt++
+    ) {
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    expect(
+      controller.pendingIncomingShares
+          .singleWhere((offer) => offer.eventId == 'own-file')
+          .acceptRequested,
+      isTrue,
+    );
+    expect(
+      controller.pendingIncomingShares
+          .singleWhere((offer) => offer.eventId == 'family-file')
+          .acceptRequested,
+      isFalse,
+    );
+    controller.dispose();
+  });
+
+  test('declining from a notification acknowledges the offer', () async {
+    const profile = ConnectionProfile(
+      serverId: testServerId,
+      serverName: 'Test Home',
+      preferredUrl: 'https://home.example.test',
+      deviceId: 'device-1',
+      secure: true,
+    );
+    final profiles = MemoryProfileStore()..profiles.add(profile);
+    final credentials = MemoryCredentialStore()
+      ..values[testServerId] = 'device-credential';
+    final notifications = FakeNotificationService()
+      ..pendingActions.add(
+        const IncomingNotificationAction(
+          serverId: testServerId,
+          eventId: 'declined-file',
+          kind: IncomingNotificationActionKind.decline,
+        ),
+      );
+    final link = FakeLinkService()
+      ..heartbeatResults.add(
+        const LinkSuccess(
+          HeartbeatResponse(
+            serverId: testServerId,
+            events: [
+              DeviceEvent(
+                id: 'declined-file',
+                type: 'share.offer',
+                payload: {
+                  'type': 'file',
+                  'sourceName': 'Tablet',
+                  'transferId': 'transfer-1',
+                  'filename': 'photo.jpg',
+                  'size': 6,
+                  'sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    final controller = ConnectionController(
+      linkService: link,
+      profileStore: profiles,
+      credentialStore: credentials,
+      notificationService: notifications,
+      clipboardService: FakeClipboardService(),
+      shareService: FakeShareService(),
+    );
+
+    await controller.initialize();
+    for (var attempt = 0; attempt < 10; attempt++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await controller.refreshEvents();
+
+    expect(controller.pendingIncomingShares, isEmpty);
+    expect(link.heartbeatAcknowledgements.last, contains('declined-file'));
     controller.dispose();
   });
 }

@@ -20,15 +20,16 @@ The first Flutter application slice is implemented with Android as the primary v
 - compact service health and recent-event monitoring;
 - explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied;
 - Android Share Sheet support for text, safe web links, and streamed files up to 500 MB, with an explicit recipient and send confirmation;
-- private same-account or explicitly enabled household delivery, five-minute offers, encrypted temporary server storage, receiver acceptance, transfer progress, cancellation, and SHA-256 verification;
+- private same-account or explicitly enabled household delivery, five-minute offers, encrypted temporary server storage, Accept/Decline notification actions, transfer progress, cancellation, and SHA-256 verification;
 - a dedicated transfer center for all pending incoming offers, queued outgoing items, retryable failures, and encrypted per-profile history;
 - Android multi-file Share Sheet intake for up to ten items and 500 MB per batch, followed by one explicit device selection and confirmation;
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
 - encrypted per-profile notification history and visible background-check diagnostics;
 - opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and foreground confirmation;
+- opt-in seamless saving for integrity-checked files sent by another device owned by the same account while the app is open;
 - bounded incoming and outgoing queues so concurrent files and links remain independently reviewable.
 
-Foreground presence and clipboard relay operate while the application is open. Android can periodically check for notifications and incoming share offers in the background, but Android controls the timing and may defer the 15-minute schedule. Opening, copying, downloading or declining an offer remains an explicit user action. Android does not permit ordinary applications to read the system clipboard while they are in the background. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
+Foreground presence and clipboard relay operate while the application is open. Android can periodically check for notifications and incoming share offers in the background, but Android controls the timing and may defer the 15-minute schedule. Private notifications provide Accept and Decline actions; accepting a file brings HomePlace forward to complete its verified download and system save. The optional seamless mode applies only to files from another device with the same server-verified account and only while HomePlace is open. Household files, links, text, and clipboard always require a specific action. Android does not permit ordinary applications to read the system clipboard while they are in the background. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 
 ## Repository layout
 

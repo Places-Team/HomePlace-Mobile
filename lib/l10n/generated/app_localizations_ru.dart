@@ -682,6 +682,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Проверять буфер, текст, ссылки и файлы, пока HomePlace закрыт. Нажмите приватное уведомление для просмотра и подтверждения. Отправка буфера требует открытого приложения.';
 
   @override
+  String get seamlessOwnAccountTransfers => 'Бесшовные файлы с моих устройств';
+
+  @override
+  String get seamlessOwnAccountTransfersBody =>
+      'Автоматически принимать и сохранять проверенные файлы с другого устройства вашего аккаунта, пока HomePlace открыт. Семейные устройства, ссылки, текст и буфер всё равно требуют подтверждения.';
+
+  @override
   String get notificationPermissionRequired =>
       'Разрешите уведомления HomePlace в настройках Android, чтобы включить фоновую доставку.';
 

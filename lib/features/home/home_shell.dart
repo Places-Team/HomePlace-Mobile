@@ -39,6 +39,7 @@ class _HomeShellState extends State<HomeShell> {
       HomeController(sessionProvider: widget.connection.authenticatedSession);
   late final bool ownsHome = widget.homeController == null;
   late final PageController pages = PageController();
+  final Set<String> _automaticIncoming = {};
   var tab = 0;
 
   @override
@@ -60,6 +61,21 @@ class _HomeShellState extends State<HomeShell> {
     listenable: Listenable.merge([home, widget.connection]),
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
+      final requested = widget.connection.pendingIncomingShares
+          .where((offer) => offer.acceptRequested)
+          .where((offer) => !_automaticIncoming.contains(offer.eventId))
+          .firstOrNull;
+      if (requested != null) {
+        _automaticIncoming.add(requested.eventId);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          if (requested.kind == SharedContentKind.file) {
+            await home.acceptSharedFile(requested, widget.connection);
+          } else {
+            await home.acceptIncomingTextOrUrl(requested, widget.connection);
+          }
+        });
+      }
       if (home.loading && home.overview == null) {
         return _Loading(label: l10n.loadingHome);
       }
@@ -268,6 +284,16 @@ class _HomeShellState extends State<HomeShell> {
                   title: Text(l10n.automaticClipboard),
                   subtitle: Text(l10n.automaticClipboardBody),
                   secondary: const Icon(Icons.content_paste_go_rounded),
+                ),
+              if (Platform.isAndroid && widget.preferences != null)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: widget.preferences!.seamlessOwnAccountTransfersEnabled,
+                  onChanged:
+                      widget.preferences!.setSeamlessOwnAccountTransfersEnabled,
+                  title: Text(l10n.seamlessOwnAccountTransfers),
+                  subtitle: Text(l10n.seamlessOwnAccountTransfersBody),
+                  secondary: const Icon(Icons.devices_rounded),
                 ),
               if (Platform.isAndroid)
                 SwitchListTile(

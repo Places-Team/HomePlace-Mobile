@@ -72,6 +72,7 @@ abstract interface class ShareService {
   bool get isSupported;
   Future<void> initialize(void Function(SharedContent content) onShare);
   Future<void> openUrl(String url);
+  Future<String> createTemporaryFilePath();
   Future<void> saveFilePath(String path, String filename, String mimeType);
 }
 
@@ -100,6 +101,18 @@ final class PlatformShareService implements ShareService {
   @override
   Future<void> openUrl(String url) =>
       _channel.invokeMethod<void>('openUrl', {'url': url});
+
+  @override
+  Future<String> createTemporaryFilePath() async {
+    final path = await _channel.invokeMethod<String>('createTemporaryFile');
+    if (path == null || path.isEmpty) {
+      throw PlatformException(
+        code: 'temporary_file_unavailable',
+        message: 'A protected temporary file could not be created.',
+      );
+    }
+    return path;
+  }
 
   @override
   Future<void> saveFilePath(String path, String filename, String mimeType) =>

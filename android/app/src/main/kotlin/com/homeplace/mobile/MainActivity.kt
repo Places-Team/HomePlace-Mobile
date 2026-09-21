@@ -76,6 +76,11 @@ class MainActivity : FlutterActivity() {
                             result.success(null)
                         }
                     }
+                    "createTemporaryFile" -> runCatching {
+                        File.createTempFile("received-", ".bin", cacheDir).absolutePath
+                    }.onSuccess(result::success).onFailure {
+                        result.error("temporary_file_unavailable", "A protected temporary file could not be created.", null)
+                    }
                     "saveFilePath" -> saveReceivedFilePath(call.arguments as? Map<*, *>, result)
                     else -> result.notImplemented()
                 }
@@ -191,7 +196,10 @@ class MainActivity : FlutterActivity() {
     private fun saveReceivedFilePath(arguments: Map<*, *>?, result: MethodChannel.Result) {
         val rawPath = arguments?.get("path") as? String
         val rawName = arguments?.get("filename") as? String
-        val mimeType = arguments?.get("mimeType") as? String ?: "application/octet-stream"
+        val requestedMimeType = arguments?.get("mimeType") as? String
+        val mimeType = requestedMimeType
+            ?.takeIf { SAFE_MIME_TYPE.matches(it) }
+            ?: "application/octet-stream"
         val source = rawPath?.let(::File)
         val cacheRoot = cacheDir.canonicalFile
         val safeSource = runCatching { source?.canonicalFile }.getOrNull()
@@ -231,7 +239,9 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }.onSuccess { runOnUiThread { result.success(null) } }
-            .onFailure { runOnUiThread { result.error("save_failed", "The file could not be saved.", null) } }
+            .onFailure { error -> runOnUiThread {
+                result.error("save_failed", error.message ?: "The file could not be saved.", null)
+            } }
         }
     }
 
@@ -270,5 +280,6 @@ class MainActivity : FlutterActivity() {
         private const val MAX_SHARED_ITEMS = 10
         private const val MAX_FILE_BYTES = 500 * 1024 * 1024L
         private val SERVER_ID = Regex("^[0-9a-fA-F-]{36}$")
+        private val SAFE_MIME_TYPE = Regex("^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,99}$")
     }
 }

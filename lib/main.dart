@@ -19,6 +19,8 @@ Future<void> main() async {
     onBackgroundIncomingOffersChanged: (enabled) async {
       if (enabled) await backgroundDelivery.refreshNow();
     },
+    onSeamlessOwnAccountTransfersChanged:
+        controller.setSeamlessOwnAccountTransfersEnabled,
   );
   runApp(HomePlaceApp(controller: controller, preferences: preferences));
   await preferences.initialize();

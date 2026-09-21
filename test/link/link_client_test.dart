@@ -216,9 +216,13 @@ void main() {
         size: expected.length,
       ),
     );
+    final receivedDirectory = await Directory.systemTemp.createTemp(
+      'homeplace-download-test-',
+    );
     final received = await const MobileApi().downloadSharedFile(
       session,
       'transfer-1',
+      destinationPath: '${receivedDirectory.path}/received.bin',
       expectedSize: expected.length,
       expectedSha256: sha256.convert(expected).toString(),
     );
@@ -228,6 +232,6 @@ void main() {
     expect(received, isA<LinkSuccess<DownloadedLinkFile>>());
     final downloaded = (received as LinkSuccess<DownloadedLinkFile>).value;
     expect(await downloaded.file.readAsBytes(), expected);
-    await downloaded.file.parent.delete(recursive: true);
+    await receivedDirectory.delete(recursive: true);
   });
 }

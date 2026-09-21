@@ -1284,6 +1284,18 @@ abstract class AppLocalizations {
   /// **'Check for clipboard, text, links and files while HomePlace is closed. Tap a private notification to review and confirm. Clipboard sending still requires the app open.'**
   String get backgroundIncomingOffersBody;
 
+  /// No description provided for @seamlessOwnAccountTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'Seamless files from my devices'**
+  String get seamlessOwnAccountTransfers;
+
+  /// No description provided for @seamlessOwnAccountTransfersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically accept and save verified files sent by another device on your account while HomePlace is open. Family devices, links, text and clipboard still require confirmation.'**
+  String get seamlessOwnAccountTransfersBody;
+
   /// No description provided for @notificationPermissionRequired.
   ///
   /// In en, this message translates to:

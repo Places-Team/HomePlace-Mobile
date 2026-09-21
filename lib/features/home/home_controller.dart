@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/sharing/share_service.dart';
@@ -424,11 +426,14 @@ final class HomeController extends ChangeNotifier {
     fileTransferProgress = 0;
     notifyListeners();
     DownloadedLinkFile? downloaded;
+    String? temporaryPath;
     var savedSuccessfully = false;
     try {
+      temporaryPath = await connection.createIncomingTemporaryFilePath();
       final result = await _api.downloadSharedFile(
         session,
         offer.transferId!,
+        destinationPath: temporaryPath,
         expectedSize: offer.size!,
         expectedSha256: offer.sha256!,
         cancellation: cancellation,
@@ -455,14 +460,24 @@ final class HomeController extends ChangeNotifier {
           when failure.kind != LinkFailureKind.cancelled) {
         error = failure.message;
       }
+    } on PlatformException catch (exception) {
+      error = exception.message?.trim().isNotEmpty == true
+          ? exception.message!.trim()
+          : 'The shared file could not be saved. Please try again.';
     } on Object {
       error = 'The shared file could not be saved. Please try again.';
     } finally {
       if (downloaded != null) {
         try {
-          await downloaded.file.parent.delete(recursive: true);
+          await downloaded.file.delete();
         } on Object {
           // Saving succeeded or already has a useful error for the user.
+        }
+      } else if (temporaryPath != null) {
+        try {
+          await File(temporaryPath).delete();
+        } on Object {
+          // Download failures already have an actionable user-facing error.
         }
       }
       busyId = null;
