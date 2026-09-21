@@ -22,7 +22,7 @@ On reconnect, the client requests `/api/link/info` before using the saved creden
 
 After pairing, `HomeController` reads the authenticated mobile overview and refreshes it every 30 seconds while the application is open. Calendar, reminders, media requests, Telegram, and monitoring reuse server-owned services and models. Reminder history includes upcoming, overdue, and completed items; every mutation remains scoped to the paired user's ID on the server. The app does not keep a competing local source of truth.
 
-On Android, an `ACTION_SEND` intent is reduced to a bounded text, HTTP(S) URL, or private cache file. Shared Dart UI shows the item, filters the server-provided same-account device list by real receiver capability, and requires a second confirmation before upload. The receiving device separately accepts or declines the offer. Files are downloaded only after acceptance, verified by SHA-256, and then written to `Downloads/HomePlace` by the Android host.
+On Android, an `ACTION_SEND` intent is reduced to a bounded text, HTTP(S) URL, or private cache file. Shared Dart UI shows the item, filters the server-provided authorized device list by real receiver capability, identifies household targets, and requires a second confirmation before upload. The receiving device separately accepts or declines the offer. Files up to 500 MB are streamed in both directions. An accepted download stays in a private temporary file while the UI reports progress and permits cancellation; exact size and SHA-256 are verified before the Android host copies it to `Downloads/HomePlace`. The event is acknowledged only after that save succeeds.
 
 ## Native boundaries
 

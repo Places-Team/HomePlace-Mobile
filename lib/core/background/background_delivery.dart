@@ -288,7 +288,7 @@ final class BackgroundHeartbeatRunner {
           filename is! String ||
           size is! int ||
           size < 1 ||
-          size > 5 * 1024 * 1024 ||
+          size > maxShareFileBytes ||
           digest is! String ||
           !RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(digest)) {
         return null;

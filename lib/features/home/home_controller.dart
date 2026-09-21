@@ -41,6 +41,9 @@ final class HomeController extends ChangeNotifier {
   bool autoClipboardEnabled = false;
   List<TransferActivity> transferActivity = const [];
   String? _activityScope;
+  double? fileTransferProgress;
+  String? activeFileTransferId;
+  LinkTransferCancellation? _fileTransferCancellation;
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
@@ -374,16 +377,30 @@ final class HomeController extends ChangeNotifier {
     if (session == null) return false;
     busyId = 'share';
     error = null;
+    final cancellation = content.kind == SharedContentKind.file
+        ? LinkTransferCancellation()
+        : null;
+    _fileTransferCancellation = cancellation;
+    activeFileTransferId = cancellation == null ? null : 'outgoing';
+    fileTransferProgress = cancellation == null ? null : 0;
     notifyListeners();
-    final result = await _api.relayShare(session, target, content);
+    final result = await _api.relayShare(
+      session,
+      target,
+      content,
+      cancellation: cancellation,
+      onProgress: cancellation == null ? null : _updateFileTransferProgress,
+    );
     final sent = result is LinkSuccess<void>;
     if (sent) {
       notice = 'share:${target.name}';
       await _recordTransfer(TransferDirection.sent, content.kind, target.name);
-    } else if (result case LinkFailure<void> failure) {
+    } else if (result case LinkFailure<void> failure
+        when failure.kind != LinkFailureKind.cancelled) {
       error = failure.message;
     }
     busyId = null;
+    _finishFileTransfer(cancellation);
     notifyListeners();
     return sent;
   }
@@ -393,41 +410,84 @@ final class HomeController extends ChangeNotifier {
     ConnectionController connection,
   ) async {
     final session = await sessionProvider();
-    if (session == null || offer.transferId == null || offer.sha256 == null) {
+    if (session == null ||
+        offer.transferId == null ||
+        offer.size == null ||
+        offer.sha256 == null) {
       return false;
     }
-    busyId = 'receive-file';
+    busyId = 'receive:${offer.eventId}';
     error = null;
+    final cancellation = LinkTransferCancellation();
+    _fileTransferCancellation = cancellation;
+    activeFileTransferId = offer.eventId;
+    fileTransferProgress = 0;
     notifyListeners();
+    DownloadedLinkFile? downloaded;
+    var savedSuccessfully = false;
     try {
-      final result = await _api.downloadSharedFile(session, offer.transferId!);
-      if (result case LinkSuccess<Uint8List> success) {
-        final actual = sha256.convert(success.value).toString();
-        if (actual != offer.sha256) {
-          error = 'Shared file integrity check failed.';
+      final result = await _api.downloadSharedFile(
+        session,
+        offer.transferId!,
+        expectedSize: offer.size!,
+        expectedSha256: offer.sha256!,
+        cancellation: cancellation,
+        onProgress: _updateFileTransferProgress,
+      );
+      if (result case LinkSuccess<DownloadedLinkFile> success) {
+        downloaded = success.value;
+        final saved = await connection.saveIncomingFile(
+          offer,
+          downloaded.file.path,
+        );
+        if (!saved) {
+          error = 'This file offer is no longer available.';
         } else {
-          final saved = await connection.saveIncomingFile(offer, success.value);
-          if (!saved) {
-            error = 'This file offer is no longer available.';
-          } else {
-            notice = 'file:${offer.filename ?? ''}';
-            await _recordTransfer(
-              TransferDirection.received,
-              SharedContentKind.file,
-              offer.sourceName,
-            );
-          }
+          savedSuccessfully = true;
+          notice = 'file:${offer.filename ?? ''}';
+          await _recordTransfer(
+            TransferDirection.received,
+            SharedContentKind.file,
+            offer.sourceName,
+          );
         }
-      } else if (result case LinkFailure<Uint8List> failure) {
+      } else if (result case LinkFailure<DownloadedLinkFile> failure
+          when failure.kind != LinkFailureKind.cancelled) {
         error = failure.message;
       }
     } on Object {
       error = 'The shared file could not be saved. Please try again.';
     } finally {
+      if (downloaded != null) {
+        try {
+          await downloaded.file.parent.delete(recursive: true);
+        } on Object {
+          // Saving succeeded or already has a useful error for the user.
+        }
+      }
       busyId = null;
+      _finishFileTransfer(cancellation);
       notifyListeners();
     }
-    return error == null;
+    return savedSuccessfully;
+  }
+
+  void cancelFileTransfer() => _fileTransferCancellation?.cancel();
+
+  void _updateFileTransferProgress(int transferred, int total) {
+    if (total <= 0) return;
+    final next = (transferred / total).clamp(0.0, 1.0);
+    final previous = fileTransferProgress ?? 0;
+    if (next < 1 && next - previous < .01) return;
+    fileTransferProgress = next;
+    notifyListeners();
+  }
+
+  void _finishFileTransfer(LinkTransferCancellation? cancellation) {
+    if (!identical(_fileTransferCancellation, cancellation)) return;
+    _fileTransferCancellation = null;
+    activeFileTransferId = null;
+    fileTransferProgress = null;
   }
 
   Future<void> acceptIncomingTextOrUrl(

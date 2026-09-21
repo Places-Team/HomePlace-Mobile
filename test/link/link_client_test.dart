@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/network/server_address.dart';
 import 'package:homeplace/core/sharing/share_service.dart';
@@ -138,7 +140,10 @@ void main() {
   });
 
   test('uploads and downloads a shared file through the Link API', () async {
-    final expected = List<int>.generate(4096, (index) => index % 251);
+    final expected = Uint8List(6 * 1024 * 1024 + 17);
+    for (var index = 0; index < expected.length; index++) {
+      expected[index] = index % 251;
+    }
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(server.close);
     final temp = await Directory.systemTemp.createTemp('homeplace-file-test-');
@@ -155,10 +160,8 @@ void main() {
         expect(request.method, 'POST');
         expect(request.headers.value('x-homeplace-target'), 'target-1');
         expect(
-          Uri.decodeComponent(
-            request.headers.value('x-homeplace-filename') ?? '',
-          ),
-          'family note.txt',
+          request.headers.value('x-homeplace-filename-base64'),
+          '0YHQtdC80YzRjy50eHQ=',
         );
         expect(
           await request.fold<List<int>>([], (all, part) => all..addAll(part)),
@@ -172,6 +175,10 @@ void main() {
         expect(request.method, 'GET');
         request.response.statusCode = HttpStatus.ok;
         request.response.headers.contentType = ContentType.binary;
+        request.response.headers.set(
+          'x-homeplace-sha256',
+          sha256.convert(expected).toString(),
+        );
         request.response.add(expected);
       } else {
         request.response.statusCode = HttpStatus.notFound;
@@ -204,7 +211,7 @@ void main() {
       SharedContent(
         kind: SharedContentKind.file,
         path: file.path,
-        filename: 'family note.txt',
+        filename: 'семья.txt',
         mimeType: 'text/plain',
         size: expected.length,
       ),
@@ -212,11 +219,15 @@ void main() {
     final received = await const MobileApi().downloadSharedFile(
       session,
       'transfer-1',
+      expectedSize: expected.length,
+      expectedSha256: sha256.convert(expected).toString(),
     );
 
     expect(sent, isA<LinkSuccess<void>>());
     expect(uploadVerified, isTrue);
-    expect(received, isA<LinkSuccess<List<int>>>());
-    expect((received as LinkSuccess).value, expected);
+    expect(received, isA<LinkSuccess<DownloadedLinkFile>>());
+    final downloaded = (received as LinkSuccess<DownloadedLinkFile>).value;
+    expect(await downloaded.file.readAsBytes(), expected);
+    await downloaded.file.parent.delete(recursive: true);
   });
 }

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import '../features/connection/connection_controller.dart';
 import '../core/sharing/share_service.dart';
@@ -189,8 +188,10 @@ final class MobileApi {
   Future<LinkResult<void>> relayShare(
     AuthenticatedLinkSession session,
     MobileShareTarget target,
-    SharedContent content,
-  ) {
+    SharedContent content, {
+    void Function(int transferred, int total)? onProgress,
+    LinkTransferCancellation? cancellation,
+  }) {
     if (content.kind == SharedContentKind.file) {
       return _client.uploadFile(
         session.address,
@@ -200,6 +201,8 @@ final class MobileApi {
         targetDeviceId: target.id,
         filename: content.filename!,
         mimeType: content.mimeType ?? 'application/octet-stream',
+        onProgress: onProgress,
+        cancellation: cancellation,
       );
     }
     return _empty(session, '/api/link/mobile/share', {
@@ -209,13 +212,21 @@ final class MobileApi {
     });
   }
 
-  Future<LinkResult<Uint8List>> downloadSharedFile(
+  Future<LinkResult<DownloadedLinkFile>> downloadSharedFile(
     AuthenticatedLinkSession session,
-    String transferId,
-  ) => _client.downloadFile(
+    String transferId, {
+    required int expectedSize,
+    required String expectedSha256,
+    void Function(int transferred, int total)? onProgress,
+    LinkTransferCancellation? cancellation,
+  }) => _client.downloadFileToTemporary(
     session.address,
     '/api/link/mobile/share/file/${Uri.encodeComponent(transferId)}',
     session.credential,
+    expectedSize: expectedSize,
+    expectedSha256: expectedSha256,
+    onProgress: onProgress,
+    cancellation: cancellation,
   );
 
   Future<LinkResult<void>> _empty(

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/sharing/share_service.dart';
+import 'package:homeplace/link/link_client.dart';
 
 void main() {
   test('accepts bounded text and safe web links from Android', () {
@@ -36,7 +37,7 @@ void main() {
         'type': 'file',
         'path': '/tmp/item',
         'filename': 'item.bin',
-        'size': 5 * 1024 * 1024,
+        'size': maxShareFileBytes,
       }),
       isNotNull,
     );
@@ -45,7 +46,7 @@ void main() {
         'type': 'file',
         'path': '/tmp/item',
         'filename': 'item.bin',
-        'size': 5 * 1024 * 1024 + 1,
+        'size': maxShareFileBytes + 1,
       }),
       isNull,
     );

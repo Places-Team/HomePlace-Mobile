@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:homeplace/core/network/server_address.dart';
 import 'package:homeplace/core/clipboard/clipboard_service.dart';
 import 'package:homeplace/core/notifications/notification_service.dart';
@@ -188,8 +186,8 @@ final class FakeShareService implements ShareService {
   @override
   Future<void> openUrl(String url) async {}
   @override
-  Future<void> saveFile(
-    Uint8List bytes,
+  Future<void> saveFilePath(
+    String path,
     String filename,
     String mimeType,
   ) async {}

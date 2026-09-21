@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../../link/link_client.dart';
+
 enum SharedContentKind { text, url, file }
 
 final class SharedContent {
@@ -50,7 +52,7 @@ final class SharedContent {
             filename is! String ||
             size is! int ||
             size < 1 ||
-            size > 5 * 1024 * 1024) {
+            size > maxShareFileBytes) {
           return null;
         }
         return SharedContent(
@@ -70,7 +72,7 @@ abstract interface class ShareService {
   bool get isSupported;
   Future<void> initialize(void Function(SharedContent content) onShare);
   Future<void> openUrl(String url);
-  Future<void> saveFile(Uint8List bytes, String filename, String mimeType);
+  Future<void> saveFilePath(String path, String filename, String mimeType);
 }
 
 final class PlatformShareService implements ShareService {
@@ -100,9 +102,9 @@ final class PlatformShareService implements ShareService {
       _channel.invokeMethod<void>('openUrl', {'url': url});
 
   @override
-  Future<void> saveFile(Uint8List bytes, String filename, String mimeType) =>
-      _channel.invokeMethod<void>('saveFile', {
-        'bytes': bytes,
+  Future<void> saveFilePath(String path, String filename, String mimeType) =>
+      _channel.invokeMethod<void>('saveFilePath', {
+        'path': path,
         'filename': filename,
         'mimeType': mimeType,
       });

@@ -537,7 +537,7 @@ final class ConnectionController extends ChangeNotifier {
 
   Future<bool> saveIncomingFile(
     PendingShareOffer pending,
-    Uint8List bytes,
+    String temporaryPath,
   ) async {
     if (!pendingIncomingShares.any(
           (offer) => offer.eventId == pending.eventId,
@@ -546,8 +546,8 @@ final class ConnectionController extends ChangeNotifier {
         pending.filename == null) {
       return false;
     }
-    await _sharing.saveFile(
-      bytes,
+    await _sharing.saveFilePath(
+      temporaryPath,
       pending.filename!,
       pending.mimeType ?? 'application/octet-stream',
     );
@@ -768,7 +768,7 @@ final class ConnectionController extends ChangeNotifier {
               filename is String &&
               size is int &&
               size > 0 &&
-              size <= 5 * 1024 * 1024 &&
+              size <= maxShareFileBytes &&
               sha256 is String &&
               RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(sha256)) {
             _enqueueIncomingShare(

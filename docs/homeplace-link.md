@@ -18,7 +18,7 @@ Approved devices may also use scoped mobile endpoints:
 - `POST /api/link/mobile/telegram` for an explicit delivery check;
 - `POST /api/link/mobile/clipboard` to relay bounded text to the same user's capable devices.
 - `POST /api/link/mobile/share` for confirmed text and URL offers to one same-account device;
-- `POST /api/link/mobile/share/file` and `GET /api/link/mobile/share/file/{id}` for single-use encrypted file transfer.
+- `POST /api/link/mobile/share/file` and `GET /api/link/mobile/share/file/{id}` for five-minute encrypted, streamed file offers up to 500 MB.
 
 The pairing document separates device capabilities from server permissions. Android clipboard events use `clipboard.offer`; the receiver presents the text for confirmation and acknowledges it only after copy or dismissal. Share events use `share.offer`, expire after five minutes, and are deleted when accepted or declined. Android advertises `share.send`, `text.receive`, `url.open`, and `file.receive`; iOS does not advertise them until its Share Extension and receiving UI are implemented.
 

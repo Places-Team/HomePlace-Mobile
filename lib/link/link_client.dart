@@ -15,7 +15,10 @@ enum LinkFailureKind {
   incompatible,
   authentication,
   serverIdentity,
+  cancelled,
 }
+
+const maxShareFileBytes = 500 * 1024 * 1024;
 
 sealed class LinkResult<T> {
   const LinkResult();
@@ -35,6 +38,25 @@ final class LinkFailure<T> extends LinkResult<T> {
 
 final class _ResponseTooLarge implements Exception {
   const _ResponseTooLarge();
+}
+
+final class _TransferCancelled implements Exception {
+  const _TransferCancelled();
+}
+
+final class LinkTransferCancellation {
+  bool _cancelled = false;
+
+  bool get isCancelled => _cancelled;
+
+  void cancel() => _cancelled = true;
+}
+
+final class DownloadedLinkFile {
+  const DownloadedLinkFile({required this.file, required this.size});
+
+  final File file;
+  final int size;
 }
 
 final class DeviceDescription {
@@ -161,14 +183,16 @@ final class HttpLinkService implements LinkService {
     required String targetDeviceId,
     required String filename,
     required String mimeType,
+    void Function(int transferred, int total)? onProgress,
+    LinkTransferCancellation? cancellation,
   }) async {
     final client = _clientFor(address);
     try {
       final length = await file.length();
-      if (length < 1 || length > 5 * 1024 * 1024) {
+      if (length < 1 || length > maxShareFileBytes) {
         return const LinkFailure(
           LinkFailureKind.invalidResponse,
-          'Files must be 5 MB or smaller.',
+          'Files must be 500 MB or smaller.',
         );
       }
       final request = await client
@@ -185,8 +209,22 @@ final class HttpLinkService implements LinkService {
         'x-homeplace-filename',
         Uri.encodeComponent(filename),
       );
+      request.headers.set(
+        'x-homeplace-filename-base64',
+        base64Encode(utf8.encode(filename)),
+      );
       request.headers.contentType = ContentType.parse(mimeType);
-      await request.addStream(file.openRead());
+      var transferred = 0;
+      await request.addStream(
+        file.openRead().map((chunk) {
+          if (cancellation?.isCancelled == true) {
+            throw const _TransferCancelled();
+          }
+          transferred += chunk.length;
+          onProgress?.call(transferred, length);
+          return chunk;
+        }),
+      );
       final response = await request.close().timeout(
         const Duration(seconds: 30),
       );
@@ -204,6 +242,11 @@ final class HttpLinkService implements LinkService {
         );
       }
       return const LinkSuccess(null);
+    } on _TransferCancelled {
+      return const LinkFailure(
+        LinkFailureKind.cancelled,
+        'The file transfer was cancelled.',
+      );
     } on HandshakeException {
       return const LinkFailure(LinkFailureKind.tls, 'TLS validation failed.');
     } on Object {
@@ -216,12 +259,25 @@ final class HttpLinkService implements LinkService {
     }
   }
 
-  Future<LinkResult<Uint8List>> downloadFile(
+  Future<LinkResult<DownloadedLinkFile>> downloadFileToTemporary(
     ServerAddress address,
     String path,
-    String credential,
-  ) async {
+    String credential, {
+    required int expectedSize,
+    required String expectedSha256,
+    void Function(int transferred, int total)? onProgress,
+    LinkTransferCancellation? cancellation,
+  }) async {
+    if (expectedSize < 1 ||
+        expectedSize > maxShareFileBytes ||
+        !RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(expectedSha256)) {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'The shared file offer is invalid.',
+      );
+    }
     final client = _clientFor(address);
+    File? temporary;
     try {
       final request = await client
           .getUrl(address.uri.resolve(path))
@@ -235,6 +291,7 @@ final class HttpLinkService implements LinkService {
         const Duration(seconds: 30),
       );
       if (response.statusCode == HttpStatus.unauthorized) {
+        await response.drain<void>();
         return const LinkFailure(
           LinkFailureKind.authentication,
           'This device credential is no longer accepted.',
@@ -247,22 +304,91 @@ final class HttpLinkService implements LinkService {
           'The shared file is unavailable or expired.',
         );
       }
-      final builder = BytesBuilder(copy: false);
-      var total = 0;
-      await for (final chunk in response) {
-        total += chunk.length;
-        if (total > 5 * 1024 * 1024) throw const _ResponseTooLarge();
-        builder.add(chunk);
+      final announced = response.contentLength;
+      final announcedDigest = response.headers.value('x-homeplace-sha256');
+      if ((announced >= 0 && announced != expectedSize) ||
+          (announcedDigest != null &&
+              announcedDigest.toLowerCase() != expectedSha256.toLowerCase())) {
+        await response.drain<void>();
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'The shared file metadata does not match the offer.',
+        );
       }
-      return LinkSuccess(builder.takeBytes());
+
+      final directory = await Directory.systemTemp.createTemp(
+        'homeplace-received-',
+      );
+      temporary = File('${directory.path}/transfer.bin');
+      final output = temporary.openWrite();
+      var transferred = 0;
+      try {
+        await for (final chunk in response.timeout(
+          const Duration(seconds: 30),
+        )) {
+          if (cancellation?.isCancelled == true) {
+            throw const _TransferCancelled();
+          }
+          transferred += chunk.length;
+          if (transferred > expectedSize || transferred > maxShareFileBytes) {
+            throw const _ResponseTooLarge();
+          }
+          output.add(chunk);
+          onProgress?.call(transferred, expectedSize);
+        }
+        await output.flush();
+      } finally {
+        await output.close();
+      }
+      if (transferred != expectedSize) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'The shared file size does not match the offer.',
+        );
+      }
+      final actualDigest = await sha256.bind(temporary.openRead()).single;
+      if (actualDigest.toString().toLowerCase() !=
+          expectedSha256.toLowerCase()) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'Shared file integrity check failed.',
+        );
+      }
+      final completed = temporary;
+      temporary = null;
+      return LinkSuccess(
+        DownloadedLinkFile(file: completed, size: transferred),
+      );
+    } on _TransferCancelled {
+      return const LinkFailure(
+        LinkFailureKind.cancelled,
+        'The file transfer was cancelled.',
+      );
+    } on _ResponseTooLarge {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'The shared file is larger than the approved offer.',
+      );
     } on HandshakeException {
       return const LinkFailure(LinkFailureKind.tls, 'TLS validation failed.');
+    } on TimeoutException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The shared file transfer timed out.',
+      );
     } on Object {
       return const LinkFailure(
         LinkFailureKind.network,
         'The shared file could not be downloaded.',
       );
     } finally {
+      if (temporary != null) {
+        try {
+          await temporary.parent.delete(recursive: true);
+        } on Object {
+          // A failed transfer must not replace its useful network error.
+        }
+      }
       client.close(force: true);
     }
   }

@@ -829,8 +829,13 @@ class _OverviewPage extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: _IncomingShareCard(
                     offer: offer,
-                    receiving: home.busyId == 'receive-file',
-                    onDismiss: () => connection.dismissIncomingShare(offer),
+                    receiving: home.activeFileTransferId == offer.eventId,
+                    progress: home.activeFileTransferId == offer.eventId
+                        ? home.fileTransferProgress
+                        : null,
+                    onDismiss: home.activeFileTransferId == offer.eventId
+                        ? home.cancelFileTransfer
+                        : () => connection.dismissIncomingShare(offer),
                     onAccept: offer.kind == SharedContentKind.file
                         ? () => home.acceptSharedFile(offer, connection)
                         : () => home.acceptIncomingTextOrUrl(offer, connection),
@@ -1020,11 +1025,13 @@ class _IncomingShareCard extends StatelessWidget {
   const _IncomingShareCard({
     required this.offer,
     required this.receiving,
+    required this.progress,
     required this.onDismiss,
     required this.onAccept,
   });
   final PendingShareOffer offer;
   final bool receiving;
+  final double? progress;
   final VoidCallback onDismiss;
   final VoidCallback onAccept;
 
@@ -1061,12 +1068,24 @@ class _IncomingShareCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
+          if (receiving) ...[
+            LinearProgressIndicator(value: progress),
+            const SizedBox(height: 8),
+            Text(
+              progress == null
+                  ? l10n.loadingHome
+                  : '${(progress! * 100).round()}%',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            const SizedBox(height: 6),
+          ],
           Row(
             children: [
               Expanded(
                 child: TextButton(
-                  onPressed: receiving ? null : onDismiss,
-                  child: Text(l10n.decline),
+                  onPressed: onDismiss,
+                  child: Text(receiving ? l10n.cancel : l10n.decline),
                 ),
               ),
               const SizedBox(width: 8),

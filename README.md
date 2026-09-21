@@ -19,10 +19,10 @@ The first Flutter application slice is implemented with Android as the primary v
 - Sonarr/Radarr search and requests, qBittorrent status, Telegram status and a delivery check;
 - compact service health and recent-event monitoring;
 - explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied;
-- Android Share Sheet support for text, safe web links, and files up to 5 MB, with an explicit recipient and send confirmation;
-- private same-account delivery, five-minute offers, encrypted temporary file storage, integrity verification, and receiver acceptance.
+- Android Share Sheet support for text, safe web links, and streamed files up to 500 MB, with an explicit recipient and send confirmation;
+- private same-account or explicitly enabled household delivery, five-minute offers, encrypted temporary server storage, receiver acceptance, transfer progress, cancellation, and SHA-256 verification;
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
-- encrypted per-profile notification history and visible background-check diagnostics.
+- encrypted per-profile notification history and visible background-check diagnostics;
 - opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and foreground confirmation;
 - a bounded incoming-offer queue so concurrent file and link offers remain independently reviewable.
 

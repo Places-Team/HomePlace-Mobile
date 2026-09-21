@@ -212,7 +212,7 @@ void main() {
                   'sourceName': 'Phone',
                   'transferId': 'transfer-1',
                   'filename': 'first.txt',
-                  'size': 5,
+                  'size': 200 * 1024 * 1024,
                   'sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
                 },
               ),

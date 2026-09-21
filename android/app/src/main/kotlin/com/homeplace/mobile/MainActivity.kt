@@ -22,10 +22,12 @@ import java.security.spec.ECGenParameterSpec
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URI
+import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private var shareChannel: MethodChannel? = null
     private var pendingShare: Map<String, Any>? = null
+    private val shareExecutor = Executors.newSingleThreadExecutor()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -74,7 +76,7 @@ class MainActivity : FlutterActivity() {
                             result.success(null)
                         }
                     }
-                    "saveFile" -> saveReceivedFile(call.arguments as? Map<*, *>, result)
+                    "saveFilePath" -> saveReceivedFilePath(call.arguments as? Map<*, *>, result)
                     else -> result.notImplemented()
                 }
             }
@@ -95,14 +97,25 @@ class MainActivity : FlutterActivity() {
         } else {
             @Suppress("DEPRECATION") incoming.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
         }
-        val content = if (stream != null) copyIncomingFile(stream, incoming.type) else captureText(incoming)
+        val announcedType = incoming.type
+        val textContent = if (stream == null) captureText(incoming) else null
         incoming.action = null
         incoming.removeExtra(Intent.EXTRA_TEXT)
         incoming.removeExtra(Intent.EXTRA_STREAM)
-        if (content != null) {
-            pendingShare = content
-            shareChannel?.invokeMethod("shareReceived", content)
+        if (stream == null) {
+            deliverShare(textContent)
+            return
         }
+        shareExecutor.execute {
+            val content = copyIncomingFile(stream, announcedType)
+            runOnUiThread { deliverShare(content) }
+        }
+    }
+
+    private fun deliverShare(content: Map<String, Any>?) {
+        if (content == null) return
+        pendingShare = content
+        shareChannel?.invokeMethod("shareReceived", content)
     }
 
     private fun captureText(incoming: Intent): Map<String, Any>? {
@@ -153,16 +166,22 @@ class MainActivity : FlutterActivity() {
         )
     }.getOrNull()
 
-    private fun saveReceivedFile(arguments: Map<*, *>?, result: MethodChannel.Result) {
-        val bytes = arguments?.get("bytes") as? ByteArray
+    private fun saveReceivedFilePath(arguments: Map<*, *>?, result: MethodChannel.Result) {
+        val rawPath = arguments?.get("path") as? String
         val rawName = arguments?.get("filename") as? String
         val mimeType = arguments?.get("mimeType") as? String ?: "application/octet-stream"
-        if (bytes == null || bytes.isEmpty() || bytes.size > MAX_FILE_BYTES || rawName == null) {
+        val source = rawPath?.let(::File)
+        val cacheRoot = cacheDir.canonicalFile
+        val safeSource = runCatching { source?.canonicalFile }.getOrNull()
+        if (safeSource == null ||
+            !safeSource.path.startsWith(cacheRoot.path + File.separator) ||
+            !safeSource.isFile || safeSource.length() < 1 ||
+            safeSource.length() > MAX_FILE_BYTES || rawName == null) {
             result.error("invalid_file", "The received file is invalid.", null)
             return
         }
         val filename = rawName.replace(Regex("[\\\\/\\x00-\\x1f\\x7f]"), "_").take(180)
-        runCatching {
+        shareExecutor.execute { runCatching {
             if (Build.VERSION.SDK_INT >= 29) {
                 val values = ContentValues().apply {
                     put(MediaStore.Downloads.DISPLAY_NAME, filename)
@@ -172,16 +191,31 @@ class MainActivity : FlutterActivity() {
                 }
                 val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                     ?: error("Could not create download")
-                contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("Could not write download")
-                values.clear()
-                values.put(MediaStore.Downloads.IS_PENDING, 0)
-                contentResolver.update(uri, values, null, null)
+                try {
+                    contentResolver.openOutputStream(uri)?.use { output ->
+                        safeSource.inputStream().use { input -> input.copyTo(output, 64 * 1024) }
+                    } ?: error("Could not write download")
+                    values.clear()
+                    values.put(MediaStore.Downloads.IS_PENDING, 0)
+                    contentResolver.update(uri, values, null, null)
+                } catch (error: Throwable) {
+                    contentResolver.delete(uri, null, null)
+                    throw error
+                }
             } else {
                 val directory = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "HomePlace").apply { mkdirs() }
-                File(directory, filename).writeBytes(bytes)
+                safeSource.inputStream().use { input ->
+                    FileOutputStream(File(directory, filename)).use { output -> input.copyTo(output, 64 * 1024) }
+                }
             }
-        }.onSuccess { result.success(null) }
-            .onFailure { result.error("save_failed", "The file could not be saved.", null) }
+        }.onSuccess { runOnUiThread { result.success(null) } }
+            .onFailure { runOnUiThread { result.error("save_failed", "The file could not be saved.", null) } }
+        }
+    }
+
+    override fun onDestroy() {
+        shareExecutor.shutdownNow()
+        super.onDestroy()
     }
 
     private fun isSafeWebUrl(value: String): Boolean = runCatching {
@@ -211,7 +245,7 @@ class MainActivity : FlutterActivity() {
         private const val SHARE_CHANNEL = "com.homeplace.mobile/share"
         private const val MAX_TEXT_LENGTH = 8000
         private const val MAX_URL_LENGTH = 4096
-        private const val MAX_FILE_BYTES = 5 * 1024 * 1024L
+        private const val MAX_FILE_BYTES = 500 * 1024 * 1024L
         private val SERVER_ID = Regex("^[0-9a-fA-F-]{36}$")
     }
 }
