@@ -128,13 +128,15 @@ class _HomeShellState extends State<HomeShell> {
                       error: false,
                       onClose: home.clearMessage,
                     ),
-                  if (widget.connection.pendingOutgoingShare
-                      case final content?)
+                  if (widget.connection.pendingOutgoingShares.isNotEmpty)
                     _OutgoingShareBanner(
-                      content: content,
-                      onCancel: widget.connection.clearOutgoingShare,
-                      onChoose: () =>
-                          _showShareTargets(context, overview, content),
+                      contents: widget.connection.pendingOutgoingShares,
+                      onCancel: widget.connection.clearAllOutgoingShares,
+                      onChoose: () => _showShareTargets(
+                        context,
+                        overview,
+                        List.of(widget.connection.pendingOutgoingShares),
+                      ),
                     ),
                   Expanded(
                     child: PageView(
@@ -148,6 +150,15 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                         _PlanPage(overview: overview, home: home),
                         _RequestsPage(overview: overview, home: home),
+                        _TransfersPage(
+                          home: home,
+                          connection: widget.connection,
+                          onChooseOutgoing: () => _showShareTargets(
+                            context,
+                            overview,
+                            List.of(widget.connection.pendingOutgoingShares),
+                          ),
+                        ),
                         _MonitorPage(overview: overview, home: home),
                       ],
                     ),
@@ -159,6 +170,9 @@ class _HomeShellState extends State<HomeShell> {
         ),
         bottomNavigationBar: _PillNavigation(
           index: tab,
+          transferCount:
+              widget.connection.pendingOutgoingShares.length +
+              widget.connection.pendingIncomingShares.length,
           onChanged: (value) {
             setState(() => tab = value);
             pages.jumpToPage(value);
@@ -420,17 +434,20 @@ class _HomeShellState extends State<HomeShell> {
   Future<void> _showShareTargets(
     BuildContext context,
     MobileOverview overview,
-    SharedContent content,
+    List<SharedContent> contents,
   ) async {
+    if (contents.isEmpty) return;
     final l10n = AppLocalizations.of(context);
     final targets =
         overview.shareTargets
             .where(
-              (target) => switch (content.kind) {
-                SharedContentKind.text => target.supportsText,
-                SharedContentKind.url => target.supportsUrl,
-                SharedContentKind.file => target.supportsFile,
-              },
+              (target) => contents.every(
+                (content) => switch (content.kind) {
+                  SharedContentKind.text => target.supportsText,
+                  SharedContentKind.url => target.supportsUrl,
+                  SharedContentKind.file => target.supportsFile,
+                },
+              ),
             )
             .toList(growable: false)
           ..sort((a, b) {
@@ -505,7 +522,18 @@ class _HomeShellState extends State<HomeShell> {
                         builder: (dialogContext) => AlertDialog(
                           title: Text(l10n.confirmShareTitle),
                           content: Text(
-                            target.ownedByCurrentUser
+                            contents.length > 1 && !target.ownedByCurrentUser
+                                ? l10n.confirmMultipleHouseholdShareBody(
+                                    contents.length,
+                                    target.ownerName ?? l10n.appName,
+                                    target.name,
+                                  )
+                                : contents.length > 1
+                                ? l10n.confirmMultipleShareBody(
+                                    contents.length,
+                                    target.name,
+                                  )
+                                : target.ownedByCurrentUser
                                 ? l10n.confirmShareBody(target.name)
                                 : l10n.confirmHouseholdShareBody(
                                     target.ownerName ?? l10n.appName,
@@ -527,11 +555,14 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                       );
                       if (confirmed != true || !mounted) return;
-                      final sent = await home.sendSharedContent(
-                        target,
-                        content,
-                      );
-                      if (sent) widget.connection.clearOutgoingShare();
+                      for (final content in contents) {
+                        final sent = await home.sendSharedContent(
+                          target,
+                          content,
+                        );
+                        if (!sent) break;
+                        widget.connection.clearOutgoingShare(content);
+                      }
                       if (sheetContext.mounted) Navigator.pop(sheetContext);
                     },
                   ),
@@ -546,23 +577,26 @@ class _HomeShellState extends State<HomeShell> {
 
 class _OutgoingShareBanner extends StatelessWidget {
   const _OutgoingShareBanner({
-    required this.content,
+    required this.contents,
     required this.onCancel,
     required this.onChoose,
   });
-  final SharedContent content;
+  final List<SharedContent> contents;
   final VoidCallback onCancel;
   final VoidCallback onChoose;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final label = switch (content.kind) {
-      SharedContentKind.text => content.value ?? '',
-      SharedContentKind.url => content.value ?? '',
-      SharedContentKind.file =>
-        '${content.filename} · ${_formatBytes(content.size ?? 0)}',
-    };
+    final content = contents.first;
+    final label = contents.length > 1
+        ? l10n.itemsReadyToShare(contents.length)
+        : switch (content.kind) {
+            SharedContentKind.text => content.value ?? '',
+            SharedContentKind.url => content.value ?? '',
+            SharedContentKind.file =>
+              '${content.filename} · ${_formatBytes(content.size ?? 0)}',
+          };
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.all(14),
@@ -812,54 +846,163 @@ class _OverviewPage extends StatelessWidget {
             onDismiss: connection.dismissPendingClipboard,
           ),
         ],
-        if (connection.pendingIncomingShares.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          if (connection.pendingIncomingShares.length > 1)
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 8),
-              child: Text(
-                l10n.incomingOffers(connection.pendingIncomingShares.length),
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-            ),
-          ...connection.pendingIncomingShares
-              .take(5)
-              .map(
-                (offer) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _IncomingShareCard(
-                    offer: offer,
-                    receiving: home.activeFileTransferId == offer.eventId,
-                    progress: home.activeFileTransferId == offer.eventId
-                        ? home.fileTransferProgress
-                        : null,
-                    onDismiss: home.activeFileTransferId == offer.eventId
-                        ? home.cancelFileTransfer
-                        : () => connection.dismissIncomingShare(offer),
-                    onAccept: offer.kind == SharedContentKind.file
-                        ? () => home.acceptSharedFile(offer, connection)
-                        : () => home.acceptIncomingTextOrUrl(offer, connection),
-                  ),
-                ),
-              ),
-          if (connection.pendingIncomingShares.length > 5)
-            Text(
-              l10n.moreIncomingOffers(
-                connection.pendingIncomingShares.length - 5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-        ],
-        if (home.transferActivity.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _TransferActivityCard(home: home),
-        ],
         if (connection.notificationHistory.isNotEmpty) ...[
           const SizedBox(height: 12),
           _NotificationHistoryCard(connection: connection),
         ],
         const SizedBox(height: 110),
       ],
+    );
+  }
+}
+
+class _TransfersPage extends StatelessWidget {
+  const _TransfersPage({
+    required this.home,
+    required this.connection,
+    required this.onChooseOutgoing,
+  });
+
+  final HomeController home;
+  final ConnectionController connection;
+  final VoidCallback onChooseOutgoing;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final outgoing = connection.pendingOutgoingShares;
+    final incoming = connection.pendingIncomingShares;
+    final empty = outgoing.isEmpty && incoming.isEmpty;
+    return _ScrollPage(
+      onRefresh: () async {
+        await Future.wait([home.refresh(), connection.refreshEvents()]);
+      },
+      children: [
+        _PageHeading(
+          title: l10n.transfersTitle,
+          subtitle: l10n.transfersSubtitle,
+        ),
+        const SizedBox(height: 22),
+        if (empty)
+          _EmptyCard(
+            icon: Icons.swap_vert_circle_outlined,
+            text: l10n.noPendingTransfers,
+          ),
+        if (outgoing.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.outgoingItems(outgoing.length),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: home.busyId == 'share' ? null : onChooseOutgoing,
+                icon: const Icon(Icons.send_rounded),
+                label: Text(l10n.chooseDevice),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (home.activeFileTransferId == 'outgoing') ...[
+            LinearProgressIndicator(value: home.fileTransferProgress),
+            const SizedBox(height: 10),
+          ],
+          ...outgoing.map(
+            (content) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _OutgoingQueueCard(
+                content: content,
+                onRemove: () => connection.clearOutgoingShare(content),
+              ),
+            ),
+          ),
+        ],
+        if (incoming.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            l10n.incomingOffers(incoming.length),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 10),
+          ...incoming.map(
+            (offer) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _IncomingShareCard(
+                offer: offer,
+                receiving: home.activeFileTransferId == offer.eventId,
+                progress: home.activeFileTransferId == offer.eventId
+                    ? home.fileTransferProgress
+                    : null,
+                onDismiss: home.activeFileTransferId == offer.eventId
+                    ? home.cancelFileTransfer
+                    : () => connection.dismissIncomingShare(offer),
+                onAccept: offer.kind == SharedContentKind.file
+                    ? () => home.acceptSharedFile(offer, connection)
+                    : () => home.acceptIncomingTextOrUrl(offer, connection),
+              ),
+            ),
+          ),
+        ],
+        if (home.transferActivity.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _TransferActivityCard(home: home, limit: 20),
+        ],
+        const SizedBox(height: 110),
+      ],
+    );
+  }
+}
+
+class _OutgoingQueueCard extends StatelessWidget {
+  const _OutgoingQueueCard({required this.content, required this.onRemove});
+
+  final SharedContent content;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final detail = switch (content.kind) {
+      SharedContentKind.file =>
+        '${content.filename} · ${_formatBytes(content.size ?? 0)}',
+      SharedContentKind.url => content.value ?? '',
+      SharedContentKind.text => content.value ?? '',
+    };
+    final icon = switch (content.kind) {
+      SharedContentKind.file => Icons.insert_drive_file_rounded,
+      SharedContentKind.url => Icons.link_rounded,
+      SharedContentKind.text => Icons.notes_rounded,
+    };
+    return _Surface(
+      color: _coral.withValues(alpha: .08),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      child: Row(
+        children: [
+          _RoundIcon(icon: icon, color: _coral),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.waitingToSend,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.remove,
+            onPressed: onRemove,
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -961,8 +1104,9 @@ class _NotificationHistoryCard extends StatelessWidget {
 }
 
 class _TransferActivityCard extends StatelessWidget {
-  const _TransferActivityCard({required this.home});
+  const _TransferActivityCard({required this.home, this.limit = 5});
   final HomeController home;
+  final int limit;
 
   @override
   Widget build(BuildContext context) {
@@ -992,7 +1136,7 @@ class _TransferActivityCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...home.transferActivity.take(5).map((activity) {
+          ...home.transferActivity.take(limit).map((activity) {
             final sent = activity.direction == TransferDirection.sent;
             final icon = switch (activity.kind) {
               SharedContentKind.text => Icons.notes_rounded,
@@ -2055,8 +2199,13 @@ class _MonitorPage extends StatelessWidget {
 }
 
 class _PillNavigation extends StatelessWidget {
-  const _PillNavigation({required this.index, required this.onChanged});
+  const _PillNavigation({
+    required this.index,
+    required this.transferCount,
+    required this.onChanged,
+  });
   final int index;
+  final int transferCount;
   final ValueChanged<int> onChanged;
 
   @override
@@ -2066,6 +2215,7 @@ class _PillNavigation extends StatelessWidget {
       (Icons.space_dashboard_rounded, l10n.homeTab),
       (Icons.event_note_rounded, l10n.calendarTab),
       (Icons.add_to_queue_rounded, l10n.requestsTab),
+      (Icons.swap_horiz_rounded, l10n.transfersTab),
       (Icons.monitor_heart_rounded, l10n.monitorTab),
     ];
     return SafeArea(
@@ -2109,12 +2259,44 @@ class _PillNavigation extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          items[i].$1,
-                          size: 22,
-                          color: selected
-                              ? const Color(0xff111521)
-                              : Colors.white.withValues(alpha: .62),
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              items[i].$1,
+                              size: 22,
+                              color: selected
+                                  ? const Color(0xff111521)
+                                  : Colors.white.withValues(alpha: .62),
+                            ),
+                            if (i == 3 && transferCount > 0)
+                              Positioned(
+                                right: -9,
+                                top: -7,
+                                child: Container(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _coral,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    transferCount > 9 ? '9+' : '$transferCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(

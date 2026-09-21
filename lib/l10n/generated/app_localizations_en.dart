@@ -155,6 +155,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requestsTab => 'Requests';
 
   @override
+  String get transfersTab => 'Transfers';
+
+  @override
   String get monitorTab => 'Monitor';
 
   @override
@@ -513,6 +516,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String confirmMultipleShareBody(int count, String device) {
+    return 'HomePlace will send $count items only to $device. Each offer expires in five minutes.';
+  }
+
+  @override
+  String confirmMultipleHouseholdShareBody(
+    int count,
+    String owner,
+    String device,
+  ) {
+    return 'This device belongs to $owner. HomePlace will send $count items only to $device after you confirm. Each offer expires in five minutes.';
+  }
+
+  @override
   String confirmHouseholdShareBody(String owner, String device) {
     return 'This device belongs to $owner. HomePlace will send the item only to $device after you confirm. The offer expires in five minutes.';
   }
@@ -524,6 +541,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String shareSent(String device) {
     return 'Sent to $device.';
   }
+
+  @override
+  String itemsReadyToShare(int count) {
+    return '$count items ready to send';
+  }
+
+  @override
+  String get transfersTitle => 'Transfers';
+
+  @override
+  String get transfersSubtitle =>
+      'Review every incoming item and choose exactly where outgoing content is sent.';
+
+  @override
+  String get noPendingTransfers =>
+      'No transfers need your attention right now.';
+
+  @override
+  String outgoingItems(int count) {
+    return 'Waiting to send · $count';
+  }
+
+  @override
+  String get waitingToSend => 'Waiting for a device';
+
+  @override
+  String get remove => 'Remove';
 
   @override
   String get recentTransfers => 'Recent transfers';

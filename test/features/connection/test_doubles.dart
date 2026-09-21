@@ -175,12 +175,14 @@ final class FakeClipboardService implements ClipboardService {
 }
 
 final class FakeShareService implements ShareService {
-  SharedContent? pending;
+  List<SharedContent> pending = const [];
   @override
   bool get isSupported => true;
   @override
   Future<void> initialize(void Function(SharedContent content) onShare) async {
-    if (pending != null) onShare(pending!);
+    for (final content in pending) {
+      onShare(content);
+    }
   }
 
   @override

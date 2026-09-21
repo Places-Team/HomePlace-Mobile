@@ -153,25 +153,26 @@ final class ConnectionController extends ChangeNotifier {
   String? _notificationHistoryScope;
   PendingClipboard? pendingClipboard;
   String? _clipboardTextToSuppress;
-  SharedContent? pendingOutgoingShare;
+  List<SharedContent> pendingOutgoingShares = const [];
   List<PendingShareOffer> pendingIncomingShares = const [];
   PendingShareOffer? get pendingIncomingShare =>
       pendingIncomingShares.firstOrNull;
   Timer? _heartbeatTimer;
+  bool _heartbeating = false;
   bool _polling = false;
   bool _disposed = false;
   List<String> _acknowledgedEventIds = const [];
 
   Future<void> initialize() async {
     await _notifications.initialize();
+    profiles = await _profiles.readAll();
+    if (profiles.isNotEmpty) {
+      await _activateProfile(profiles.last, persistSelection: false);
+    }
     await _sharing.initialize((content) {
-      _discardOutgoingFile();
-      pendingOutgoingShare = content;
+      _enqueueOutgoingShare(content);
       notifyListeners();
     });
-    profiles = await _profiles.readAll();
-    if (profiles.isEmpty) return;
-    await _activateProfile(profiles.last, persistSelection: false);
   }
 
   Future<bool> switchProfile(ConnectionProfile candidate) =>
@@ -233,8 +234,8 @@ final class ConnectionController extends ChangeNotifier {
     lastNotification = null;
     pendingClipboard = null;
     pendingIncomingShares = const [];
-    _discardOutgoingFile();
-    pendingOutgoingShare = null;
+    _discardAllOutgoingFiles();
+    pendingOutgoingShares = const [];
     _clipboardTextToSuppress = null;
     _acknowledgedEventIds = const [];
     stage = ConnectionStage.connected;
@@ -512,10 +513,28 @@ final class ConnectionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearOutgoingShare() {
-    _discardOutgoingFile();
-    pendingOutgoingShare = null;
+  void clearOutgoingShare([SharedContent? content]) {
+    final removed = content ?? pendingOutgoingShares.firstOrNull;
+    if (removed == null) return;
+    _discardOutgoingFile(removed);
+    pendingOutgoingShares = pendingOutgoingShares
+        .where((candidate) => !identical(candidate, removed))
+        .toList(growable: false);
     notifyListeners();
+  }
+
+  void clearAllOutgoingShares() {
+    _discardAllOutgoingFiles();
+    pendingOutgoingShares = const [];
+    notifyListeners();
+  }
+
+  void _enqueueOutgoingShare(SharedContent content) {
+    final updated = [...pendingOutgoingShares, content];
+    if (updated.length > 10) {
+      _discardOutgoingFile(updated.removeAt(0));
+    }
+    pendingOutgoingShares = updated.toList(growable: false);
   }
 
   Future<bool> acceptIncomingTextOrUrl(PendingShareOffer pending) async {
@@ -569,10 +588,16 @@ final class ConnectionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _discardOutgoingFile() {
-    final path = pendingOutgoingShare?.path;
+  void _discardOutgoingFile(SharedContent content) {
+    final path = content.path;
     if (path != null) {
       unawaited(File(path).delete().catchError((_) => File(path)));
+    }
+  }
+
+  void _discardAllOutgoingFiles() {
+    for (final content in pendingOutgoingShares) {
+      _discardOutgoingFile(content);
     }
   }
 
@@ -612,8 +637,8 @@ final class ConnectionController extends ChangeNotifier {
     pendingClipboard = null;
     _clipboardTextToSuppress = null;
     pendingIncomingShares = const [];
-    _discardOutgoingFile();
-    pendingOutgoingShare = null;
+    _discardAllOutgoingFiles();
+    pendingOutgoingShares = const [];
     _acknowledgedEventIds = const [];
     if (profiles.isNotEmpty) {
       await _activateProfile(profiles.last, persistSelection: false);
@@ -665,147 +690,155 @@ final class ConnectionController extends ChangeNotifier {
     );
   }
 
+  Future<void> refreshEvents() => _heartbeat();
+
   Future<void> _heartbeat() async {
-    final connectedProfile = profile;
-    final address = serverAddress;
-    if (stage != ConnectionStage.connected ||
-        connectedProfile == null ||
-        address == null) {
-      return;
-    }
-    final credential = await _credentials.read(connectedProfile.serverId);
-    if (credential == null) return;
-    final result = await _link.heartbeat(
-      address,
-      credential,
-      _acknowledgedEventIds,
-    );
-    if (_disposed ||
-        stage != ConnectionStage.connected ||
-        profile?.serverId != connectedProfile.serverId ||
-        serverAddress?.uri != address.uri) {
-      return;
-    }
-    if (result is LinkFailure<HeartbeatResponse>) {
-      diagnostics = result.message;
-      notifyListeners();
-      return;
-    }
-    final response = (result as LinkSuccess<HeartbeatResponse>).value;
-    if (response.serverId != connectedProfile.serverId) {
-      _heartbeatTimer?.cancel();
-      error = 'The server identity changed. Connection stopped.';
-      diagnostics =
-          'Expected ${connectedProfile.serverId}; received ${response.serverId}.';
-      notifyListeners();
-      return;
-    }
-    await _loadNotificationHistory(
-      connectedProfile.serverId,
-      credential,
-      applyIf: () =>
-          !_disposed &&
-          stage == ConnectionStage.connected &&
-          profile?.serverId == connectedProfile.serverId &&
-          serverAddress?.uri == address.uri,
-    );
-    if (_disposed ||
-        stage != ConnectionStage.connected ||
-        profile?.serverId != connectedProfile.serverId ||
-        serverAddress?.uri != address.uri) {
-      return;
-    }
-    final acknowledged = <String>[];
-    for (final event in response.events) {
-      if (event.type == 'clipboard.offer') {
-        final text = event.payload['text'];
-        final sourceName = event.payload['sourceName'];
-        if (text is String &&
-            text.isNotEmpty &&
-            text.length <= 8000 &&
-            sourceName is String) {
-          pendingClipboard = PendingClipboard(
-            eventId: event.id,
-            text: text,
-            sourceName: sourceName,
-          );
-        }
-        continue;
+    if (_heartbeating) return;
+    _heartbeating = true;
+    try {
+      final connectedProfile = profile;
+      final address = serverAddress;
+      if (stage != ConnectionStage.connected ||
+          connectedProfile == null ||
+          address == null) {
+        return;
       }
-      if (event.type == 'share.offer') {
-        final type = event.payload['type'];
-        final sourceName = event.payload['sourceName'];
-        if (sourceName is! String) continue;
-        if ((type == 'text' || type == 'url') &&
-            event.payload['value'] is String) {
-          final value = event.payload['value'] as String;
-          final uri = type == 'url' ? Uri.tryParse(value) : null;
-          if (value.isEmpty || value.length > (type == 'url' ? 4096 : 8000)) {
-            continue;
-          }
-          if (type == 'url' &&
-              (uri == null ||
-                  !{'http', 'https'}.contains(uri.scheme) ||
-                  uri.userInfo.isNotEmpty)) {
-            continue;
-          }
-          _enqueueIncomingShare(
-            PendingShareOffer(
+      final credential = await _credentials.read(connectedProfile.serverId);
+      if (credential == null) return;
+      final result = await _link.heartbeat(
+        address,
+        credential,
+        _acknowledgedEventIds,
+      );
+      if (_disposed ||
+          stage != ConnectionStage.connected ||
+          profile?.serverId != connectedProfile.serverId ||
+          serverAddress?.uri != address.uri) {
+        return;
+      }
+      if (result is LinkFailure<HeartbeatResponse>) {
+        diagnostics = result.message;
+        notifyListeners();
+        return;
+      }
+      final response = (result as LinkSuccess<HeartbeatResponse>).value;
+      if (response.serverId != connectedProfile.serverId) {
+        _heartbeatTimer?.cancel();
+        error = 'The server identity changed. Connection stopped.';
+        diagnostics =
+            'Expected ${connectedProfile.serverId}; received ${response.serverId}.';
+        notifyListeners();
+        return;
+      }
+      await _loadNotificationHistory(
+        connectedProfile.serverId,
+        credential,
+        applyIf: () =>
+            !_disposed &&
+            stage == ConnectionStage.connected &&
+            profile?.serverId == connectedProfile.serverId &&
+            serverAddress?.uri == address.uri,
+      );
+      if (_disposed ||
+          stage != ConnectionStage.connected ||
+          profile?.serverId != connectedProfile.serverId ||
+          serverAddress?.uri != address.uri) {
+        return;
+      }
+      final acknowledged = <String>[];
+      for (final event in response.events) {
+        if (event.type == 'clipboard.offer') {
+          final text = event.payload['text'];
+          final sourceName = event.payload['sourceName'];
+          if (text is String &&
+              text.isNotEmpty &&
+              text.length <= 8000 &&
+              sourceName is String) {
+            pendingClipboard = PendingClipboard(
               eventId: event.id,
-              kind: type == 'url'
-                  ? SharedContentKind.url
-                  : SharedContentKind.text,
+              text: text,
               sourceName: sourceName,
-              value: value,
-            ),
-          );
-        } else if (type == 'file') {
-          final transferId = event.payload['transferId'];
-          final filename = event.payload['filename'];
-          final size = event.payload['size'];
-          final sha256 = event.payload['sha256'];
-          if (transferId is String &&
-              filename is String &&
-              size is int &&
-              size > 0 &&
-              size <= maxShareFileBytes &&
-              sha256 is String &&
-              RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(sha256)) {
+            );
+          }
+          continue;
+        }
+        if (event.type == 'share.offer') {
+          final type = event.payload['type'];
+          final sourceName = event.payload['sourceName'];
+          if (sourceName is! String) continue;
+          if ((type == 'text' || type == 'url') &&
+              event.payload['value'] is String) {
+            final value = event.payload['value'] as String;
+            final uri = type == 'url' ? Uri.tryParse(value) : null;
+            if (value.isEmpty || value.length > (type == 'url' ? 4096 : 8000)) {
+              continue;
+            }
+            if (type == 'url' &&
+                (uri == null ||
+                    !{'http', 'https'}.contains(uri.scheme) ||
+                    uri.userInfo.isNotEmpty)) {
+              continue;
+            }
             _enqueueIncomingShare(
               PendingShareOffer(
                 eventId: event.id,
-                kind: SharedContentKind.file,
+                kind: type == 'url'
+                    ? SharedContentKind.url
+                    : SharedContentKind.text,
                 sourceName: sourceName,
-                transferId: transferId,
-                filename: filename,
-                mimeType: event.payload['mimeType'] as String?,
-                size: size,
-                sha256: sha256,
+                value: value,
               ),
             );
+          } else if (type == 'file') {
+            final transferId = event.payload['transferId'];
+            final filename = event.payload['filename'];
+            final size = event.payload['size'];
+            final sha256 = event.payload['sha256'];
+            if (transferId is String &&
+                filename is String &&
+                size is int &&
+                size > 0 &&
+                size <= maxShareFileBytes &&
+                sha256 is String &&
+                RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(sha256)) {
+              _enqueueIncomingShare(
+                PendingShareOffer(
+                  eventId: event.id,
+                  kind: SharedContentKind.file,
+                  sourceName: sourceName,
+                  transferId: transferId,
+                  filename: filename,
+                  mimeType: event.payload['mimeType'] as String?,
+                  size: size,
+                  sha256: sha256,
+                ),
+              );
+            }
           }
+          continue;
         }
-        continue;
+        if (event.type != 'notification.deliver') continue;
+        final title = event.payload['title'];
+        final body = event.payload['body'];
+        if (title is! String ||
+            body is! String ||
+            title.isEmpty ||
+            title.length > 120 ||
+            body.isEmpty ||
+            body.length > 2000) {
+          continue;
+        }
+        await _notifications.show(event.id, title, body);
+        await _recordNotification(event.id, title, body);
+        acknowledged.add(event.id);
+        lastNotification = '$title — $body';
       }
-      if (event.type != 'notification.deliver') continue;
-      final title = event.payload['title'];
-      final body = event.payload['body'];
-      if (title is! String ||
-          body is! String ||
-          title.isEmpty ||
-          title.length > 120 ||
-          body.isEmpty ||
-          body.length > 2000) {
-        continue;
-      }
-      await _notifications.show(event.id, title, body);
-      await _recordNotification(event.id, title, body);
-      acknowledged.add(event.id);
-      lastNotification = '$title — $body';
+      _acknowledgedEventIds = acknowledged;
+      diagnostics = null;
+      notifyListeners();
+    } finally {
+      _heartbeating = false;
     }
-    _acknowledgedEventIds = acknowledged;
-    diagnostics = null;
-    notifyListeners();
   }
 
   void _enqueueIncomingShare(PendingShareOffer offer) {

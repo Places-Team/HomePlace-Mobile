@@ -21,10 +21,12 @@ The first Flutter application slice is implemented with Android as the primary v
 - explicit Android clipboard relay with foreground reads and confirmation before an incoming value is copied;
 - Android Share Sheet support for text, safe web links, and streamed files up to 500 MB, with an explicit recipient and send confirmation;
 - private same-account or explicitly enabled household delivery, five-minute offers, encrypted temporary server storage, receiver acceptance, transfer progress, cancellation, and SHA-256 verification;
+- a dedicated transfer center for all pending incoming offers, queued outgoing items, retryable failures, and encrypted per-profile history;
+- Android multi-file Share Sheet intake for up to ten items and 500 MB per batch, followed by one explicit device selection and confirmation;
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
 - encrypted per-profile notification history and visible background-check diagnostics;
 - opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and foreground confirmation;
-- a bounded incoming-offer queue so concurrent file and link offers remain independently reviewable.
+- bounded incoming and outgoing queues so concurrent files and links remain independently reviewable.
 
 Foreground presence and clipboard relay operate while the application is open. Android can periodically check for notifications and incoming share offers in the background, but Android controls the timing and may defer the 15-minute schedule. Opening, copying, downloading or declining an offer remains an explicit user action. Android does not permit ordinary applications to read the system clipboard while they are in the background. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 

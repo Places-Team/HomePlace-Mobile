@@ -368,6 +368,12 @@ abstract class AppLocalizations {
   /// **'Requests'**
   String get requestsTab;
 
+  /// No description provided for @transfersTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers'**
+  String get transfersTab;
+
   /// No description provided for @monitorTab.
   ///
   /// In en, this message translates to:
@@ -1016,6 +1022,22 @@ abstract class AppLocalizations {
   /// **'HomePlace will send it only to {device}. The offer expires in five minutes.'**
   String confirmShareBody(String device);
 
+  /// No description provided for @confirmMultipleShareBody.
+  ///
+  /// In en, this message translates to:
+  /// **'HomePlace will send {count} items only to {device}. Each offer expires in five minutes.'**
+  String confirmMultipleShareBody(int count, String device);
+
+  /// No description provided for @confirmMultipleHouseholdShareBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device belongs to {owner}. HomePlace will send {count} items only to {device} after you confirm. Each offer expires in five minutes.'**
+  String confirmMultipleHouseholdShareBody(
+    int count,
+    String owner,
+    String device,
+  );
+
   /// No description provided for @confirmHouseholdShareBody.
   ///
   /// In en, this message translates to:
@@ -1033,6 +1055,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sent to {device}.'**
   String shareSent(String device);
+
+  /// No description provided for @itemsReadyToShare.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items ready to send'**
+  String itemsReadyToShare(int count);
+
+  /// No description provided for @transfersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers'**
+  String get transfersTitle;
+
+  /// No description provided for @transfersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review every incoming item and choose exactly where outgoing content is sent.'**
+  String get transfersSubtitle;
+
+  /// No description provided for @noPendingTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'No transfers need your attention right now.'**
+  String get noPendingTransfers;
+
+  /// No description provided for @outgoingItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to send · {count}'**
+  String outgoingItems(int count);
+
+  /// No description provided for @waitingToSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for a device'**
+  String get waitingToSend;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
 
   /// No description provided for @recentTransfers.
   ///

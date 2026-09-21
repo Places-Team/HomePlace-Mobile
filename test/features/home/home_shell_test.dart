@@ -56,7 +56,7 @@ void main() {
       scrollable: planScroll.first,
     );
     expect(find.text('Completed · 1'), findsOneWidget);
-    for (final label in ['Requests', 'Monitor', 'Home']) {
+    for (final label in ['Requests', 'Transfers', 'Monitor', 'Home']) {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
       expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
@@ -74,10 +74,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final connection = ConnectionController()
-      ..pendingOutgoingShare = const SharedContent(
-        kind: SharedContentKind.text,
-        value: 'Family note',
-      );
+      ..pendingOutgoingShares = const [
+        SharedContent(kind: SharedContentKind.text, value: 'Family note'),
+        SharedContent(kind: SharedContentKind.url, value: 'https://home.test'),
+      ];
     final home = HomeController(sessionProvider: () async => null)
       ..loading = false
       ..overview = _overview();
@@ -103,6 +103,7 @@ void main() {
     await tester.tap(find.text('Family tablet'));
     await tester.pumpAndSettle();
     expect(find.textContaining('This device belongs to Alex'), findsOneWidget);
+    expect(find.textContaining('send 2 items'), findsOneWidget);
     connection.dispose();
     home.dispose();
   });
@@ -133,6 +134,8 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
+    await tester.tap(find.text('Transfers'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Recent transfers'),
       300,
@@ -229,6 +232,8 @@ void main() {
           home: HomeShell(connection: connection, homeController: home),
         ),
       );
+      await tester.tap(find.text('Transfers'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('first.txt · 5 B'),
         300,

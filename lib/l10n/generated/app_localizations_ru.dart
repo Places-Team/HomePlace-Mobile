@@ -155,6 +155,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get requestsTab => 'Заявки';
 
   @override
+  String get transfersTab => 'Передачи';
+
+  @override
   String get monitorTab => 'Контроль';
 
   @override
@@ -514,6 +517,20 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String confirmMultipleShareBody(int count, String device) {
+    return 'HomePlace отправит $count объектов только на устройство «$device». Каждое предложение исчезнет через пять минут.';
+  }
+
+  @override
+  String confirmMultipleHouseholdShareBody(
+    int count,
+    String owner,
+    String device,
+  ) {
+    return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит $count объектов только на «$device». Каждое предложение исчезнет через пять минут.';
+  }
+
+  @override
   String confirmHouseholdShareBody(String owner, String device) {
     return 'Это устройство принадлежит пользователю $owner. После подтверждения HomePlace отправит объект только на «$device». Предложение исчезнет через пять минут.';
   }
@@ -525,6 +542,33 @@ class AppLocalizationsRu extends AppLocalizations {
   String shareSent(String device) {
     return 'Отправлено на устройство «$device».';
   }
+
+  @override
+  String itemsReadyToShare(int count) {
+    return 'Готово к отправке: $count';
+  }
+
+  @override
+  String get transfersTitle => 'Передачи';
+
+  @override
+  String get transfersSubtitle =>
+      'Проверяйте каждый входящий объект и точно выбирайте получателя исходящих данных.';
+
+  @override
+  String get noPendingTransfers =>
+      'Сейчас нет передач, требующих вашего внимания.';
+
+  @override
+  String outgoingItems(int count) {
+    return 'Ожидают отправки · $count';
+  }
+
+  @override
+  String get waitingToSend => 'Ожидает выбора устройства';
+
+  @override
+  String get remove => 'Убрать';
 
   @override
   String get recentTransfers => 'Недавние передачи';

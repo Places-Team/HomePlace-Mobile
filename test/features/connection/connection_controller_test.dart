@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/core/storage/connection_profile.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/link/link_client.dart';
@@ -7,6 +8,38 @@ import 'package:homeplace/link/models.dart';
 import 'test_doubles.dart';
 
 void main() {
+  test('queues multiple Android share items for explicit review', () async {
+    final sharing = FakeShareService()
+      ..pending = const [
+        SharedContent(
+          kind: SharedContentKind.file,
+          path: '/tmp/one',
+          filename: 'one.txt',
+          size: 10,
+        ),
+        SharedContent(
+          kind: SharedContentKind.file,
+          path: '/tmp/two',
+          filename: 'two.txt',
+          size: 20,
+        ),
+      ];
+    final controller = ConnectionController(
+      profileStore: MemoryProfileStore(),
+      notificationService: FakeNotificationService(),
+      shareService: sharing,
+    );
+
+    await controller.initialize();
+
+    expect(controller.pendingOutgoingShares.map((item) => item.filename), [
+      'one.txt',
+      'two.txt',
+    ]);
+    controller.pendingOutgoingShares = const [];
+    controller.dispose();
+  });
+
   test('completes pairing and persists the connection securely', () async {
     final link = FakeLinkService();
     final profiles = MemoryProfileStore();

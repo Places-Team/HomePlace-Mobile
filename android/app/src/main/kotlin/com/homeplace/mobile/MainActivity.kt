@@ -91,25 +91,47 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun captureShareIntent(incoming: Intent?) {
-        if (incoming?.action != Intent.ACTION_SEND) return
-        val stream = if (Build.VERSION.SDK_INT >= 33) {
-            incoming.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        } else {
-            @Suppress("DEPRECATION") incoming.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
-        }
+        if (incoming?.action != Intent.ACTION_SEND && incoming?.action != Intent.ACTION_SEND_MULTIPLE) return
+        val streams = sharedStreams(incoming).take(MAX_SHARED_ITEMS)
         val announcedType = incoming.type
-        val textContent = if (stream == null) captureText(incoming) else null
+        val textContent = if (streams.isEmpty()) captureText(incoming) else null
         incoming.action = null
         incoming.removeExtra(Intent.EXTRA_TEXT)
         incoming.removeExtra(Intent.EXTRA_STREAM)
-        if (stream == null) {
+        if (streams.isEmpty()) {
             deliverShare(textContent)
             return
         }
         shareExecutor.execute {
-            val content = copyIncomingFile(stream, announcedType)
-            runOnUiThread { deliverShare(content) }
+            var total = 0L
+            for (stream in streams) {
+                val content = copyIncomingFile(stream, announcedType) ?: continue
+                val size = content["size"] as? Long ?: continue
+                if (total + size > MAX_FILE_BYTES) {
+                    (content["path"] as? String)?.let(::File)?.delete()
+                    break
+                }
+                total += size
+                runOnUiThread { deliverShare(content) }
+            }
         }
+    }
+
+    private fun sharedStreams(incoming: Intent): List<Uri> {
+        if (incoming.action == Intent.ACTION_SEND_MULTIPLE) {
+            return if (Build.VERSION.SDK_INT >= 33) {
+                incoming.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java) ?: emptyList()
+            } else {
+                @Suppress("DEPRECATION")
+                incoming.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM) ?: emptyList()
+            }
+        }
+        val single = if (Build.VERSION.SDK_INT >= 33) {
+            incoming.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION") incoming.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+        }
+        return listOfNotNull(single)
     }
 
     private fun deliverShare(content: Map<String, Any>?) {
@@ -245,6 +267,7 @@ class MainActivity : FlutterActivity() {
         private const val SHARE_CHANNEL = "com.homeplace.mobile/share"
         private const val MAX_TEXT_LENGTH = 8000
         private const val MAX_URL_LENGTH = 4096
+        private const val MAX_SHARED_ITEMS = 10
         private const val MAX_FILE_BYTES = 500 * 1024 * 1024L
         private val SERVER_ID = Regex("^[0-9a-fA-F-]{36}$")
     }
