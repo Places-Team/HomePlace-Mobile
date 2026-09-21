@@ -15,6 +15,8 @@ The first Flutter application slice is implemented with Android as the primary v
 - capability negotiation, foreground heartbeat, event acknowledgement, and test notifications;
 - multiple saved connection profiles with server identity checks, diagnostics, revoke, and disconnect actions;
 - a five-tab pill navigation shell for home, plans, media requests, transfers, and monitoring;
+- an "All sections" workspace map inspired by the server and desktop information architecture, with live routes for implemented modules and clearly labelled previews for automations and smart-home controls that still require server APIs;
+- dedicated mobile views for share-capable devices, encrypted notification history, approved permissions, server identity, account isolation, and connection security;
 - Google Calendar agenda and full reminder management: upcoming, overdue and completed sections, create, edit, repeat, complete, restore and confirmed deletion;
 - Sonarr/Radarr search and requests, qBittorrent status, Telegram status and a delivery check;
 - compact service health and recent-event monitoring;

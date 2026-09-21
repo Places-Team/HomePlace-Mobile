@@ -76,6 +76,65 @@ void main() {
     home.dispose();
   });
 
+  testWidgets('all sections maps live modules and honest previews', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+    await tester.tap(find.byTooltip('All sections'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('All sections'), findsWidgets);
+    expect(find.text('Devices'), findsOneWidget);
+
+    await tester.tap(find.text('Devices'));
+    await tester.pumpAndSettle();
+    expect(find.text('Available for sharing'), findsWidgets);
+    expect(find.text('Family tablet'), findsOneWidget);
+    expect(find.text('file.receive'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Automations'),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Automations'));
+    await tester.pumpAndSettle();
+    expect(find.text('Waiting for a compatible server API'), findsOneWidget);
+    expect(find.text('When a download finishes'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Calendar'),
+      -400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Calendar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reminders'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    connection.dispose();
+    home.dispose();
+  });
+
   testWidgets('opens system shares directly on the device chooser', (
     tester,
   ) async {

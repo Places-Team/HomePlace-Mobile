@@ -13,6 +13,7 @@ import '../../link/mobile_models.dart';
 import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import 'home_controller.dart';
+import 'home_modules.dart';
 
 const _violet = Color(0xff829eff);
 const _coral = Color(0xffff746c);
@@ -135,6 +136,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     onError: home.error == null
                         ? null
                         : () => _showCurrentError(context, l10n),
+                    onModules: () => _showModules(context, overview),
                     onSettings: () => _showSettings(context, l10n),
                   ),
                   if (home.notice case final notice?)
@@ -252,6 +254,31 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
     if (dismiss == true) home.clearMessage();
   }
+
+  Future<void> _showModules(BuildContext context, MobileOverview overview) =>
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (routeContext) => HomeModulesPage(
+            overview: overview,
+            connection: widget.connection,
+            onOpenTab: (value) {
+              setState(() => tab = value);
+              if (pages.hasClients) pages.jumpToPage(value);
+            },
+            onOpenSettings: () {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _showSettings(
+                    this.context,
+                    AppLocalizations.of(this.context),
+                  );
+                }
+              });
+            },
+          ),
+        ),
+      );
 
   void _routeOutgoingShare(
     MobileOverview overview,
@@ -778,6 +805,7 @@ class _TopBar extends StatelessWidget {
     required this.hasError,
     required this.onRefresh,
     required this.onError,
+    required this.onModules,
     required this.onSettings,
   });
   final String serverName;
@@ -785,6 +813,7 @@ class _TopBar extends StatelessWidget {
   final bool hasError;
   final VoidCallback onRefresh;
   final VoidCallback? onError;
+  final VoidCallback onModules;
   final VoidCallback onSettings;
 
   @override
@@ -842,6 +871,11 @@ class _TopBar extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.refresh_rounded),
+        ),
+        IconButton(
+          tooltip: AppLocalizations.of(context).allSections,
+          onPressed: onModules,
+          icon: const Icon(Icons.apps_rounded),
         ),
         IconButton(
           tooltip: AppLocalizations.of(context).settings,

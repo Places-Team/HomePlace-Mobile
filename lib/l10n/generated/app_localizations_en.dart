@@ -799,4 +799,171 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewAll => 'View all';
+
+  @override
+  String get allSections => 'All sections';
+
+  @override
+  String get allSectionsBody =>
+      'The complete HomePlace mobile workspace, arranged around what you want to do.';
+
+  @override
+  String get everydaySection => 'Every day';
+
+  @override
+  String get sharingSection => 'Devices and sharing';
+
+  @override
+  String get servicesSection => 'Home and services';
+
+  @override
+  String get systemSection => 'System';
+
+  @override
+  String get availableNow => 'Available now';
+
+  @override
+  String get preview => 'Preview';
+
+  @override
+  String get configureOnServer =>
+      'Configure in the HomePlace web control center';
+
+  @override
+  String get devicesTitle => 'Devices';
+
+  @override
+  String get devicesBody =>
+      'Presence, ownership and the actions each paired device actually supports.';
+
+  @override
+  String get shareCapableDevices => 'Available for sharing';
+
+  @override
+  String get noLinkedDevices =>
+      'No other compatible devices are currently available.';
+
+  @override
+  String get capabilities => 'Capabilities';
+
+  @override
+  String get clipboardModuleBody =>
+      'Private text handoff with confirmation and loop protection.';
+
+  @override
+  String get notificationsModuleBody =>
+      'Delivery history and sensitive action approvals for this profile.';
+
+  @override
+  String get automationsTitle => 'Automations';
+
+  @override
+  String get automationsBody =>
+      'Connect explicit events and actions without giving devices unrestricted control.';
+
+  @override
+  String get automationArrival => 'When I arrive home';
+
+  @override
+  String get automationArrivalAction => 'Turn on the hallway scene';
+
+  @override
+  String get automationDownload => 'When a download finishes';
+
+  @override
+  String get automationDownloadAction => 'Notify my phone';
+
+  @override
+  String get automationBattery => 'When server power is low';
+
+  @override
+  String get automationBatteryAction => 'Send a Telegram alert';
+
+  @override
+  String get automationSafety =>
+      'Every rule lists its trigger, target and required permission before it can be enabled.';
+
+  @override
+  String get smartHomeTitle => 'Smart home';
+
+  @override
+  String get smartHomeBody =>
+      'Rooms, scenes, sensors and safe controls from the Home Assistant connection managed by HomePlace.';
+
+  @override
+  String get smartHomeEmpty =>
+      'Connect Home Assistant on the server to show real rooms and controls here.';
+
+  @override
+  String get rooms => 'Rooms';
+
+  @override
+  String get scenes => 'Scenes';
+
+  @override
+  String get sensors => 'Sensors';
+
+  @override
+  String get securityCenter => 'Security and privacy';
+
+  @override
+  String get securityCenterBody =>
+      'Review server identity, transport security, account isolation and approved permissions.';
+
+  @override
+  String get accountIsolation => 'Account-isolated sharing';
+
+  @override
+  String get accountIsolationBody =>
+      'Content is routed only to the selected approved device. Household transfers always require confirmation.';
+
+  @override
+  String get explicitCapabilities => 'Explicit capabilities';
+
+  @override
+  String get explicitCapabilitiesBody =>
+      'The phone advertises only actions supported by this operating system and current permissions.';
+
+  @override
+  String get verifiedIdentity => 'Verified server identity';
+
+  @override
+  String get verifiedIdentityBody =>
+      'HomePlace checks the server ID on reconnect and never silently accepts an invalid certificate.';
+
+  @override
+  String get openSection => 'Open section';
+
+  @override
+  String get manageSettings => 'Manage settings';
+
+  @override
+  String get calendarModuleBody =>
+      'Calendar, flexible reminders and completed history.';
+
+  @override
+  String get mediaModuleBody =>
+      'Search Radarr and Sonarr and follow download queues.';
+
+  @override
+  String get transfersModuleBody =>
+      'Send and receive text, links and files with an explicit recipient.';
+
+  @override
+  String get monitoringModuleBody =>
+      'Availability checks, Docker containers, service latency and events.';
+
+  @override
+  String get telegramModuleBody =>
+      'Server-managed alerts and a connection test.';
+
+  @override
+  String get settingsModuleBody =>
+      'Language, appearance, background delivery, profiles and connection security.';
+
+  @override
+  String get privateWorkspace => 'Private workspace';
+
+  @override
+  String get plannedServerApi => 'Waiting for a compatible server API';
 }

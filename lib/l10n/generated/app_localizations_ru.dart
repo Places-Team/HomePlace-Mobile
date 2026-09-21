@@ -799,4 +799,170 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get viewAll => 'Показать все';
+
+  @override
+  String get allSections => 'Все разделы';
+
+  @override
+  String get allSectionsBody =>
+      'Полное мобильное пространство HomePlace, собранное вокруг ваших задач.';
+
+  @override
+  String get everydaySection => 'Каждый день';
+
+  @override
+  String get sharingSection => 'Устройства и обмен';
+
+  @override
+  String get servicesSection => 'Дом и сервисы';
+
+  @override
+  String get systemSection => 'Система';
+
+  @override
+  String get availableNow => 'Уже работает';
+
+  @override
+  String get preview => 'Макет';
+
+  @override
+  String get configureOnServer => 'Настройте в веб-интерфейсе HomePlace';
+
+  @override
+  String get devicesTitle => 'Устройства';
+
+  @override
+  String get devicesBody =>
+      'Присутствие, владелец и только те действия, которые действительно поддерживает устройство.';
+
+  @override
+  String get shareCapableDevices => 'Доступны для передачи';
+
+  @override
+  String get noLinkedDevices =>
+      'Сейчас нет других доступных совместимых устройств.';
+
+  @override
+  String get capabilities => 'Возможности';
+
+  @override
+  String get clipboardModuleBody =>
+      'Приватная передача текста с подтверждением и защитой от зацикливания.';
+
+  @override
+  String get notificationsModuleBody =>
+      'История доставки и подтверждения важных действий только для этого профиля.';
+
+  @override
+  String get automationsTitle => 'Автоматизации';
+
+  @override
+  String get automationsBody =>
+      'Связывайте явные события и действия без неограниченного доступа к устройствам.';
+
+  @override
+  String get automationArrival => 'Когда я прихожу домой';
+
+  @override
+  String get automationArrivalAction => 'Включить сцену в прихожей';
+
+  @override
+  String get automationDownload => 'Когда загрузка завершена';
+
+  @override
+  String get automationDownloadAction => 'Уведомить телефон';
+
+  @override
+  String get automationBattery => 'Когда питание сервера на исходе';
+
+  @override
+  String get automationBatteryAction => 'Отправить предупреждение в Telegram';
+
+  @override
+  String get automationSafety =>
+      'Перед включением правило показывает триггер, получателя и необходимое разрешение.';
+
+  @override
+  String get smartHomeTitle => 'Умный дом';
+
+  @override
+  String get smartHomeBody =>
+      'Комнаты, сцены, датчики и безопасное управление через подключение Home Assistant в HomePlace.';
+
+  @override
+  String get smartHomeEmpty =>
+      'Подключите Home Assistant на сервере, чтобы здесь появились настоящие комнаты и элементы управления.';
+
+  @override
+  String get rooms => 'Комнаты';
+
+  @override
+  String get scenes => 'Сцены';
+
+  @override
+  String get sensors => 'Датчики';
+
+  @override
+  String get securityCenter => 'Безопасность и приватность';
+
+  @override
+  String get securityCenterBody =>
+      'Проверяйте идентификатор сервера, защиту канала, изоляцию аккаунтов и выданные разрешения.';
+
+  @override
+  String get accountIsolation => 'Обмен изолирован по аккаунтам';
+
+  @override
+  String get accountIsolationBody =>
+      'Данные идут только на выбранное подтверждённое устройство. Передача семье всегда требует подтверждения.';
+
+  @override
+  String get explicitCapabilities => 'Явные возможности';
+
+  @override
+  String get explicitCapabilitiesBody =>
+      'Телефон объявляет только действия, доступные в этой ОС и с текущими разрешениями.';
+
+  @override
+  String get verifiedIdentity => 'Проверенная личность сервера';
+
+  @override
+  String get verifiedIdentityBody =>
+      'HomePlace сверяет ID сервера при переподключении и не принимает неверный сертификат без предупреждения.';
+
+  @override
+  String get openSection => 'Открыть раздел';
+
+  @override
+  String get manageSettings => 'Открыть настройки';
+
+  @override
+  String get calendarModuleBody =>
+      'Календарь, гибкие напоминания и история выполненных.';
+
+  @override
+  String get mediaModuleBody =>
+      'Поиск в Radarr и Sonarr и контроль очередей загрузки.';
+
+  @override
+  String get transfersModuleBody =>
+      'Отправка и приём текста, ссылок и файлов с точным выбором получателя.';
+
+  @override
+  String get monitoringModuleBody =>
+      'Проверки доступности, Docker-контейнеры, задержка сервисов и события.';
+
+  @override
+  String get telegramModuleBody =>
+      'Оповещения под управлением сервера и проверка подключения.';
+
+  @override
+  String get settingsModuleBody =>
+      'Язык, тема, фоновая доставка, профили и безопасность подключения.';
+
+  @override
+  String get privateWorkspace => 'Приватное пространство';
+
+  @override
+  String get plannedServerApi => 'Ожидает совместимого API сервера';
 }

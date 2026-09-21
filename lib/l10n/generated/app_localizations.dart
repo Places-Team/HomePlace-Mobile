@@ -1499,6 +1499,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View all'**
   String get viewAll;
+
+  /// No description provided for @allSections.
+  ///
+  /// In en, this message translates to:
+  /// **'All sections'**
+  String get allSections;
+
+  /// No description provided for @allSectionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The complete HomePlace mobile workspace, arranged around what you want to do.'**
+  String get allSectionsBody;
+
+  /// No description provided for @everydaySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get everydaySection;
+
+  /// No description provided for @sharingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices and sharing'**
+  String get sharingSection;
+
+  /// No description provided for @servicesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Home and services'**
+  String get servicesSection;
+
+  /// No description provided for @systemSection.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get systemSection;
+
+  /// No description provided for @availableNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Available now'**
+  String get availableNow;
+
+  /// No description provided for @preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get preview;
+
+  /// No description provided for @configureOnServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure in the HomePlace web control center'**
+  String get configureOnServer;
+
+  /// No description provided for @devicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get devicesTitle;
+
+  /// No description provided for @devicesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Presence, ownership and the actions each paired device actually supports.'**
+  String get devicesBody;
+
+  /// No description provided for @shareCapableDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Available for sharing'**
+  String get shareCapableDevices;
+
+  /// No description provided for @noLinkedDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No other compatible devices are currently available.'**
+  String get noLinkedDevices;
+
+  /// No description provided for @capabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get capabilities;
+
+  /// No description provided for @clipboardModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Private text handoff with confirmation and loop protection.'**
+  String get clipboardModuleBody;
+
+  /// No description provided for @notificationsModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery history and sensitive action approvals for this profile.'**
+  String get notificationsModuleBody;
+
+  /// No description provided for @automationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automations'**
+  String get automationsTitle;
+
+  /// No description provided for @automationsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect explicit events and actions without giving devices unrestricted control.'**
+  String get automationsBody;
+
+  /// No description provided for @automationArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'When I arrive home'**
+  String get automationArrival;
+
+  /// No description provided for @automationArrivalAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on the hallway scene'**
+  String get automationArrivalAction;
+
+  /// No description provided for @automationDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'When a download finishes'**
+  String get automationDownload;
+
+  /// No description provided for @automationDownloadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify my phone'**
+  String get automationDownloadAction;
+
+  /// No description provided for @automationBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'When server power is low'**
+  String get automationBattery;
+
+  /// No description provided for @automationBatteryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a Telegram alert'**
+  String get automationBatteryAction;
+
+  /// No description provided for @automationSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Every rule lists its trigger, target and required permission before it can be enabled.'**
+  String get automationSafety;
+
+  /// No description provided for @smartHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart home'**
+  String get smartHomeTitle;
+
+  /// No description provided for @smartHomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms, scenes, sensors and safe controls from the Home Assistant connection managed by HomePlace.'**
+  String get smartHomeBody;
+
+  /// No description provided for @smartHomeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Home Assistant on the server to show real rooms and controls here.'**
+  String get smartHomeEmpty;
+
+  /// No description provided for @rooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms'**
+  String get rooms;
+
+  /// No description provided for @scenes.
+  ///
+  /// In en, this message translates to:
+  /// **'Scenes'**
+  String get scenes;
+
+  /// No description provided for @sensors.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensors'**
+  String get sensors;
+
+  /// No description provided for @securityCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Security and privacy'**
+  String get securityCenter;
+
+  /// No description provided for @securityCenterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Review server identity, transport security, account isolation and approved permissions.'**
+  String get securityCenterBody;
+
+  /// No description provided for @accountIsolation.
+  ///
+  /// In en, this message translates to:
+  /// **'Account-isolated sharing'**
+  String get accountIsolation;
+
+  /// No description provided for @accountIsolationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Content is routed only to the selected approved device. Household transfers always require confirmation.'**
+  String get accountIsolationBody;
+
+  /// No description provided for @explicitCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Explicit capabilities'**
+  String get explicitCapabilities;
+
+  /// No description provided for @explicitCapabilitiesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone advertises only actions supported by this operating system and current permissions.'**
+  String get explicitCapabilitiesBody;
+
+  /// No description provided for @verifiedIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified server identity'**
+  String get verifiedIdentity;
+
+  /// No description provided for @verifiedIdentityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'HomePlace checks the server ID on reconnect and never silently accepts an invalid certificate.'**
+  String get verifiedIdentityBody;
+
+  /// No description provided for @openSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Open section'**
+  String get openSection;
+
+  /// No description provided for @manageSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage settings'**
+  String get manageSettings;
+
+  /// No description provided for @calendarModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar, flexible reminders and completed history.'**
+  String get calendarModuleBody;
+
+  /// No description provided for @mediaModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Radarr and Sonarr and follow download queues.'**
+  String get mediaModuleBody;
+
+  /// No description provided for @transfersModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Send and receive text, links and files with an explicit recipient.'**
+  String get transfersModuleBody;
+
+  /// No description provided for @monitoringModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability checks, Docker containers, service latency and events.'**
+  String get monitoringModuleBody;
+
+  /// No description provided for @telegramModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-managed alerts and a connection test.'**
+  String get telegramModuleBody;
+
+  /// No description provided for @settingsModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Language, appearance, background delivery, profiles and connection security.'**
+  String get settingsModuleBody;
+
+  /// No description provided for @privateWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Private workspace'**
+  String get privateWorkspace;
+
+  /// No description provided for @plannedServerApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for a compatible server API'**
+  String get plannedServerApi;
 }
 
 class _AppLocalizationsDelegate
