@@ -145,8 +145,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     onError: home.error == null
                         ? null
                         : () => _showCurrentError(context, l10n),
-                    onModules: () => _showModules(context, overview),
-                    onSettings: () => _showSettings(context, l10n),
                   ),
                   if (home.notice case final notice?)
                     _MessageBanner(
@@ -240,6 +238,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             setState(() => tab = value);
             pages.jumpToPage(value);
           },
+          onMore: () => _showModules(context, overview),
         ),
       );
     },
@@ -828,16 +827,12 @@ class _TopBar extends StatelessWidget {
     required this.hasError,
     required this.onRefresh,
     required this.onError,
-    required this.onModules,
-    required this.onSettings,
   });
   final String serverName;
   final bool refreshing;
   final bool hasError;
   final VoidCallback onRefresh;
   final VoidCallback? onError;
-  final VoidCallback onModules;
-  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -894,16 +889,6 @@ class _TopBar extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.refresh_rounded),
-        ),
-        IconButton(
-          tooltip: AppLocalizations.of(context).allSections,
-          onPressed: onModules,
-          icon: const Icon(Icons.apps_rounded),
-        ),
-        IconButton(
-          tooltip: AppLocalizations.of(context).settings,
-          onPressed: onSettings,
-          icon: const Icon(Icons.tune_rounded),
         ),
       ],
     ),
@@ -2649,10 +2634,12 @@ class _PillNavigation extends StatelessWidget {
     required this.index,
     required this.transferCount,
     required this.onChanged,
+    required this.onMore,
   });
   final int index;
   final int transferCount;
   final ValueChanged<int> onChanged;
+  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -2682,88 +2669,121 @@ class _PillNavigation extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: List.generate(items.length, (i) {
-            final selected = i == index;
-            return Expanded(
-              child: Semantics(
-                selected: selected,
-                button: true,
-                label: items[i].$2,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(27),
-                  onTap: () => onChanged(i),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutCubic,
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? const Color(0xffa9bcff)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(27),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Icon(
-                              items[i].$1,
-                              size: 22,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 330;
+            return Row(
+              children: [
+                ...List.generate(items.length, (i) {
+                  final selected = i == index;
+                  return Expanded(
+                    flex: selected && !compact ? 2 : 1,
+                    child: Tooltip(
+                      message: items[i].$2,
+                      excludeFromSemantics: true,
+                      child: Semantics(
+                        selected: selected,
+                        button: true,
+                        label: items[i].$2,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(27),
+                          onTap: () => onChanged(i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            decoration: BoxDecoration(
                               color: selected
-                                  ? const Color(0xff111521)
-                                  : Colors.white.withValues(alpha: .62),
+                                  ? const Color(0xffa9bcff)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(27),
                             ),
-                            if (i == 3 && transferCount > 0)
-                              Positioned(
-                                right: -9,
-                                top: -7,
-                                child: Container(
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _coral,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    transferCount > 9 ? '9+' : '$transferCount',
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Icon(
+                                      items[i].$1,
+                                      size: 22,
+                                      color: selected
+                                          ? const Color(0xff111521)
+                                          : Colors.white.withValues(alpha: .62),
+                                    ),
+                                    if (i == 3 && transferCount > 0)
+                                      Positioned(
+                                        right: -9,
+                                        top: -7,
+                                        child: Container(
+                                          constraints: const BoxConstraints(
+                                            minWidth: 16,
+                                            minHeight: 16,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _coral,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            transferCount > 9
+                                                ? '9+'
+                                                : '$transferCount',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                if (selected && !compact) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    items[i].$2,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.fade,
                                     style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xff111521),
                                     ),
                                   ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          items[i].$2,
-                          maxLines: 1,
-                          overflow: TextOverflow.fade,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: selected
-                                ? const Color(0xff111521)
-                                : Colors.white.withValues(alpha: .62),
+                                ],
+                              ],
+                            ),
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(width: 4),
+                Container(
+                  width: 48,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  child: IconButton(
+                    tooltip: l10n.allSections,
+                    onPressed: onMore,
+                    icon: const Icon(
+                      Icons.grid_view_rounded,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-              ),
+              ],
             );
-          }),
+          },
         ),
       ),
     );

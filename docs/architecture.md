@@ -27,7 +27,7 @@ On reconnect, the client requests `/api/link/info` before using the saved creden
 After pairing, `HomeController` reads the authenticated mobile overview and refreshes it every 30 seconds while the application is open. Calendar, reminders, media requests, Telegram, and monitoring reuse server-owned services and models. Reminder history includes upcoming, overdue, and completed items; every mutation remains scoped to the paired user's ID on the server. The app does not keep a competing local source of truth.
 
 The five bottom destinations remain task-oriented: Home, Plan, Requests,
-Transfers, and Control. The top-bar module map exposes the broader product
+Transfers, and Control. The bottom-pill module directory exposes the broader product
 architecture without squeezing more destinations into the bottom pill. Live
 cards route to existing features; Devices, Notifications, and Security render
 only data already returned for the active profile. Automations and Smart Home

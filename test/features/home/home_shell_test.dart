@@ -5,6 +5,7 @@ import 'package:homeplace/core/storage/transfer_activity_store.dart';
 import 'package:homeplace/core/storage/notification_history_store.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/features/home/home_controller.dart';
+import 'package:homeplace/features/home/home_modules.dart';
 import 'package:homeplace/features/home/home_shell.dart';
 import 'package:homeplace/l10n/generated/app_localizations.dart';
 import 'package:homeplace/link/mobile_models.dart';
@@ -12,6 +13,59 @@ import 'package:homeplace/link/mobile_models.dart';
 import '../connection/test_doubles.dart';
 
 void main() {
+  testWidgets('module directory adapts to narrow and wide windows', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.4)),
+          child: HomeModulesPage(
+            overview: home.overview!,
+            connection: connection,
+            home: home,
+            onOpenTab: (_) {},
+            onOpenSettings: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('module-row-plan')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byKey(const ValueKey('module-row-plan')), findsOneWidget);
+    expect(find.byKey(const ValueKey('module-card-plan')), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    tester.view.physicalSize = const Size(800, 640);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('module-card-plan')),
+      -200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byKey(const ValueKey('module-card-plan')), findsOneWidget);
+    expect(find.byKey(const ValueKey('module-row-plan')), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    connection.dispose();
+    home.dispose();
+  });
+
   testWidgets('Home keeps service setup out of the daily view', (tester) async {
     final connection = ConnectionController();
     final home = HomeController(sessionProvider: () async => null)
@@ -56,7 +110,7 @@ void main() {
     );
     expect(find.text('Everything in its place'), findsOneWidget);
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
-    await tester.tap(find.text('Plan').last);
+    await tester.tap(find.byTooltip('Plan'));
     await tester.pumpAndSettle();
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
     final planScroll = find.descendant(
@@ -83,12 +137,12 @@ void main() {
     );
     expect(find.text('Completed · 1'), findsOneWidget);
     for (final label in ['Requests', 'Transfers', 'Monitor', 'Home']) {
-      await tester.tap(find.text(label));
+      await tester.tap(find.byTooltip(label));
       await tester.pumpAndSettle();
       expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
-    await tester.tap(find.text('Monitor'));
+    await tester.tap(find.byTooltip('Monitor'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Availability checks'), findsOneWidget);
     tester.view.physicalSize = const Size(800, 640);
@@ -120,7 +174,10 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
-    await tester.tap(find.byTooltip('All sections'));
+    final moreButton = find.byTooltip('All sections');
+    expect(moreButton, findsOneWidget);
+    expect(tester.getCenter(moreButton).dy, greaterThan(700));
+    await tester.tap(moreButton);
     await tester.pumpAndSettle();
 
     expect(find.text('All sections'), findsWidgets);
@@ -159,11 +216,16 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Calendar'),
+      find.byKey(const ValueKey('module-row-plan')),
       -400,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Calendar'));
+    await Scrollable.ensureVisible(
+      tester.element(find.byKey(const ValueKey('module-row-plan'))),
+      alignment: .5,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('module-row-plan')));
     await tester.pumpAndSettle();
     expect(find.text('Reminders'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -295,7 +357,7 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
-    await tester.tap(find.text('Transfers'));
+    await tester.tap(find.byTooltip('Transfers'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Recent transfers'),
@@ -339,7 +401,7 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
-    await tester.tap(find.text('Transfers'));
+    await tester.tap(find.byTooltip('Transfers'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Notification history'),
@@ -395,7 +457,7 @@ void main() {
           home: HomeShell(connection: connection, homeController: home),
         ),
       );
-      await tester.tap(find.text('Transfers'));
+      await tester.tap(find.byTooltip('Transfers'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('first.txt · 5 B'),

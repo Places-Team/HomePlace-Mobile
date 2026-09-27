@@ -8,9 +8,9 @@ and a tested mobile implementation are available.
 ## Navigation model
 
 The five destinations in the bottom pill are **Home**, **Plan**, **Requests**,
-**Transfers**, and **Monitor**. A persistent top-bar entry opens **All sections**;
-settings and connection management are available from the top bar and that
-directory. An incoming Android system share opens Transfers and recipient
+**Transfers**, and **Monitor**. The rightmost button in the same bottom pill
+opens **All sections** for one-handed access. Settings and connection management
+are available from that directory. An incoming Android system share opens Transfers and recipient
 selection directly, without resetting the selected connection or landing on
 Home first. Returning from a detail screen preserves the selected tab.
 
@@ -112,6 +112,9 @@ without transient banners covering routine navigation.
 ### All sections and settings
 
 All sections groups everyday tools, sharing, services, and system controls.
+On narrow windows it uses compact grouped rows so titles and availability
+remain easy to scan; wider windows use two-column cards. The layout responds
+to available width rather than device model or orientation.
 Telegram lives in Services: show its actual connection state and the permitted
 test action. It is never a Home card. Devices shows the active account's
 authorized devices, not all devices on an installation. Notification history

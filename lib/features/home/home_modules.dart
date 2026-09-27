@@ -120,6 +120,42 @@ final class HomeModulesPage extends StatelessWidget {
                       const SizedBox(height: 10),
                       LayoutBuilder(
                         builder: (context, constraints) {
+                          if (constraints.maxWidth < 600) {
+                            return Material(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(24),
+                              clipBehavior: Clip.antiAlias,
+                              child: Column(
+                                children: [
+                                  for (
+                                    var index = 0;
+                                    index < section.$2.length;
+                                    index++
+                                  ) ...[
+                                    if (index > 0)
+                                      Divider(
+                                        height: 1,
+                                        indent: 68,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outlineVariant
+                                            .withValues(alpha: .45),
+                                      ),
+                                    _ModuleRow(
+                                      key: ValueKey(
+                                        'module-row-${section.$2[index].name}',
+                                      ),
+                                      spec: _spec(l10n, section.$2[index]),
+                                      onTap: () =>
+                                          _open(context, section.$2[index]),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          }
                           final width = (constraints.maxWidth - 10) / 2;
                           return Wrap(
                             spacing: 10,
@@ -129,6 +165,7 @@ final class HomeModulesPage extends StatelessWidget {
                                   (kind) => SizedBox(
                                     width: width,
                                     child: _ModuleCard(
+                                      key: ValueKey('module-card-${kind.name}'),
                                       spec: _spec(l10n, kind),
                                       onTap: () => _open(context, kind),
                                     ),
@@ -294,8 +331,75 @@ _ModuleSpec _spec(AppLocalizations l10n, _ModuleKind kind) => switch (kind) {
   ),
 };
 
+class _ModuleRow extends StatelessWidget {
+  const _ModuleRow({required this.spec, required this.onTap, super.key});
+
+  final _ModuleSpec spec;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 76),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+            child: Row(
+              children: [
+                _IconTile(icon: spec.icon, color: spec.color),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        spec.title,
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        spec.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (!spec.live) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.preview,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.tertiary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({required this.spec, required this.onTap});
+  const _ModuleCard({required this.spec, required this.onTap, super.key});
   final _ModuleSpec spec;
   final VoidCallback onTap;
 
