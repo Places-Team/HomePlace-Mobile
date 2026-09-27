@@ -199,49 +199,52 @@ void main() {
     controller.dispose();
   });
 
-  test('updates notification capability when permission changes after pairing', () async {
-    const saved = ConnectionProfile(
-      serverId: testServerId,
-      serverName: 'Test Home',
-      preferredUrl: 'https://home.example.test',
-      deviceId: 'device-1',
-      secure: true,
-    );
-    final profiles = MemoryProfileStore()..profiles.add(saved);
-    final credentials = MemoryCredentialStore()
-      ..values[testServerId] = 'device-credential';
-    final link = FakeLinkService();
-    final notifications = FakeNotificationService(permissionGranted: false);
-    final controller = ConnectionController(
-      linkService: link,
-      profileStore: profiles,
-      credentialStore: credentials,
-      deviceIdentity: const FakeDeviceIdentity(),
-      notificationService: notifications,
-      descriptionProvider: const FakeDescriptionProvider(),
-    );
+  test(
+    'updates notification capability when permission changes after pairing',
+    () async {
+      const saved = ConnectionProfile(
+        serverId: testServerId,
+        serverName: 'Test Home',
+        preferredUrl: 'https://home.example.test',
+        deviceId: 'device-1',
+        secure: true,
+      );
+      final profiles = MemoryProfileStore()..profiles.add(saved);
+      final credentials = MemoryCredentialStore()
+        ..values[testServerId] = 'device-credential';
+      final link = FakeLinkService();
+      final notifications = FakeNotificationService(permissionGranted: false);
+      final controller = ConnectionController(
+        linkService: link,
+        profileStore: profiles,
+        credentialStore: credentials,
+        deviceIdentity: const FakeDeviceIdentity(),
+        notificationService: notifications,
+        descriptionProvider: const FakeDescriptionProvider(),
+      );
 
-    await controller.initialize();
-    expect(controller.stage, ConnectionStage.connected);
-    await controller.refreshEvents();
-    expect(
-      link.heartbeatCapabilities.last?.any(
-        (item) => item.name == 'notification.receive',
-      ),
-      isFalse,
-    );
+      await controller.initialize();
+      expect(controller.stage, ConnectionStage.connected);
+      await controller.refreshEvents();
+      expect(
+        link.heartbeatCapabilities.last?.any(
+          (item) => item.name == 'notification.receive',
+        ),
+        isFalse,
+      );
 
-    notifications.permissionGranted = true;
-    expect(await controller.requestNotificationPermission(), isTrue);
-    await controller.refreshEvents();
-    expect(
-      link.heartbeatCapabilities.last?.any(
-        (item) => item.name == 'notification.receive',
-      ),
-      isTrue,
-    );
-    controller.dispose();
-  });
+      notifications.permissionGranted = true;
+      expect(await controller.requestNotificationPermission(), isTrue);
+      await controller.refreshEvents();
+      expect(
+        link.heartbeatCapabilities.last?.any(
+          (item) => item.name == 'notification.receive',
+        ),
+        isTrue,
+      );
+      controller.dispose();
+    },
+  );
 
   test('switches profiles only after validating the saved server ID', () async {
     const otherServerId = 'c956a1b1-244c-46c2-b4c8-a0dbf7449558';

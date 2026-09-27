@@ -196,34 +196,39 @@ void main() {
     expect(store.serverSynced, isFalse);
   });
 
-  test('granting ideas access reveals import without changing local copy', () async {
-    SharedPreferences.setMockInitialValues({});
-    final local = _LocalStore()
-      ..value = IdeaCollection(ideas: [
-        HomeIdea(
-          id: 'phone-only',
-          text: 'Plant shelf',
-          category: 'inbox',
-          createdAt: DateTime.utc(2026, 9, 27),
+  test(
+    'granting ideas access reveals import without changing local copy',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final local = _LocalStore()
+        ..value = IdeaCollection(
+          ideas: [
+            HomeIdea(
+              id: 'phone-only',
+              text: 'Plant shelf',
+              category: 'inbox',
+              createdAt: DateTime.utc(2026, 9, 27),
+            ),
+          ],
+        );
+      var allowed = false;
+      final store = ProfileIdeaStore(
+        local: local,
+        server: ServerIdeaStore(
+          profile: profile,
+          sessionProvider: () async => session(),
+          localStore: local,
+          gateway: _Gateway(),
         ),
-      ]);
-    var allowed = false;
-    final store = ProfileIdeaStore(
-      local: local,
-      server: ServerIdeaStore(
-        profile: profile,
-        sessionProvider: () async => session(),
-        localStore: local,
-        gateway: _Gateway(),
-      ),
-      canUseServer: () => allowed,
-    );
-    expect((await store.read()).ideas.single.text, 'Plant shelf');
-    expect(store.serverSynced, isFalse);
-    allowed = true;
-    expect((await store.read()).ideas, isEmpty);
-    expect(store.serverSynced, isTrue);
-    expect(store.pendingLocalCount, 1);
-    expect(local.value.ideas.single.text, 'Plant shelf');
-  });
+        canUseServer: () => allowed,
+      );
+      expect((await store.read()).ideas.single.text, 'Plant shelf');
+      expect(store.serverSynced, isFalse);
+      allowed = true;
+      expect((await store.read()).ideas, isEmpty);
+      expect(store.serverSynced, isTrue);
+      expect(store.pendingLocalCount, 1);
+      expect(local.value.ideas.single.text, 'Plant shelf');
+    },
+  );
 }

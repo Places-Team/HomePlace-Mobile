@@ -108,12 +108,13 @@ class _HomeModulesPageState extends State<HomeModulesPage> {
         children: [
           CustomScrollView(
             slivers: [
-          SliverAppBar.large(
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
-                ? SystemUiOverlayStyle.light
-                : SystemUiOverlayStyle.dark,
+              SliverAppBar.large(
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                systemOverlayStyle:
+                    Theme.of(context).brightness == Brightness.dark
+                    ? SystemUiOverlayStyle.light
+                    : SystemUiOverlayStyle.dark,
                 title: Text(l10n.allSections),
                 actions: [
                   IconButton(
