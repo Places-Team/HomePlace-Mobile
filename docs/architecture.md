@@ -64,6 +64,10 @@ or iOS Keychain under a server-and-device-scoped key. When server access
 is granted, an explicit, idempotent import copies local ideas without
 deleting the phone data. The server is authoritative for synced ideas;
 Desktop-only local records are not assumed to be server data.
+While the app is open, each successful mobile overview refresh also reloads
+account ideas when `ideas.manage` is granted. This includes foreground polling
+and manual refresh, so Desktop changes appear without restarting mobile.
+Failed refreshes do not replace cached ideas or upload local-only ideas.
 
 ## Native boundaries
 

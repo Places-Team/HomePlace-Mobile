@@ -7,6 +7,8 @@ import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/features/home/home_controller.dart';
 import 'package:homeplace/features/home/home_modules.dart';
 import 'package:homeplace/features/home/home_shell.dart';
+import 'package:homeplace/features/ideas/idea_controller.dart';
+import 'package:homeplace/features/ideas/idea_store.dart';
 import 'package:homeplace/l10n/generated/app_localizations.dart';
 import 'package:homeplace/link/mobile_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -519,9 +521,89 @@ void main() {
       home.dispose();
     },
   );
+
+  testWidgets('refresh brings desktop ideas into the mobile plans view', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(390, 840);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController();
+    final home = _RefreshableHomeController()
+      ..loading = false
+      ..overview = _overview(ideasAccess: true);
+    final store = _ExternalIdeaStore();
+    final ideas = _SyncedIdeaController(store);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(
+          connection: connection,
+          homeController: home,
+          ideaController: ideas,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    store.value = IdeaCollection(
+      ideas: [
+        HomeIdea(
+          id: 'desktop-idea',
+          text: 'Shared desk note',
+          category: 'inbox',
+          createdAt: DateTime.utc(2026, 9, 27),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byTooltip('Refresh').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('plan-mode-ideas')));
+    await tester.pumpAndSettle();
+    expect(find.text('Shared desk note'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    connection.dispose();
+    home.dispose();
+    ideas.dispose();
+  });
 }
 
-MobileOverview _overview() {
+final class _ExternalIdeaStore implements IdeaStore {
+  IdeaCollection value = const IdeaCollection();
+
+  @override
+  Future<IdeaCollection> read() async => value;
+
+  @override
+  Future<void> write(IdeaCollection collection) async => value = collection;
+}
+
+final class _SyncedIdeaController extends IdeaController {
+  _SyncedIdeaController(super.store);
+
+  @override
+  bool get serverSynced => true;
+}
+
+final class _RefreshableHomeController extends HomeController {
+  _RefreshableHomeController() : super(sessionProvider: () async => null);
+
+  @override
+  Future<void> refresh({bool initial = false}) async {
+    overviewRevision++;
+    notifyListeners();
+  }
+}
+
+MobileOverview _overview({bool ideasAccess = false}) {
   final now = DateTime.now().toUtc();
   return MobileOverview.fromJson({
     'serverTime': '2026-09-20T10:00:00Z',
@@ -530,6 +612,7 @@ MobileOverview _overview() {
       'reminder.manage',
       'media.request',
       'telegram.send',
+      if (ideasAccess) 'ideas.manage',
     ],
     'reminders': [
       {

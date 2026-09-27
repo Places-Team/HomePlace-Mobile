@@ -33,11 +33,13 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     required this.connection,
     this.homeController,
+    this.ideaController,
     this.preferences,
     super.key,
   });
   final ConnectionController connection;
   final HomeController? homeController;
+  final IdeaController? ideaController;
   final AppPreferences? preferences;
 
   @override
@@ -52,20 +54,25 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late final PlantController? plants = widget.connection.profile == null
       ? null
       : PlantController(PlantStore(widget.connection.profile!));
-  late final IdeaController? ideas = widget.connection.profile == null
-      ? null
-      : IdeaController(
-          ProfileIdeaStore(
-            local: SecureIdeaStore(widget.connection.profile!),
-            server: ServerIdeaStore(
-              profile: widget.connection.profile!,
-              sessionProvider: widget.connection.authenticatedSession,
-              localStore: SecureIdeaStore(widget.connection.profile!),
-            ),
-            canUseServer: () =>
-                home.overview?.permissions.contains('ideas.manage') ?? false,
-          ),
-        );
+  late final IdeaController? ideas =
+      widget.ideaController ??
+      (widget.connection.profile == null
+          ? null
+          : IdeaController(
+              ProfileIdeaStore(
+                local: SecureIdeaStore(widget.connection.profile!),
+                server: ServerIdeaStore(
+                  profile: widget.connection.profile!,
+                  sessionProvider: widget.connection.authenticatedSession,
+                  localStore: SecureIdeaStore(widget.connection.profile!),
+                ),
+                canUseServer: () =>
+                    home.overview?.permissions.contains('ideas.manage') ??
+                    false,
+              ),
+            ));
+  late final bool ownsIdeas = widget.ideaController == null;
+  int _seenIdeaOverviewRevision = 0;
   final ValueNotifier<_PlanSection> planSection = ValueNotifier(
     _PlanSection.calendar,
   );
@@ -109,7 +116,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (controller == null || controller.loading || controller.busy) return;
     final allowed =
         home.overview?.permissions.contains('ideas.manage') ?? false;
-    if (controller.serverSynced != allowed) unawaited(controller.load());
+    if (controller.serverSynced != allowed ||
+        (allowed && home.overviewRevision != _seenIdeaOverviewRevision)) {
+      _seenIdeaOverviewRevision = home.overviewRevision;
+      unawaited(controller.load());
+    }
   }
 
   Future<void> _takeShortcut() async {
@@ -154,7 +165,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     pages.dispose();
     if (ownsHome) home.dispose();
     plants?.dispose();
-    ideas?.dispose();
+    if (ownsIdeas) ideas?.dispose();
     planSection.dispose();
     selectedTab.dispose();
     super.dispose();

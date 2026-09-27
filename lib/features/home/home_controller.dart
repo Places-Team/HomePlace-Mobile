@@ -14,7 +14,7 @@ import '../../link/mobile_api.dart';
 import '../../link/mobile_models.dart';
 import '../connection/connection_controller.dart';
 
-final class HomeController extends ChangeNotifier {
+class HomeController extends ChangeNotifier {
   HomeController({
     required this.sessionProvider,
     MobileApi? api,
@@ -26,6 +26,7 @@ final class HomeController extends ChangeNotifier {
   final MobileApi _api;
   final TransferActivityStore _activityStore;
   MobileOverview? overview;
+  int overviewRevision = 0;
   List<MobileSearchResult> searchResults = const [];
   List<MobileCalendarEvent>? calendarEvents;
   bool calendarLoading = false;
@@ -146,6 +147,7 @@ final class HomeController extends ChangeNotifier {
             .timeout(const Duration(seconds: 20));
         if (result case LinkSuccess<MobileOverview> success) {
           overview = success.value;
+          overviewRevision++;
           error = null;
         } else if (result case LinkFailure<MobileOverview> failure) {
           error = failure.message;

@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'idea_store.dart';
 import 'server_idea_store.dart';
 
-final class IdeaController extends ChangeNotifier {
+class IdeaController extends ChangeNotifier {
   IdeaController(this.store);
 
   final IdeaStore store;
