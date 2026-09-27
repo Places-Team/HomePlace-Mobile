@@ -58,15 +58,14 @@ should earn a place here only when they expose a useful, real, everyday action.
 ### Plan
 
 ```text
-Month / week selector → chosen day → day's calendar events
-Reminders: due first → upcoming → completed / overdue filters
+Calendar mode → month selector → chosen day → day's calendar events
+Reminders mode → past due first → upcoming → expandable completed history
 Create / edit → date, time, repeat interval, save / delete
-Plant watering timeline → plant details or mark watered
+Plants mode → watering timeline → plant details or mark watered
 ```
 
 Calendar and reminders are server-backed and permission-gated. Plant watering
-is local. The two sources can share a visual timeline but must retain their
-source and storage distinction. Flexible reminder recurrence must use the
+is local. The modes keep those sources and storage boundaries clear. Flexible reminder recurrence must use the
 server's supported format; the UI must not promise schedules it cannot save.
 
 ### Requests
@@ -84,8 +83,8 @@ completed request when the server has not acknowledged it.
 ### Transfers
 
 ```text
+Incoming offers first → accept or decline → progress → verify → open saved file
 Outgoing queue → choose a named authorized recipient → confirm send
-Incoming offers → accept or decline → progress → verify → open saved file
 Android clipboard → foreground send / explicit received copy
 Recent transfer activity and notification history
 ```

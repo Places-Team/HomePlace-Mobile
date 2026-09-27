@@ -1977,7 +1977,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarModuleBody.
   ///
   /// In en, this message translates to:
-  /// **'Calendar, flexible reminders and completed history.'**
+  /// **'Calendar, reminders and plant care in one place.'**
   String get calendarModuleBody;
 
   /// No description provided for @mediaModuleBody.

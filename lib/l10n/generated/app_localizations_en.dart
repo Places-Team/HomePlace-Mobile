@@ -1065,7 +1065,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarModuleBody =>
-      'Calendar, flexible reminders and completed history.';
+      'Calendar, reminders and plant care in one place.';
 
   @override
   String get mediaModuleBody =>

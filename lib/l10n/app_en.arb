@@ -345,7 +345,7 @@
   "verifiedIdentityBody": "HomePlace checks the server ID on reconnect and never silently accepts an invalid certificate.",
   "openSection": "Open section",
   "manageSettings": "Manage settings",
-  "calendarModuleBody": "Calendar, flexible reminders and completed history.",
+  "calendarModuleBody": "Calendar, reminders and plant care in one place.",
   "mediaModuleBody": "Search Radarr and Sonarr and follow download queues.",
   "transfersModuleBody": "Send and receive text, links and files with an explicit recipient.",
   "monitoringModuleBody": "Availability checks, Docker containers, service latency and events.",

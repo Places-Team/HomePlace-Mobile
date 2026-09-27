@@ -113,29 +113,36 @@ void main() {
     await tester.tap(find.byTooltip('Plan'));
     await tester.pumpAndSettle();
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Reminders'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Add reminder'), findsOneWidget);
     final planScroll = find.descendant(
       of: find.byType(ListView).hitTestable(),
       matching: find.byType(Scrollable),
     );
     await tester.scrollUntilVisible(
-      find.text('Upcoming · 1'),
+      find.text('Past due · 1'),
       250,
       scrollable: planScroll.first,
     );
-    expect(find.text('Upcoming · 1'), findsOneWidget);
+    expect(find.text('Past due · 1'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.scrollUntilVisible(
-      find.text('Past due · 1'),
+      find.text('Upcoming · 1'),
       200,
       scrollable: planScroll.first,
     );
-    expect(find.text('Past due · 1'), findsOneWidget);
+    expect(find.text('Upcoming · 1'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Completed · 1'),
       200,
       scrollable: planScroll.first,
     );
     expect(find.text('Completed · 1'), findsOneWidget);
+    expect(find.text('Completed reminder'), findsNothing);
+    await tester.tap(find.text('Completed · 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Completed reminder'), findsOneWidget);
     for (final label in ['Requests', 'Transfers', 'Monitor', 'Home']) {
       await tester.tap(find.byTooltip(label));
       await tester.pumpAndSettle();
@@ -459,6 +466,8 @@ void main() {
       );
       await tester.tap(find.byTooltip('Transfers'));
       await tester.pumpAndSettle();
+      expect(find.text('Incoming items · 2').hitTestable(), findsOneWidget);
+      expect(find.text('first.txt · 5 B').hitTestable(), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('first.txt · 5 B'),
         300,

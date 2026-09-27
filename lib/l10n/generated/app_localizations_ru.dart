@@ -1066,7 +1066,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get calendarModuleBody =>
-      'Календарь, гибкие напоминания и история выполненных.';
+      'Календарь, напоминания и уход за растениями в одном месте.';
 
   @override
   String get mediaModuleBody =>

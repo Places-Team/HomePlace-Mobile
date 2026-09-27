@@ -1005,7 +1005,10 @@ class _TransfersPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final outgoing = connection.pendingOutgoingShares;
     final incoming = connection.pendingIncomingShares;
-    final empty = outgoing.isEmpty && incoming.isEmpty;
+    final empty =
+        outgoing.isEmpty &&
+        incoming.isEmpty &&
+        connection.pendingClipboard == null;
     return _ScrollPage(
       onRefresh: () async {
         await Future.wait([home.refresh(), connection.refreshEvents()]);
@@ -1016,25 +1019,39 @@ class _TransfersPage extends StatelessWidget {
           subtitle: l10n.transfersSubtitle,
         ),
         const SizedBox(height: 22),
-        if (Platform.isAndroid &&
-            home.overview?.permissions.contains('clipboard.relay') == true) ...[
-          _ClipboardCard(
-            pending: connection.pendingClipboard,
-            sending: home.busyId == 'clipboard',
-            autoEnabled: home.autoClipboardEnabled,
-            onAutoChanged: home.setAutoClipboardEnabled,
-            onSend: () => home.sendClipboard(connection.readClipboardText),
-            onAccept: connection.acceptPendingClipboard,
-            onDismiss: connection.dismissPendingClipboard,
-          ),
-          const SizedBox(height: 18),
-        ],
         if (empty)
           _EmptyCard(
             icon: Icons.swap_vert_circle_outlined,
             text: l10n.noPendingTransfers,
           ),
+        if (incoming.isNotEmpty) ...[
+          Text(
+            l10n.incomingOffers(incoming.length),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 10),
+          ...incoming.map(
+            (offer) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _IncomingShareCard(
+                offer: offer,
+                receiving: home.activeFileTransferId == offer.eventId,
+                progress: home.activeFileTransferId == offer.eventId
+                    ? home.fileTransferProgress
+                    : null,
+                onDismiss: home.activeFileTransferId == offer.eventId
+                    ? home.cancelFileTransfer
+                    : () => connection.dismissIncomingShare(offer),
+                onAccept: offer.kind == SharedContentKind.file
+                    ? () => home.acceptSharedFile(offer, connection)
+                    : () => home.acceptIncomingTextOrUrl(offer, connection),
+              ),
+            ),
+          ),
+        ],
         if (outgoing.isNotEmpty) ...[
+          if (incoming.isNotEmpty) const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -1066,31 +1083,17 @@ class _TransfersPage extends StatelessWidget {
             ),
           ),
         ],
-        if (incoming.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            l10n.incomingOffers(incoming.length),
-            style: Theme.of(context).textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          ...incoming.map(
-            (offer) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _IncomingShareCard(
-                offer: offer,
-                receiving: home.activeFileTransferId == offer.eventId,
-                progress: home.activeFileTransferId == offer.eventId
-                    ? home.fileTransferProgress
-                    : null,
-                onDismiss: home.activeFileTransferId == offer.eventId
-                    ? home.cancelFileTransfer
-                    : () => connection.dismissIncomingShare(offer),
-                onAccept: offer.kind == SharedContentKind.file
-                    ? () => home.acceptSharedFile(offer, connection)
-                    : () => home.acceptIncomingTextOrUrl(offer, connection),
-              ),
-            ),
+        if (Platform.isAndroid &&
+            home.overview?.permissions.contains('clipboard.relay') == true) ...[
+          const SizedBox(height: 18),
+          _ClipboardCard(
+            pending: connection.pendingClipboard,
+            sending: home.busyId == 'clipboard',
+            autoEnabled: home.autoClipboardEnabled,
+            onAutoChanged: home.setAutoClipboardEnabled,
+            onSend: () => home.sendClipboard(connection.readClipboardText),
+            onAccept: connection.acceptPendingClipboard,
+            onDismiss: connection.dismissPendingClipboard,
           ),
         ],
         if (home.transferActivity.isNotEmpty) ...[
@@ -1506,6 +1509,8 @@ class _ClipboardCard extends StatelessWidget {
   }
 }
 
+enum _PlanSection { calendar, reminders, plants }
+
 class _PlanPage extends StatefulWidget {
   const _PlanPage({
     required this.overview,
@@ -1523,6 +1528,7 @@ class _PlanPage extends StatefulWidget {
 class _PlanPageState extends State<_PlanPage> {
   late DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
   late DateTime selected = _day(DateTime.now());
+  _PlanSection section = _PlanSection.calendar;
 
   MobileOverview get overview => widget.overview;
   HomeController get home => widget.home;
@@ -1572,105 +1578,160 @@ class _PlanPageState extends State<_PlanPage> {
           a.completedAt ?? a.createdAt,
         ),
       );
+    final sections = <(_PlanSection, String, IconData)>[
+      (_PlanSection.calendar, l10n.calendarTitle, Icons.calendar_month_rounded),
+      (
+        _PlanSection.reminders,
+        l10n.remindersTitle,
+        Icons.notifications_outlined,
+      ),
+      if (widget.plants != null)
+        (_PlanSection.plants, l10n.plantsTitle, Icons.spa_outlined),
+    ];
     return _ScrollPage(
       onRefresh: _refresh,
       children: [
         _PageHeading(
-          title: l10n.calendarTitle,
-          subtitle: overview.calendar.email,
+          title: l10n.calendarTab,
+          subtitle: l10n.calendarModuleBody,
         ),
         const SizedBox(height: 18),
-        if (!overview.calendar.connected)
-          _EmptyCard(
-            icon: Icons.event_busy_rounded,
-            text: l10n.calendarNotConnected,
-          )
-        else
-          _MonthCalendar(
-            month: month,
-            selected: selected,
-            events: home.calendarEvents ?? overview.calendar.events,
-            loading: home.calendarLoading,
-            canManage: overview.permissions.contains('calendar.manage'),
-            onSelected: (value) => setState(() => selected = value),
-            onPrevious: () => _changeMonth(-1),
-            onNext: () => _changeMonth(1),
-            onSwipe: _changeMonth,
-            onAdd: () => _showCalendarEditor(
-              context,
-              home,
-              null,
-              selected,
-              _rangeStart(month),
-              _rangeEnd(month),
-            ),
-            onEdit: (event) => _showCalendarEditor(
-              context,
-              home,
-              event,
-              selected,
-              _rangeStart(month),
-              _rangeEnd(month),
-            ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final item in sections) ...[
+                ChoiceChip(
+                  label: Text(item.$2),
+                  avatar: Icon(item.$3, size: 18),
+                  selected: section == item.$1,
+                  showCheckmark: false,
+                  onSelected: (_) => setState(() => section = item.$1),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
           ),
-        if (widget.plants != null)
-          PlantsPlanSection(controller: widget.plants!),
-        const SizedBox(height: 22),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.remindersTitle,
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 18),
+        if (section == _PlanSection.calendar) ...[
+          if (overview.calendar.email case final email?) ...[
+            Text(
+              email,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            FilledButton.icon(
-              onPressed: overview.permissions.contains('reminder.manage')
-                  ? () => _addReminder(context, home)
-                  : null,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.addReminder),
+            const SizedBox(height: 10),
+          ],
+          if (!overview.calendar.connected)
+            _EmptyCard(
+              icon: Icons.event_busy_rounded,
+              text: l10n.calendarNotConnected,
+            )
+          else
+            _MonthCalendar(
+              month: month,
+              selected: selected,
+              events: home.calendarEvents ?? overview.calendar.events,
+              loading: home.calendarLoading,
+              canManage: overview.permissions.contains('calendar.manage'),
+              onSelected: (value) => setState(() => selected = value),
+              onPrevious: () => _changeMonth(-1),
+              onNext: () => _changeMonth(1),
+              onSwipe: _changeMonth,
+              onAdd: () => _showCalendarEditor(
+                context,
+                home,
+                null,
+                selected,
+                _rangeStart(month),
+                _rangeEnd(month),
+              ),
+              onEdit: (event) => _showCalendarEditor(
+                context,
+                home,
+                event,
+                selected,
+                _rangeStart(month),
+                _rangeEnd(month),
+              ),
+            ),
+        ],
+        if (section == _PlanSection.plants && widget.plants != null)
+          PlantsPlanSection(controller: widget.plants!),
+        if (section == _PlanSection.reminders) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.remindersTitle,
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ),
+              IconButton.filledTonal(
+                onPressed: overview.permissions.contains('reminder.manage')
+                    ? () => _addReminder(context, home)
+                    : null,
+                icon: const Icon(Icons.add_rounded),
+                tooltip: l10n.addReminder,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (overview.reminders.isEmpty)
+            _EmptyCard(
+              icon: Icons.notifications_none_rounded,
+              text: l10n.nothingPlanned,
+            ),
+          if (overdue.isNotEmpty) ...[
+            _ReminderSectionTitle(
+              title: l10n.overdueReminders,
+              count: overdue.length,
+              color: _coral,
+            ),
+            ...overdue.map(
+              (item) =>
+                  _ReminderCard(reminder: item, home: home, overdue: true),
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        if (overview.reminders.isEmpty)
-          _EmptyCard(
-            icon: Icons.notifications_none_rounded,
-            text: l10n.nothingPlanned,
-          ),
-        if (upcoming.isNotEmpty) ...[
-          _ReminderSectionTitle(
-            title: l10n.upcomingReminders,
-            count: upcoming.length,
-          ),
-          ...upcoming.map((item) => _ReminderCard(reminder: item, home: home)),
-        ],
-        if (overdue.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _ReminderSectionTitle(
-            title: l10n.overdueReminders,
-            count: overdue.length,
-            color: _coral,
-          ),
-          ...overdue.map(
-            (item) => _ReminderCard(reminder: item, home: home, overdue: true),
-          ),
-        ],
-        if (completed.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _ReminderSectionTitle(
-            title: l10n.completedReminders,
-            count: completed.length,
-            trailing: TextButton(
-              onPressed: home.busyId == 'completed-reminders'
-                  ? null
-                  : () => _confirmClearCompleted(context, home),
-              child: Text(l10n.clearCompleted),
+          if (upcoming.isNotEmpty) ...[
+            if (overdue.isNotEmpty) const SizedBox(height: 12),
+            _ReminderSectionTitle(
+              title: l10n.upcomingReminders,
+              count: upcoming.length,
             ),
-          ),
-          ...completed.map((item) => _ReminderCard(reminder: item, home: home)),
+            ...upcoming.map(
+              (item) => _ReminderCard(reminder: item, home: home),
+            ),
+          ],
+          if (completed.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ExpansionTile(
+              key: const ValueKey('completed-reminders'),
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                '${l10n.completedReminders} · ${completed.length}',
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: home.busyId == 'completed-reminders'
+                        ? null
+                        : () => _confirmClearCompleted(context, home),
+                    child: Text(l10n.clearCompleted),
+                  ),
+                ),
+                ...completed.map(
+                  (item) => _ReminderCard(reminder: item, home: home),
+                ),
+              ],
+            ),
+          ],
         ],
         const SizedBox(height: 110),
       ],
@@ -1886,12 +1947,10 @@ class _ReminderSectionTitle extends StatelessWidget {
     required this.title,
     required this.count,
     this.color,
-    this.trailing,
   });
   final String title;
   final int count;
   final Color? color;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -1905,7 +1964,6 @@ class _ReminderSectionTitle extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w900, color: color),
           ),
         ),
-        ?trailing,
       ],
     ),
   );
