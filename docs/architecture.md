@@ -51,6 +51,16 @@ Saved profiles restore on startup. A failed connection check enters a retry stat
 
 ## Ideas
 
+The Transfers page offers temporary account-only text exchanges through the
+canonical server `/api/exchange` routes. It never creates a public link from
+this control. The bearer URL is copied only on request; when automatic
+clipboard relay is enabled, copying requires an extra warning. Active links
+are fetched with the paired device's `share.relay` permission and can be
+revoked. Expiry and one-time-open behavior are server-authoritative. This
+does not replace direct addressed Link offers, and exchange text is not
+persisted in mobile preferences or transfer history.
+
+
 The Ideas workspace follows Desktop's quick-capture workflow.
 `IdeaController` owns UI state and validation; `IdeaStore` separates
 persistence. New pairings request `ideas.manage`. `ServerIdeaStore` uses

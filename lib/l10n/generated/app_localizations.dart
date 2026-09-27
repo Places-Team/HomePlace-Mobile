@@ -1458,6 +1458,138 @@ abstract class AppLocalizations {
   /// **'Review every incoming item and choose exactly where outgoing content is sent.'**
   String get transfersSubtitle;
 
+  /// No description provided for @exchangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary text link'**
+  String get exchangeTitle;
+
+  /// No description provided for @exchangeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share text with another device signed in to your HomePlace account. Direct device transfers remain separate.'**
+  String get exchangeSubtitle;
+
+  /// No description provided for @exchangeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open temporary links'**
+  String get exchangeOpen;
+
+  /// No description provided for @exchangeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to share'**
+  String get exchangeText;
+
+  /// No description provided for @exchangeAccountOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your HomePlace account can open this link. Anyone with the link and access to your account may read it.'**
+  String get exchangeAccountOnly;
+
+  /// No description provided for @exchangeExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Link expires after'**
+  String get exchangeExpiry;
+
+  /// No description provided for @exchangeTenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'10 minutes'**
+  String get exchangeTenMinutes;
+
+  /// No description provided for @exchangeOneHour.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get exchangeOneHour;
+
+  /// No description provided for @exchangeOneDay.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get exchangeOneDay;
+
+  /// No description provided for @exchangeOneTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove after first open'**
+  String get exchangeOneTime;
+
+  /// No description provided for @exchangeOneTimeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'An interrupted first open cannot be retried.'**
+  String get exchangeOneTimeWarning;
+
+  /// No description provided for @exchangeCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create private link'**
+  String get exchangeCreate;
+
+  /// No description provided for @exchangeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active text links'**
+  String get exchangeActive;
+
+  /// No description provided for @exchangeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active text links.'**
+  String get exchangeEmpty;
+
+  /// No description provided for @exchangeTextLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Private text link'**
+  String get exchangeTextLink;
+
+  /// No description provided for @exchangeReusable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reusable until expiry'**
+  String get exchangeReusable;
+
+  /// No description provided for @exchangeCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get exchangeCopy;
+
+  /// No description provided for @exchangeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied. Treat it as a secret.'**
+  String get exchangeCopied;
+
+  /// No description provided for @exchangeClipboardWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic clipboard sharing is on. Copying this link may send it to your approved devices.'**
+  String get exchangeClipboardWarning;
+
+  /// No description provided for @exchangeRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke link'**
+  String get exchangeRevoke;
+
+  /// No description provided for @exchangeRevokeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This link will stop working immediately. Revoke it?'**
+  String get exchangeRevokeConfirm;
+
+  /// No description provided for @exchangeReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to HomePlace and try again.'**
+  String get exchangeReconnect;
+
   /// No description provided for @noPendingTransfers.
   ///
   /// In en, this message translates to:

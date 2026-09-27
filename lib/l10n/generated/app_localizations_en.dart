@@ -763,6 +763,77 @@ class AppLocalizationsEn extends AppLocalizations {
       'Review every incoming item and choose exactly where outgoing content is sent.';
 
   @override
+  String get exchangeTitle => 'Temporary text link';
+
+  @override
+  String get exchangeSubtitle =>
+      'Share text with another device signed in to your HomePlace account. Direct device transfers remain separate.';
+
+  @override
+  String get exchangeOpen => 'Open temporary links';
+
+  @override
+  String get exchangeText => 'Text to share';
+
+  @override
+  String get exchangeAccountOnly =>
+      'Only your HomePlace account can open this link. Anyone with the link and access to your account may read it.';
+
+  @override
+  String get exchangeExpiry => 'Link expires after';
+
+  @override
+  String get exchangeTenMinutes => '10 minutes';
+
+  @override
+  String get exchangeOneHour => '1 hour';
+
+  @override
+  String get exchangeOneDay => '1 day';
+
+  @override
+  String get exchangeOneTime => 'Remove after first open';
+
+  @override
+  String get exchangeOneTimeWarning =>
+      'An interrupted first open cannot be retried.';
+
+  @override
+  String get exchangeCreate => 'Create private link';
+
+  @override
+  String get exchangeActive => 'Active text links';
+
+  @override
+  String get exchangeEmpty => 'No active text links.';
+
+  @override
+  String get exchangeTextLink => 'Private text link';
+
+  @override
+  String get exchangeReusable => 'Reusable until expiry';
+
+  @override
+  String get exchangeCopy => 'Copy link';
+
+  @override
+  String get exchangeCopied => 'Link copied. Treat it as a secret.';
+
+  @override
+  String get exchangeClipboardWarning =>
+      'Automatic clipboard sharing is on. Copying this link may send it to your approved devices.';
+
+  @override
+  String get exchangeRevoke => 'Revoke link';
+
+  @override
+  String get exchangeRevokeConfirm =>
+      'This link will stop working immediately. Revoke it?';
+
+  @override
+  String get exchangeReconnect => 'Reconnect to HomePlace and try again.';
+
+  @override
   String get noPendingTransfers =>
       'No transfers need your attention right now.';
 

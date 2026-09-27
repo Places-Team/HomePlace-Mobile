@@ -766,6 +766,78 @@ class AppLocalizationsRu extends AppLocalizations {
       'Проверяйте каждый входящий объект и точно выбирайте получателя исходящих данных.';
 
   @override
+  String get exchangeTitle => 'Временная ссылка на текст';
+
+  @override
+  String get exchangeSubtitle =>
+      'Передайте текст другому устройству с входом в ваш аккаунт HomePlace. Прямая передача между устройствами остаётся отдельно.';
+
+  @override
+  String get exchangeOpen => 'Открыть временные ссылки';
+
+  @override
+  String get exchangeText => 'Текст для передачи';
+
+  @override
+  String get exchangeAccountOnly =>
+      'Ссылку может открыть только ваш аккаунт HomePlace. Тот, у кого есть ссылка и доступ к аккаунту, сможет прочитать текст.';
+
+  @override
+  String get exchangeExpiry => 'Срок действия';
+
+  @override
+  String get exchangeTenMinutes => '10 минут';
+
+  @override
+  String get exchangeOneHour => '1 час';
+
+  @override
+  String get exchangeOneDay => '1 день';
+
+  @override
+  String get exchangeOneTime => 'Удалить после первого открытия';
+
+  @override
+  String get exchangeOneTimeWarning =>
+      'Прерванное первое открытие нельзя повторить.';
+
+  @override
+  String get exchangeCreate => 'Создать приватную ссылку';
+
+  @override
+  String get exchangeActive => 'Активные ссылки на текст';
+
+  @override
+  String get exchangeEmpty => 'Активных ссылок на текст нет.';
+
+  @override
+  String get exchangeTextLink => 'Приватная ссылка на текст';
+
+  @override
+  String get exchangeReusable => 'Доступна до конца срока';
+
+  @override
+  String get exchangeCopy => 'Скопировать ссылку';
+
+  @override
+  String get exchangeCopied => 'Ссылка скопирована. Храните её как секрет.';
+
+  @override
+  String get exchangeClipboardWarning =>
+      'Автоматическая передача буфера включена. Копирование ссылки может отправить её на ваши разрешённые устройства.';
+
+  @override
+  String get exchangeRevoke => 'Отозвать ссылку';
+
+  @override
+  String get exchangeRevokeConfirm =>
+      'Ссылка сразу перестанет работать. Отозвать её?';
+
+  @override
+  String get exchangeReconnect =>
+      'Подключитесь к HomePlace и попробуйте снова.';
+
+  @override
   String get noPendingTransfers =>
       'Сейчас нет передач, требующих вашего внимания.';
 

@@ -4,6 +4,12 @@ The Flutter application for connecting Android and iOS devices to a self-hosted 
 
 ## Current milestone
 
+Transfers include account-only temporary text links through the server's
+`/api/exchange` API. They can expire after 10 minutes, one hour, or one day,
+optionally disappear after the first open, and be revoked from the phone.
+Direct device offers remain separate. This requires the paired device's
+`share.relay` permission. Temporary file links are not yet in the mobile UI.
+
 Android 16 support now includes an optional Quick Settings Transfers tile,
 system notification-settings access, private notification visibility, and
 subtle system haptics in navigation. See [Android platform integration](docs/android-platform.md)
