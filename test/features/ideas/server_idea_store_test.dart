@@ -56,6 +56,9 @@ final class _Gateway implements IdeaGateway {
         final idea = {
           'id': 'idea-${ideas.length}',
           'title': body['title'],
+          'note': body['note'] ?? '',
+          'pinned': false,
+          'completedAt': null,
           'categoryId': body['categoryId'],
           'createdAt': DateTime.utc(2026, 9, 27).toIso8601String(),
         };
@@ -63,8 +66,17 @@ final class _Gateway implements IdeaGateway {
         return LinkSuccess({'idea': idea});
       case 'updateIdea':
         final idea = ideas.singleWhere((item) => item['id'] == body['id']);
-        idea['title'] = body['title'];
-        idea['categoryId'] = body['categoryId'];
+        if (body.containsKey('title')) idea['title'] = body['title'];
+        if (body.containsKey('note')) idea['note'] = body['note'];
+        if (body.containsKey('categoryId')) {
+          idea['categoryId'] = body['categoryId'];
+        }
+        if (body.containsKey('pinned')) idea['pinned'] = body['pinned'];
+        if (body.containsKey('completed')) {
+          idea['completedAt'] = body['completed'] == true
+              ? DateTime.utc(2026, 9, 27).toIso8601String()
+              : null;
+        }
         return const LinkSuccess({'ok': true});
       case 'deleteIdea':
         ideas.removeWhere((item) => item['id'] == body['id']);
@@ -142,10 +154,62 @@ void main() {
       IdeaCollection(ideas: [idea.copyWith(text: 'Water fern')]),
     );
     expect(store.current.ideas.single.text, 'Water fern');
+    expect(gateway.commands.last, {
+      'action': 'updateIdea',
+      'id': 'idea-0',
+      'title': 'Water fern',
+    });
     await store.write(const IdeaCollection());
     expect(store.current.ideas, isEmpty);
     expect(gateway.commands.last['action'], 'deleteIdea');
   });
+
+  test(
+    'preserves desktop idea details and sends only changed fields',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final gateway = _Gateway();
+      gateway.ideas.add({
+        'id': 'desktop-idea',
+        'title': 'Plan weekend',
+        'note': 'Take the train',
+        'pinned': true,
+        'completedAt': DateTime.utc(2026, 9, 26).toIso8601String(),
+        'categoryId': 'inbox-id',
+        'createdAt': DateTime.utc(2026, 9, 25).toIso8601String(),
+      });
+      final store = ServerIdeaStore(
+        profile: profile,
+        sessionProvider: () async => session(),
+        localStore: _LocalStore(),
+        gateway: gateway,
+      );
+      final idea = (await store.read()).ideas.single;
+      expect(idea.note, 'Take the train');
+      expect(idea.pinned, isTrue);
+      expect(idea.completed, isTrue);
+
+      await store.write(
+        IdeaCollection(
+          ideas: [
+            idea.copyWith(
+              note: 'Walk instead',
+              pinned: false,
+              completed: false,
+            ),
+          ],
+        ),
+      );
+      expect(gateway.commands.last, {
+        'action': 'updateIdea',
+        'id': 'desktop-idea',
+        'note': 'Walk instead',
+        'pinned': false,
+        'completed': false,
+      });
+      expect(store.current.ideas.single.note, 'Walk instead');
+    },
+  );
 
   test(
     'local import uses stable UUID source ids and never deletes phone copy',

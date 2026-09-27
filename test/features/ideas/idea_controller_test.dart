@@ -57,6 +57,9 @@ void main() {
         HomeIdea(
           id: 'one',
           text: 'Water the fern',
+          note: 'Kitchen window',
+          pinned: true,
+          completed: true,
           category: 'home',
           createdAt: DateTime.utc(2026, 9, 27),
         ),
@@ -65,6 +68,18 @@ void main() {
     );
     final restored = IdeaCollection.fromJson(collection.toJson());
     expect(restored.ideas.single.text, 'Water the fern');
+    expect(restored.ideas.single.note, 'Kitchen window');
+    expect(restored.ideas.single.pinned, isTrue);
+    expect(restored.ideas.single.completed, isTrue);
+    final older = HomeIdea.fromJson({
+      'id': 'older',
+      'text': 'Old phone idea',
+      'category': 'inbox',
+      'createdAt': '2026-09-27T00:00:00Z',
+    });
+    expect(older?.note, isEmpty);
+    expect(older?.pinned, isFalse);
+    expect(older?.completed, isFalse);
     expect(restored.customCategories, ['Garden']);
     expect(IdeaCollection.fromJson({'version': 2}).ideas, isEmpty);
     final damaged = IdeaCollection.fromJson({

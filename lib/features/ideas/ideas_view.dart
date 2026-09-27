@@ -7,6 +7,125 @@ import 'idea_store.dart';
 
 const _ideaMint = Color(0xff70e1b4);
 
+class _IdeaEditSheet extends StatefulWidget {
+  const _IdeaEditSheet({
+    required this.idea,
+    required this.controller,
+    required this.labelForCategory,
+    required this.onError,
+  });
+
+  final HomeIdea idea;
+  final IdeaController controller;
+  final String Function(String) labelForCategory;
+  final VoidCallback onError;
+
+  @override
+  State<_IdeaEditSheet> createState() => _IdeaEditSheetState();
+}
+
+class _IdeaEditSheetState extends State<_IdeaEditSheet> {
+  late final TextEditingController title = TextEditingController(
+    text: widget.idea.text,
+  );
+  late final TextEditingController note = TextEditingController(
+    text: widget.idea.note,
+  );
+  late String category = widget.idea.category;
+  bool saving = false;
+
+  @override
+  void dispose() {
+    title.dispose();
+    note.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    setState(() => saving = true);
+    final saved = await widget.controller.update(
+      widget.idea,
+      title.text,
+      category,
+      note: note.text,
+    );
+    if (!mounted) return;
+    if (saved) {
+      Navigator.pop(context);
+    } else {
+      setState(() => saving = false);
+      widget.onError();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        0,
+        24,
+        24 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.ideasEdit,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: title,
+              autofocus: true,
+              minLines: 2,
+              maxLines: 5,
+              maxLength: 500,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(hintText: l10n.ideasCaptureHint),
+            ),
+            const SizedBox(height: 8),
+            if (widget.controller.serverSynced) ...[
+              TextField(
+                controller: note,
+                minLines: 1,
+                maxLines: 3,
+                maxLength: 2000,
+                decoration: InputDecoration(labelText: l10n.ideasNote),
+              ),
+              const SizedBox(height: 8),
+            ],
+            DropdownButtonFormField<String>(
+              initialValue: category,
+              decoration: InputDecoration(labelText: l10n.ideasCategory),
+              items: [
+                for (final item in widget.controller.categories)
+                  DropdownMenuItem(
+                    value: item,
+                    child: Text(widget.labelForCategory(item)),
+                  ),
+              ],
+              onChanged: (value) =>
+                  setState(() => category = value ?? category),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed:
+                  title.text.trim().isEmpty || saving || widget.controller.busy
+                  ? null
+                  : save,
+              child: Text(l10n.ideasSave),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class IdeasWorkspace extends StatefulWidget {
   const IdeasWorkspace({
     required this.controller,
@@ -104,78 +223,18 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
   }
 
   Future<void> _editIdea(HomeIdea idea) async {
-    final l10n = AppLocalizations.of(context);
-    final input = TextEditingController(text: idea.text);
-    var category = idea.category;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, updateSheet) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            0,
-            24,
-            24 + MediaQuery.viewInsetsOf(sheetContext).bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.ideasEdit,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: input,
-                autofocus: true,
-                minLines: 2,
-                maxLines: 5,
-                maxLength: 500,
-                onChanged: (_) => updateSheet(() {}),
-                decoration: InputDecoration(hintText: l10n.ideasCaptureHint),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: category,
-                decoration: InputDecoration(labelText: l10n.ideasCategory),
-                items: [
-                  for (final item in widget.controller.categories)
-                    DropdownMenuItem(
-                      value: item,
-                      child: Text(_label(l10n, item)),
-                    ),
-                ],
-                onChanged: (value) =>
-                    updateSheet(() => category = value ?? category),
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                onPressed: input.text.trim().isEmpty || widget.controller.busy
-                    ? null
-                    : () async {
-                        final saved = await widget.controller.update(
-                          idea,
-                          input.text,
-                          category,
-                        );
-                        if (!sheetContext.mounted) return;
-                        if (saved) {
-                          Navigator.pop(sheetContext);
-                        } else {
-                          _showSaveError();
-                        }
-                      },
-                child: Text(l10n.ideasSave),
-              ),
-            ],
-          ),
-        ),
+      builder: (_) => _IdeaEditSheet(
+        idea: idea,
+        controller: widget.controller,
+        labelForCategory: (category) =>
+            _label(AppLocalizations.of(context), category),
+        onError: _showSaveError,
       ),
     );
-    input.dispose();
   }
 
   Future<void> _copyIdea(HomeIdea idea) async {
@@ -277,6 +336,13 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                 idea.text,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
+              if (idea.note.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SelectableText(
+                  idea.note,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
               const SizedBox(height: 22),
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
@@ -286,6 +352,46 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                   _editIdea(idea);
                 },
               ),
+              if (widget.controller.serverSynced)
+                ListTile(
+                  leading: Icon(
+                    idea.pinned
+                        ? Icons.push_pin_rounded
+                        : Icons.push_pin_outlined,
+                  ),
+                  title: Text(idea.pinned ? l10n.ideasUnpin : l10n.ideasPin),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    if (!await widget.controller.setPinned(
+                          idea,
+                          !idea.pinned,
+                        ) &&
+                        mounted) {
+                      _showSaveError();
+                    }
+                  },
+                ),
+              if (widget.controller.serverSynced)
+                ListTile(
+                  leading: Icon(
+                    idea.completed
+                        ? Icons.undo_rounded
+                        : Icons.task_alt_rounded,
+                  ),
+                  title: Text(
+                    idea.completed ? l10n.ideasReopen : l10n.ideasComplete,
+                  ),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    if (!await widget.controller.setCompleted(
+                          idea,
+                          !idea.completed,
+                        ) &&
+                        mounted) {
+                      _showSaveError();
+                    }
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.notifications_active_outlined),
                 title: Text(l10n.ideasToReminder),
@@ -560,6 +666,15 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                                 style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(fontWeight: FontWeight.w600),
                               ),
+                              if (idea.note.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  idea.note,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
                               const SizedBox(height: 5),
                               Text(
                                 '${_label(l10n, idea.category)} · '
@@ -574,6 +689,16 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                             ],
                           ),
                         ),
+                        if (idea.pinned)
+                          Tooltip(
+                            message: l10n.ideasPinned,
+                            child: const Icon(Icons.push_pin_rounded, size: 18),
+                          ),
+                        if (idea.completed)
+                          Tooltip(
+                            message: l10n.ideasCompleted,
+                            child: const Icon(Icons.task_alt_rounded, size: 18),
+                          ),
                         const Icon(Icons.chevron_right_rounded),
                       ],
                     ),

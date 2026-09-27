@@ -2190,6 +2190,48 @@ abstract class AppLocalizations {
   /// **'Edit idea'**
   String get ideasEdit;
 
+  /// No description provided for @ideasNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get ideasNote;
+
+  /// No description provided for @ideasPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin idea'**
+  String get ideasPin;
+
+  /// No description provided for @ideasUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin idea'**
+  String get ideasUnpin;
+
+  /// No description provided for @ideasComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark complete'**
+  String get ideasComplete;
+
+  /// No description provided for @ideasReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen idea'**
+  String get ideasReopen;
+
+  /// No description provided for @ideasPinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get ideasPinned;
+
+  /// No description provided for @ideasCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get ideasCompleted;
+
   /// No description provided for @ideasDuplicate.
   ///
   /// In en, this message translates to:

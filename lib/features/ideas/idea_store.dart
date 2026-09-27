@@ -13,23 +13,35 @@ final class HomeIdea {
     required this.text,
     required this.category,
     required this.createdAt,
+    this.note = '',
+    this.pinned = false,
+    this.completed = false,
   });
 
   final String id;
   final String text;
   final String category;
   final DateTime createdAt;
+  final String note;
+  final bool pinned;
+  final bool completed;
 
   HomeIdea copyWith({
     String? id,
     String? text,
     String? category,
     DateTime? createdAt,
+    String? note,
+    bool? pinned,
+    bool? completed,
   }) => HomeIdea(
     id: id ?? this.id,
     text: text ?? this.text,
     category: category ?? this.category,
     createdAt: createdAt ?? this.createdAt,
+    note: note ?? this.note,
+    pinned: pinned ?? this.pinned,
+    completed: completed ?? this.completed,
   );
 
   Map<String, Object?> toJson() => {
@@ -37,6 +49,9 @@ final class HomeIdea {
     'text': text,
     'category': category,
     'createdAt': createdAt.toIso8601String(),
+    'note': note,
+    'pinned': pinned,
+    'completed': completed,
   };
 
   static HomeIdea? fromJson(Object? value) {
@@ -44,6 +59,9 @@ final class HomeIdea {
     final id = value['id'];
     final text = value['text'];
     final category = value['category'];
+    final note = value['note'] ?? '';
+    final pinned = value['pinned'] ?? false;
+    final completed = value['completed'] ?? false;
     final createdAt = DateTime.tryParse(value['createdAt']?.toString() ?? '');
     if (id is! String ||
         id.isEmpty ||
@@ -53,6 +71,10 @@ final class HomeIdea {
         category is! String ||
         category.isEmpty ||
         category.length > 47 ||
+        note is! String ||
+        note.length > 2000 ||
+        pinned is! bool ||
+        completed is! bool ||
         createdAt == null) {
       return null;
     }
@@ -61,6 +83,9 @@ final class HomeIdea {
       text: text,
       category: category,
       createdAt: createdAt,
+      note: note,
+      pinned: pinned,
+      completed: completed,
     );
   }
 }

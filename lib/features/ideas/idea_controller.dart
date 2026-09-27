@@ -79,9 +79,18 @@ class IdeaController extends ChangeNotifier {
     );
   }
 
-  Future<bool> update(HomeIdea idea, String text, String category) async {
+  Future<bool> update(
+    HomeIdea idea,
+    String text,
+    String category, {
+    String? note,
+  }) async {
     final clean = text.trim();
-    if (clean.isEmpty || clean.length > 500 || !categories.contains(category)) {
+    final nextNote = note ?? idea.note;
+    if (clean.isEmpty ||
+        clean.length > 500 ||
+        nextNote.length > 2000 ||
+        !categories.contains(category)) {
       return false;
     }
     return _save(
@@ -89,7 +98,7 @@ class IdeaController extends ChangeNotifier {
         ideas: [
           for (final item in ideas)
             if (item.id == idea.id)
-              item.copyWith(text: clean, category: category)
+              item.copyWith(text: clean, category: category, note: nextNote)
             else
               item,
         ],
@@ -101,8 +110,33 @@ class IdeaController extends ChangeNotifier {
   Future<bool> duplicate(HomeIdea idea) => _save(
     IdeaCollection(
       ideas: [
-        idea.copyWith(id: _newId(), createdAt: DateTime.now()),
+        idea.copyWith(
+          id: _newId(),
+          createdAt: DateTime.now(),
+          pinned: false,
+          completed: false,
+        ),
         ...ideas,
+      ],
+      customCategories: collection.customCategories,
+    ),
+  );
+
+  Future<bool> setPinned(HomeIdea idea, bool pinned) => _save(
+    IdeaCollection(
+      ideas: [
+        for (final item in ideas)
+          if (item.id == idea.id) item.copyWith(pinned: pinned) else item,
+      ],
+      customCategories: collection.customCategories,
+    ),
+  );
+
+  Future<bool> setCompleted(HomeIdea idea, bool completed) => _save(
+    IdeaCollection(
+      ideas: [
+        for (final item in ideas)
+          if (item.id == idea.id) item.copyWith(completed: completed) else item,
       ],
       customCategories: collection.customCategories,
     ),
@@ -140,7 +174,9 @@ class IdeaController extends ChangeNotifier {
     notifyListeners();
     try {
       await store.write(next);
-      collection = serverSynced ? (store as ProfileIdeaStore).current : next;
+      collection = serverSynced && store is ProfileIdeaStore
+          ? (store as ProfileIdeaStore).current
+          : next;
       return true;
     } catch (failure) {
       error = failure;

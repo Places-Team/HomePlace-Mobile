@@ -17,6 +17,13 @@ final class _MemoryStore implements IdeaStore {
   }
 }
 
+final class _SyncedIdeaController extends IdeaController {
+  _SyncedIdeaController(super.store);
+
+  @override
+  bool get serverSynced => true;
+}
+
 void main() {
   testWidgets('captures a private idea and hands it to reminder editor', (
     tester,
@@ -66,9 +73,83 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(ideaCard);
     await tester.pumpAndSettle();
+    expect(find.text('Pin idea'), findsNothing);
     await tester.tap(find.text('Make reminder'));
     await tester.pumpAndSettle();
     expect(reminderDraft, 'Water the fern');
+    expect(tester.takeException(), isNull);
+    controller.dispose();
+  });
+
+  testWidgets('shows and edits details shared with Desktop', (tester) async {
+    tester.view.physicalSize = const Size(390, 840);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final store = _MemoryStore()
+      ..value = IdeaCollection(
+        ideas: [
+          HomeIdea(
+            id: 'shared-idea',
+            text: 'Weekend plan',
+            note: 'Take the train',
+            pinned: true,
+            completed: true,
+            category: 'inbox',
+            createdAt: DateTime.utc(2026, 9, 27),
+          ),
+        ],
+      );
+    final controller = _SyncedIdeaController(store);
+    await controller.load();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: IdeasWorkspace(
+              controller: controller,
+              canMakeReminder: true,
+              clipboardRelayEnabled: false,
+              onMakeReminder: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final card = find.byKey(const ValueKey('idea-shared-idea'));
+    await tester.ensureVisible(card);
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    expect(find.text('Take the train'), findsWidgets);
+    await tester.tap(find.text('Unpin idea'));
+    await tester.pumpAndSettle();
+    expect(controller.ideas.single.pinned, isFalse);
+
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reopen idea'));
+    await tester.pumpAndSettle();
+    expect(controller.ideas.single.completed, isFalse);
+
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit idea'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == 'Details',
+      ),
+      'Walk instead',
+    );
+    await tester.ensureVisible(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    expect(controller.ideas.single.note, 'Walk instead');
     expect(tester.takeException(), isNull);
     controller.dispose();
   });

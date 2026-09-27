@@ -68,6 +68,11 @@ While the app is open, each successful mobile overview refresh also reloads
 account ideas when `ideas.manage` is granted. This includes foreground polling
 and manual refresh, so Desktop changes appear without restarting mobile.
 Failed refreshes do not replace cached ideas or upload local-only ideas.
+Synced ideas retain Desktop notes, pin state, and completion state. Mobile
+updates send only changed fields, leaving unrelated Desktop fields intact.
+These advanced controls are hidden for local-only ideas because the canonical
+legacy import accepts titles and categories only. Archived ideas remain a
+Desktop-only view until mobile archive navigation is implemented.
 
 ## Native boundaries
 

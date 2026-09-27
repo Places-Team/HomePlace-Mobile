@@ -70,6 +70,11 @@ final class ServerIdeaStore implements IdeaStore {
         if (createdAt == null) {
           throw const FormatException('Invalid HomePlace idea date.');
         }
+        if (raw['note'] is! String ||
+            (raw['note'] as String).length > 2000 ||
+            raw['pinned'] is! bool) {
+          throw const FormatException('Invalid HomePlace idea details.');
+        }
         final category = categories.entries
             .where((entry) => entry.value == raw['categoryId'])
             .map((entry) => entry.key)
@@ -80,6 +85,9 @@ final class ServerIdeaStore implements IdeaStore {
             text: raw['title'] as String,
             category: category ?? 'inbox',
             createdAt: createdAt,
+            note: raw['note'] as String,
+            pinned: raw['pinned'] as bool,
+            completed: raw['completedAt'] != null,
           ),
         );
       }
@@ -140,17 +148,26 @@ final class ServerIdeaStore implements IdeaStore {
           await gateway.command(session, {
             'action': 'createIdea',
             'title': idea.text,
+            'note': idea.note,
             'categoryId': _categoryIds[idea.category],
           }),
         );
-      } else if (old.text != idea.text || old.category != idea.category) {
+      } else if (old.text != idea.text ||
+          old.category != idea.category ||
+          old.note != idea.note ||
+          old.pinned != idea.pinned ||
+          old.completed != idea.completed) {
         _needsRefresh = true;
         _value(
           await gateway.command(session, {
             'action': 'updateIdea',
             'id': idea.id,
-            'title': idea.text,
-            'categoryId': _categoryIds[idea.category],
+            if (old.text != idea.text) 'title': idea.text,
+            if (old.category != idea.category)
+              'categoryId': _categoryIds[idea.category],
+            if (old.note != idea.note) 'note': idea.note,
+            if (old.pinned != idea.pinned) 'pinned': idea.pinned,
+            if (old.completed != idea.completed) 'completed': idea.completed,
           }),
         );
       }

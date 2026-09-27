@@ -1186,6 +1186,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ideasEdit => 'Edit idea';
 
   @override
+  String get ideasNote => 'Details';
+
+  @override
+  String get ideasPin => 'Pin idea';
+
+  @override
+  String get ideasUnpin => 'Unpin idea';
+
+  @override
+  String get ideasComplete => 'Mark complete';
+
+  @override
+  String get ideasReopen => 'Reopen idea';
+
+  @override
+  String get ideasPinned => 'Pinned';
+
+  @override
+  String get ideasCompleted => 'Completed';
+
+  @override
   String get ideasDuplicate => 'Duplicate';
 
   @override
