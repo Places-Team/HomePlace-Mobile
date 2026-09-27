@@ -484,14 +484,9 @@ class _WorkspaceHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _moduleViolet.withValues(alpha: .24),
-            _moduleCoral.withValues(alpha: .12),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xff242b39)
+            : const Color(0xffe8eee2),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: _moduleViolet.withValues(alpha: .22)),
       ),
@@ -1194,9 +1189,7 @@ class _Glow extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withValues(alpha: .18), Colors.transparent],
-        ),
+        color: color.withValues(alpha: .08),
       ),
     ),
   );

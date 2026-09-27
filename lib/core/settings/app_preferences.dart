@@ -19,7 +19,7 @@ final class AppPreferences extends ChangeNotifier {
   final Future<void> Function(bool enabled)?
   onSeamlessOwnAccountTransfersChanged;
   AppLanguage language = AppLanguage.system;
-  ThemeMode themeMode = ThemeMode.system;
+  ThemeMode themeMode = ThemeMode.light;
   bool backgroundDeliveryEnabled = false;
   bool backgroundIncomingOffersEnabled = false;
   bool seamlessOwnAccountTransfersEnabled = false;
@@ -32,7 +32,7 @@ final class AppPreferences extends ChangeNotifier {
     );
     themeMode = ThemeMode.values.firstWhere(
       (item) => item.name == preferences.getString('app.theme'),
-      orElse: () => ThemeMode.system,
+      orElse: () => ThemeMode.light,
     );
     backgroundDeliveryEnabled =
         preferences.getBool('app.backgroundDelivery') ?? false;

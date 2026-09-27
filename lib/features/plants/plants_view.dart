@@ -369,14 +369,12 @@ class _PlantTile extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   _PlantPhoto(plant: plant, controller: controller),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0xdd15251d)],
-                      ),
-                    ),
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 66,
+                    child: ColoredBox(color: Color(0xd915251d)),
                   ),
                   Positioned(
                     left: 13,
@@ -474,21 +472,55 @@ class _PlantTile extends StatelessWidget {
   }
 }
 
-class _PlantPhoto extends StatelessWidget {
+class _PlantPhoto extends StatefulWidget {
   const _PlantPhoto({required this.plant, required this.controller});
   final HomePlant plant;
   final PlantController controller;
 
   @override
+  State<_PlantPhoto> createState() => _PlantPhotoState();
+}
+
+class _PlantPhotoState extends State<_PlantPhoto> {
+  late Future<File?> _photo;
+
+  @override
+  void initState() {
+    super.initState();
+    _photo = widget.controller.store.photoFile(widget.plant.photoName);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlantPhoto oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.plant.photoName != widget.plant.photoName ||
+        oldWidget.controller != widget.controller) {
+      _photo = widget.controller.store.photoFile(widget.plant.photoName);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => FutureBuilder<File?>(
-    future: controller.store.photoFile(plant.photoName),
+    future: _photo,
     builder: (context, snapshot) {
       final file = snapshot.data;
       if (file != null) {
-        return Image.file(
-          file,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _placeholder(context),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final logicalWidth = constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : 600.0;
+            final pixels =
+                (logicalWidth * MediaQuery.devicePixelRatioOf(context))
+                    .ceil()
+                    .clamp(1, 1600);
+            return Image.file(
+              file,
+              fit: BoxFit.cover,
+              cacheWidth: pixels,
+              errorBuilder: (_, _, _) => _placeholder(context),
+            );
+          },
         );
       }
       return _placeholder(context);
@@ -496,13 +528,7 @@ class _PlantPhoto extends StatelessWidget {
   );
 
   Widget _placeholder(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xff526f5d), Color(0xff203c3a)],
-      ),
-    ),
+    decoration: const BoxDecoration(color: Color(0xff354e3e)),
     child: const Center(
       child: Icon(Icons.spa_rounded, color: Color(0xffa6dcaa), size: 70),
     ),

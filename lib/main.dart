@@ -57,6 +57,23 @@ class HomePlaceApp extends StatelessWidget {
       theme: _theme(Brightness.light),
       darkTheme: _theme(Brightness.dark),
       themeMode: preferences.themeMode,
+      builder: (context, child) {
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: dark
+                ? const Color(0xff0b0d14)
+                : const Color(0xfff7f3e9),
+            systemNavigationBarIconBrightness: dark
+                ? Brightness.light
+                : Brightness.dark,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: ConnectionShell(controller: controller, preferences: preferences),
     ),
   );
@@ -161,17 +178,41 @@ class ConnectionShell extends StatelessWidget {
 
 ThemeData _theme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xff829eff),
+  final typography = ThemeData(
     brightness: brightness,
-    surface: dark ? const Color(0xff0b0d14) : const Color(0xfff5f6fb),
+    useMaterial3: true,
+  ).textTheme;
+  final scheme = ColorScheme.fromSeed(
+    seedColor: dark ? const Color(0xff829eff) : const Color(0xff4d6955),
+    brightness: brightness,
+    surface: dark ? const Color(0xff0b0d14) : const Color(0xfffffcf5),
   );
   return ThemeData(
     brightness: brightness,
     colorScheme: scheme,
+    textTheme: typography.copyWith(
+      displaySmall: typography.displaySmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: -1.4,
+        height: 1.04,
+      ),
+      headlineMedium: typography.headlineMedium?.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.9,
+        height: 1.08,
+      ),
+      headlineSmall: typography.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.6,
+      ),
+      titleLarge: typography.titleLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.35,
+      ),
+    ),
     scaffoldBackgroundColor: dark
         ? const Color(0xff0b0d14)
-        : const Color(0xfff5f6fb),
+        : const Color(0xfff7f3e9),
     useMaterial3: true,
     appBarTheme: const AppBarTheme(
       centerTitle: false,

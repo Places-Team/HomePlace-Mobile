@@ -1,8 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:homeplace/core/settings/app_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('new installations open in the light theme', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = AppPreferences();
+    await preferences.initialize();
+    expect(preferences.themeMode, ThemeMode.light);
+    preferences.dispose();
+  });
+
   test(
     'enabling background offers persists consent and requests a check',
     () async {

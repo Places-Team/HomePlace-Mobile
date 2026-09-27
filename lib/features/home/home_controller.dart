@@ -37,6 +37,7 @@ final class HomeController extends ChangeNotifier {
   String? busyId;
   Timer? _refreshTimer;
   Timer? _clipboardTimer;
+  bool _foreground = true;
   Future<String?> Function()? _clipboardReader;
   String? _lastAutoClipboardText;
   bool _autoClipboardBusy = false;
@@ -53,9 +54,29 @@ final class HomeController extends ChangeNotifier {
     autoClipboardEnabled = preferences.getBool('clipboard.autoSend') ?? false;
     await _loadTransferActivity();
     await refresh(initial: true);
+    _startForegroundTimers();
+  }
+
+  void setForeground(bool foreground) {
+    if (_foreground == foreground) return;
+    _foreground = foreground;
+    if (foreground) {
+      _startForegroundTimers();
+      unawaited(refresh());
+    } else {
+      _refreshTimer?.cancel();
+      _refreshTimer = null;
+      _clipboardTimer?.cancel();
+      _clipboardTimer = null;
+    }
+  }
+
+  void _startForegroundTimers() {
+    if (!_foreground) return;
+    _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
-      (_) => refresh(),
+      (_) => unawaited(refresh()),
     );
     _restartClipboardTimer();
   }
@@ -78,7 +99,9 @@ final class HomeController extends ChangeNotifier {
   void _restartClipboardTimer() {
     _clipboardTimer?.cancel();
     _clipboardTimer = null;
-    if (!autoClipboardEnabled || _clipboardReader == null) return;
+    if (!_foreground || !autoClipboardEnabled || _clipboardReader == null) {
+      return;
+    }
     unawaited(_relayClipboardIfChanged());
     _clipboardTimer = Timer.periodic(
       const Duration(seconds: 4),

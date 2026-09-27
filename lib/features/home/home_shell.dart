@@ -67,12 +67,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   bool _shareTargetSheetOpen = false;
   String? _presentedOutgoingBatch;
   late int tab;
+  late final ValueNotifier<int> selectedTab;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     tab = widget.connection.pendingOutgoingShares.isEmpty ? 0 : 3;
+    selectedTab = ValueNotifier(tab);
     pages = PageController(initialPage: tab);
     home.bindClipboardReader(widget.connection.readClipboardTextForAutoRelay);
     if (ownsHome) home.initialize();
@@ -108,11 +110,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       if (destination == 'ideas' && ideas != null) {
         Navigator.of(context).popUntil((route) => route.isFirst);
         planSection.value = _PlanSection.ideas;
-        setState(() => tab = 1);
+        _selectTab(1);
         pages.jumpToPage(1);
       } else if (destination == 'transfers') {
         Navigator.of(context).popUntil((route) => route.isFirst);
-        setState(() => tab = 3);
+        _selectTab(3);
         pages.jumpToPage(3);
       }
     });
@@ -129,15 +131,23 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     plants?.dispose();
     ideas?.dispose();
     planSection.dispose();
+    selectedTab.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    home.setForeground(state == AppLifecycleState.resumed);
     if (state == AppLifecycleState.resumed) {
       unawaited(widget.connection.refreshEvents());
       if (plants != null) unawaited(plants!.load());
     }
+  }
+
+  void _selectTab(int value) {
+    if (tab == value) return;
+    tab = value;
+    selectedTab.value = value;
   }
 
   @override
@@ -182,31 +192,26 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         extendBody: true,
         body: Stack(
           children: [
-            const Positioned(
-              right: -90,
-              top: -130,
-              child: _Aura(size: 310, color: _violet),
-            ),
-            const Positioned(
-              left: -130,
-              bottom: 80,
-              child: _Aura(size: 260, color: _coral),
-            ),
             SafeArea(
               bottom: false,
               child: Column(
                 children: [
-                  _TopBar(
-                    serverName:
-                        widget.connection.profile?.serverName ?? l10n.appName,
-                    planTitle: tab == 1 ? l10n.calendarTab : null,
-                    planDescription: tab == 1 ? l10n.calendarModuleBody : null,
-                    refreshing: home.refreshing,
-                    hasError: home.error != null,
-                    onRefresh: home.refresh,
-                    onError: home.error == null
-                        ? null
-                        : () => _showCurrentError(context, l10n),
+                  ValueListenableBuilder<int>(
+                    valueListenable: selectedTab,
+                    builder: (context, currentTab, _) => _TopBar(
+                      serverName:
+                          widget.connection.profile?.serverName ?? l10n.appName,
+                      planTitle: currentTab == 1 ? l10n.calendarTab : null,
+                      planDescription: currentTab == 1
+                          ? l10n.calendarModuleBody
+                          : null,
+                      refreshing: home.refreshing,
+                      hasError: home.error != null,
+                      onRefresh: home.refresh,
+                      onError: home.error == null
+                          ? null
+                          : () => _showCurrentError(context, l10n),
+                    ),
                   ),
                   if (home.notice case final notice?)
                     _MessageBanner(
@@ -251,7 +256,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   Expanded(
                     child: PageView(
                       controller: pages,
-                      onPageChanged: (value) => setState(() => tab = value),
+                      onPageChanged: _selectTab,
                       children: [
                         _OverviewPage(
                           overview: overview,
@@ -259,7 +264,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           connection: widget.connection,
                           plants: plants,
                           onOpenPlan: () {
-                            setState(() => tab = 1);
+                            _selectTab(1);
                             pages.animateToPage(
                               1,
                               duration: const Duration(milliseconds: 260),
@@ -285,7 +290,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           ),
                         ),
                         _MonitorPage(overview: overview, home: home),
-                      ],
+                      ].map((page) => _RetainedPage(child: page)).toList(),
                     ),
                   ),
                 ],
@@ -293,16 +298,19 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ),
           ],
         ),
-        bottomNavigationBar: _PillNavigation(
-          index: tab,
-          transferCount:
-              widget.connection.pendingOutgoingShares.length +
-              widget.connection.pendingIncomingShares.length,
-          onChanged: (value) {
-            setState(() => tab = value);
-            pages.jumpToPage(value);
-          },
-          onMore: () => _showModules(context, overview),
+        bottomNavigationBar: ValueListenableBuilder<int>(
+          valueListenable: selectedTab,
+          builder: (context, currentTab, _) => _PillNavigation(
+            index: currentTab,
+            transferCount:
+                widget.connection.pendingOutgoingShares.length +
+                widget.connection.pendingIncomingShares.length,
+            onChanged: (value) {
+              _selectTab(value);
+              pages.jumpToPage(value);
+            },
+            onMore: () => _showModules(context, overview),
+          ),
         ),
       );
     },
@@ -350,11 +358,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             home: home,
             onOpenIdeas: () {
               planSection.value = _PlanSection.ideas;
-              setState(() => tab = 1);
+              _selectTab(1);
               if (pages.hasClients) pages.jumpToPage(1);
             },
             onOpenTab: (value) {
-              setState(() => tab = value);
+              _selectTab(value);
               if (pages.hasClients) pages.jumpToPage(value);
             },
             onOpenSettings: () {
@@ -395,7 +403,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       if (tab != 3) {
-        setState(() => tab = 3);
+        _selectTab(3);
         if (pages.hasClients) {
           await pages.animateToPage(
             3,
@@ -1082,16 +1090,9 @@ class _OverviewPage extends StatelessWidget {
     return _ScrollPage(
       onRefresh: home.refresh,
       children: [
-        Text(
-          l10n.everythingInPlace,
-          style: Theme.of(context).textTheme.displaySmall
-              ?.copyWith(fontWeight: FontWeight.w900, height: .95),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          l10n.homeOverviewBody,
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        _PageHeading(
+          title: l10n.everythingInPlace,
+          subtitle: l10n.homeOverviewBody,
         ),
         const SizedBox(height: 22),
         if (plants != null) PlantsHomeSection(controller: plants!),
@@ -2475,9 +2476,7 @@ class _RequestsPageState extends State<_RequestsPage> {
                           Expanded(
                             child: Text(
                               instance.label,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.w900),
                             ),
                           ),
                           _TinyBadge(
@@ -2922,6 +2921,8 @@ class _PillNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final navigationInk = dark ? Colors.white : const Color(0xff25352b);
     final items = [
       (Icons.space_dashboard_rounded, l10n.homeTab),
       (Icons.event_note_rounded, l10n.calendarTab),
@@ -2935,15 +2936,16 @@ class _PillNavigation extends StatelessWidget {
         height: 68,
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
+          color: dark
               ? const Color(0xff151824).withValues(alpha: .97)
-              : const Color(0xff161a27).withValues(alpha: .97),
+              : const Color(0xfffffcf5),
           borderRadius: BorderRadius.circular(34),
-          boxShadow: const [
+          border: dark ? null : Border.all(color: const Color(0xffded9c9)),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 24,
-              offset: Offset(0, 10),
+              color: dark ? const Color(0x33000000) : const Color(0x142c3627),
+              blurRadius: dark ? 24 : 14,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -2974,7 +2976,9 @@ class _PillNavigation extends StatelessWidget {
                             curve: Curves.easeOutCubic,
                             decoration: BoxDecoration(
                               color: selected
-                                  ? const Color(0xffa9bcff)
+                                  ? (dark
+                                        ? const Color(0xffa9bcff)
+                                        : const Color(0xffdce9d7))
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(27),
                             ),
@@ -2988,8 +2992,12 @@ class _PillNavigation extends StatelessWidget {
                                       items[i].$1,
                                       size: 22,
                                       color: selected
-                                          ? const Color(0xff111521)
-                                          : Colors.white.withValues(alpha: .62),
+                                          ? (dark
+                                                ? const Color(0xff111521)
+                                                : navigationInk)
+                                          : navigationInk.withValues(
+                                              alpha: .58,
+                                            ),
                                     ),
                                     if (i == 3 && transferCount > 0)
                                       Positioned(
@@ -3030,10 +3038,12 @@ class _PillNavigation extends StatelessWidget {
                                     items[i].$2,
                                     maxLines: 1,
                                     overflow: TextOverflow.fade,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xff111521),
+                                      color: dark
+                                          ? const Color(0xff111521)
+                                          : navigationInk,
                                     ),
                                   ),
                                 ],
@@ -3050,7 +3060,9 @@ class _PillNavigation extends StatelessWidget {
                   width: 48,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .10),
+                    color: dark
+                        ? Colors.white.withValues(alpha: .10)
+                        : const Color(0xffeee9dc),
                     borderRadius: BorderRadius.circular(26),
                   ),
                   child: IconButton(
@@ -3059,10 +3071,7 @@ class _PillNavigation extends StatelessWidget {
                       HapticFeedback.selectionClick();
                       onMore();
                     },
-                    icon: const Icon(
-                      Icons.grid_view_rounded,
-                      color: Colors.white,
-                    ),
+                    icon: Icon(Icons.grid_view_rounded, color: navigationInk),
                   ),
                 ),
               ],
@@ -3071,6 +3080,27 @@ class _PillNavigation extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _RetainedPage extends StatefulWidget {
+  const _RetainedPage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_RetainedPage> createState() => _RetainedPageState();
+}
+
+class _RetainedPageState extends State<_RetainedPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
 
@@ -3105,22 +3135,28 @@ class _Surface extends StatelessWidget {
     decoration: BoxDecoration(
       color:
           color ??
-          Theme.of(context).colorScheme.surfaceContainerLow
-              .withValues(alpha: .92),
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(
-        color: Theme.of(context).colorScheme.outlineVariant
-            .withValues(alpha: .45),
+          (Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.surfaceContainerLow
+                    .withValues(alpha: .92)
+              : const Color(0xfffffcf5)),
+      borderRadius: BorderRadius.circular(
+        Theme.of(context).brightness == Brightness.dark ? 24 : 18,
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(
-            alpha: Theme.of(context).brightness == Brightness.dark ? .18 : .04,
-          ),
-          blurRadius: 22,
-          offset: const Offset(0, 9),
-        ),
-      ],
+      border: Border.all(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.outlineVariant
+                  .withValues(alpha: .45)
+            : const Color(0xffe9e3d5),
+      ),
+      boxShadow: Theme.of(context).brightness == Brightness.dark
+          ? [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .18),
+                blurRadius: 22,
+                offset: const Offset(0, 9),
+              ),
+            ]
+          : null,
     ),
     child: child,
   );
@@ -3306,10 +3342,19 @@ class _PageHeading extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      Container(
+        width: 38,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+      const SizedBox(height: 13),
       Text(
         title,
         style: Theme.of(context).textTheme.displaySmall
-            ?.copyWith(fontWeight: FontWeight.w900, height: .98),
+            ?.copyWith(fontWeight: FontWeight.w800),
       ),
       if (subtitle?.isNotEmpty == true) ...[
         const SizedBox(height: 8),
@@ -3383,25 +3428,6 @@ class _StatusRing extends StatelessWidget {
   );
 }
 
-class _Aura extends StatelessWidget {
-  const _Aura({required this.size, required this.color});
-  final double size;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withValues(alpha: .25), color.withValues(alpha: 0)],
-        ),
-      ),
-    ),
-  );
-}
-
 class _MessageBanner extends StatelessWidget {
   const _MessageBanner({
     required this.message,
@@ -3449,7 +3475,7 @@ class _Loading extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _Aura(size: 180, color: _violet),
+          const HomePlaceMark(size: 54),
           const SizedBox(height: 18),
           const CircularProgressIndicator(),
           const SizedBox(height: 18),
