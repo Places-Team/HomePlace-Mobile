@@ -3,11 +3,38 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import 'idea_store.dart';
+import 'server_idea_store.dart';
 
 final class IdeaController extends ChangeNotifier {
   IdeaController(this.store);
 
   final IdeaStore store;
+  bool get serverSynced =>
+      store is ProfileIdeaStore && (store as ProfileIdeaStore).serverSynced;
+  bool get serverAccessGranted =>
+      store is ProfileIdeaStore && (store as ProfileIdeaStore).canUseServer();
+  int get pendingLocalCount => store is ProfileIdeaStore
+      ? (store as ProfileIdeaStore).pendingLocalCount
+      : 0;
+
+  Future<bool> importLocal() async {
+    if (store is! ProfileIdeaStore || !serverSynced || busy) return false;
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      await (store as ProfileIdeaStore).importLocal();
+      collection = (store as ProfileIdeaStore).current;
+      return true;
+    } catch (failure) {
+      error = failure;
+      return false;
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+  }
+
   IdeaCollection collection = const IdeaCollection();
   bool loading = true;
   bool busy = false;
@@ -113,7 +140,7 @@ final class IdeaController extends ChangeNotifier {
     notifyListeners();
     try {
       await store.write(next);
-      collection = next;
+      collection = serverSynced ? (store as ProfileIdeaStore).current : next;
       return true;
     } catch (failure) {
       error = failure;

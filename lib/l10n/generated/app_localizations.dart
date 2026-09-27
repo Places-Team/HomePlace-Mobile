@@ -2061,8 +2061,38 @@ abstract class AppLocalizations {
   /// No description provided for @ideasLocalOnly.
   ///
   /// In en, this message translates to:
-  /// **'Private to this phone and connection. Ideas do not sync with Desktop yet.'**
+  /// **'Only on this phone. This device has not been granted access to account ideas.'**
   String get ideasLocalOnly;
+
+  /// No description provided for @ideasServerSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your HomePlace account and available on your devices.'**
+  String get ideasServerSynced;
+
+  /// No description provided for @ideasSyncUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Account ideas are unavailable right now. Phone ideas have not been uploaded.'**
+  String get ideasSyncUnavailable;
+
+  /// No description provided for @ideasImportLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Import phone ideas'**
+  String get ideasImportLocal;
+
+  /// No description provided for @ideasImportPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy ideas saved on this phone to your HomePlace account? Existing phone copies will stay private on this device.'**
+  String get ideasImportPrompt;
+
+  /// No description provided for @ideasImportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone ideas imported to HomePlace.'**
+  String get ideasImportDone;
 
   /// No description provided for @ideasModuleBody.
   ///

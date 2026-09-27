@@ -47,7 +47,7 @@ void main() {
     );
     expect(
       find.text(
-        'Private to this phone and connection. Ideas do not sync with Desktop yet.',
+        'Only on this phone. This device has not been granted access to account ideas.',
       ),
       findsOneWidget,
     );

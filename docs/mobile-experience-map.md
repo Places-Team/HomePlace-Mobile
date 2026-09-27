@@ -21,7 +21,7 @@ Home first. Returning from a detail screen preserves the selected tab.
 | Requests | What did I ask HomePlace to do? | Existing media requests and their status | Home chores or file inbox |
 | Transfers | What am I sending or receiving? | Named devices, explicit share confirmation, files, links, text, Android clipboard, transfer history | Monitoring graphs |
 | Monitor | Is HomePlace healthy? | Service/container state, health checks, recent events, drill-down diagnostics | Household chores |
-| All sections | Where is a less-frequent tool? | Ideas, devices, notification history, Telegram, media, smart home preview, automations preview, security, settings | A second competing home dashboard |
+| All sections | Where are less-frequent tools? | Notifications, devices, Telegram, smart home, automations, security, settings; user-configurable visibility | A duplicate of main tabs |
 
 ## Screen sketches
 
@@ -67,12 +67,9 @@ Ideas mode → quick capture → category filter → edit / duplicate / delete
 Idea action → prefill the server-backed reminder editor without deleting the idea
 ```
 
-Calendar and reminders are server-backed and permission-gated. Plant watering
-and ideas are local. Ideas use platform-secure storage scoped to the paired
-server and device; they do not sync with Desktop or the server yet. The modes
-keep those sources and storage boundaries clear. Flexible reminder recurrence
-must use the server's supported format; the UI must not promise schedules it
-cannot save.
+Calendar and reminders are server-backed and permission-gated. Plant watering remains local. Ideas use the account-scoped server API only with `ideas.manage`; otherwise they remain in secure, profile-scoped local storage. Existing local ideas require confirmed import before they reach the server.
+Flexible reminder recurrence must use the server's supported format; the UI
+must not promise schedules it cannot save.
 
 ### Requests
 
@@ -137,7 +134,7 @@ troubleshooting. Destructive or cross-device actions need explicit confirmation.
 | Ideas | Private local capture, categories, editing and reminder handoff | Connect to a canonical, account-scoped server API when it exists; plan conflict handling and migration before enabling sync |
 | Calendar and reminders | Server-backed viewing and editing | Refine day agenda and recurrence validation against current server |
 | Requests | Existing server-backed media actions | Improve per-request status and actionable failures |
-| Files, links, text | Recipient selection, confirmation, receiving and save flow | Validate large-file and background paths on real devices |
+| Ideas | Account-backed capture and categories with permission; secure local fallback and explicit import | Add pin, archive, notes and richer conflict handling against the canonical API |
 | Android clipboard | Foreground relay and explicit copy | Keep platform restrictions visible; no silent background reads |
 | Monitor | Server-backed dashboard and read-only drill-down | Improve freshness and source labels on each metric |
 | Telegram | Server status and permitted test in Services | Only add account management if canonical APIs support it |

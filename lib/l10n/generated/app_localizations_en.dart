@@ -1115,7 +1115,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ideasLocalOnly =>
-      'Private to this phone and connection. Ideas do not sync with Desktop yet.';
+      'Only on this phone. This device has not been granted access to account ideas.';
+
+  @override
+  String get ideasServerSynced =>
+      'Saved to your HomePlace account and available on your devices.';
+
+  @override
+  String get ideasSyncUnavailable =>
+      'Account ideas are unavailable right now. Phone ideas have not been uploaded.';
+
+  @override
+  String get ideasImportLocal => 'Import phone ideas';
+
+  @override
+  String get ideasImportPrompt =>
+      'Copy ideas saved on this phone to your HomePlace account? Existing phone copies will stay private on this device.';
+
+  @override
+  String get ideasImportDone => 'Phone ideas imported to HomePlace.';
 
   @override
   String get ideasModuleBody =>

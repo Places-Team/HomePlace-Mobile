@@ -16,6 +16,7 @@ import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import '../ideas/idea_controller.dart';
 import '../ideas/idea_store.dart';
+import '../ideas/server_idea_store.dart';
 import '../ideas/ideas_view.dart';
 import 'home_controller.dart';
 import 'home_modules.dart';
@@ -53,7 +54,18 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       : PlantController(PlantStore(widget.connection.profile!));
   late final IdeaController? ideas = widget.connection.profile == null
       ? null
-      : IdeaController(SecureIdeaStore(widget.connection.profile!));
+      : IdeaController(
+          ProfileIdeaStore(
+            local: SecureIdeaStore(widget.connection.profile!),
+            server: ServerIdeaStore(
+              profile: widget.connection.profile!,
+              sessionProvider: widget.connection.authenticatedSession,
+              localStore: SecureIdeaStore(widget.connection.profile!),
+            ),
+            canUseServer: () =>
+                home.overview?.permissions.contains('ideas.manage') ?? false,
+          ),
+        );
   final ValueNotifier<_PlanSection> planSection = ValueNotifier(
     _PlanSection.calendar,
   );
@@ -76,16 +88,28 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     tab = widget.connection.pendingOutgoingShares.isEmpty ? 0 : 3;
     selectedTab = ValueNotifier(tab);
     pages = PageController(initialPage: tab);
+    home.addListener(_refreshIdeasAccess);
     home.bindClipboardReader(widget.connection.readClipboardTextForAutoRelay);
-    if (ownsHome) home.initialize();
+    if (ownsHome) {
+      unawaited(home.initialize().then((_) => ideas?.load()));
+    } else {
+      ideas?.load();
+    }
     plants?.load();
-    ideas?.load();
     if (Platform.isAndroid) {
       _shortcutChannel.setMethodCallHandler((call) async {
         if (call.method == 'shortcutOpened') await _takeShortcut();
       });
       unawaited(_takeShortcut());
     }
+  }
+
+  void _refreshIdeasAccess() {
+    final controller = ideas;
+    if (controller == null || controller.loading || controller.busy) return;
+    final allowed =
+        home.overview?.permissions.contains('ideas.manage') ?? false;
+    if (controller.serverSynced != allowed) unawaited(controller.load());
   }
 
   Future<void> _takeShortcut() async {
@@ -123,6 +147,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    home.removeListener(_refreshIdeasAccess);
     if (Platform.isAndroid) {
       _shortcutChannel.setMethodCallHandler(null);
     }

@@ -9,13 +9,14 @@ system notification-settings access, private notification visibility, and
 subtle system haptics in navigation. See [Android platform integration](docs/android-platform.md)
 for the implemented One UI/Android behavior and the Android 17 permission gate.
 
-Plans now includes an Ideas workspace based on Desktop's quick-capture flow:
-private notes, categories, editing, duplication, deletion, and an explicit
-handoff to the server-backed reminder editor. Ideas are stored in Android
-Keystore-backed storage or iOS Keychain for the current paired profile. They do
-not sync with Desktop or the server until HomePlace defines a compatible,
-account-scoped API. Android launcher shortcuts can open Ideas and Transfers
-after the normal connection flow; neither shortcut bypasses confirmation.
+Plans includes an Ideas workspace based on Desktop's quick-capture flow:
+notes, categories, editing, duplication, deletion, and explicit handoff to
+the server-backed reminder editor. Ideas use the account-scoped
+`/api/link/ideas` API when the paired device has `ideas.manage`. Older
+pairings keep their secure device-local ideas until access is granted.
+The user can then confirm an idempotent import; phone copies remain intact.
+Android launcher shortcuts can open Ideas and Transfers after the normal
+connection flow; neither shortcut bypasses confirmation.
 
 The first Flutter application slice is implemented with Android as the primary validation target. It includes:
 

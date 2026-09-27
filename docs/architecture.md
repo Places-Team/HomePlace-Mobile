@@ -49,18 +49,21 @@ Plant cards are a device-local feature. `PlantStore` persists bounded metadata i
 
 Saved profiles restore on startup. A failed connection check enters a retry state that keeps the saved address and credentials. The client still checks `/api/link/info` and the server ID before using credentials. Entering a different address remains an explicit choice.
 
-## Local ideas
+## Ideas
 
-The Ideas workspace follows Desktop's quick-capture and category workflow but
-does not claim to synchronize with Desktop. `IdeaController` owns validation and
-editing; `IdeaStore` owns persistence. The current `SecureIdeaStore` stores a
-versioned collection in Android Keystore-backed storage or iOS Keychain, keyed
-by a hash of the paired server and device IDs. A different connection profile
-cannot read the same collection. An idea may prefill the existing server-backed
-reminder editor only after the user chooses that action and has reminder
-permission. When the server defines an account-scoped Ideas API, replace the
-storage implementation behind this boundary with an explicit migration and
-conflict policy; do not assume a Desktop-local record is already server data.
+The Ideas workspace follows Desktop's quick-capture workflow.
+`IdeaController` owns UI state and validation; `IdeaStore` separates
+persistence. New pairings request `ideas.manage`. `ServerIdeaStore` uses
+the canonical `/api/link/ideas` route for account-scoped categories and
+ideas, including paginated reads and authenticated changes. An uncertain
+write must be refreshed before another change to avoid a blind retry.
+
+`SecureIdeaStore` remains available to older pairings without Ideas
+permission. Its versioned data stays in Android Keystore-backed storage
+or iOS Keychain under a server-and-device-scoped key. When server access
+is granted, an explicit, idempotent import copies local ideas without
+deleting the phone data. The server is authoritative for synced ideas;
+Desktop-only local records are not assumed to be server data.
 
 ## Native boundaries
 

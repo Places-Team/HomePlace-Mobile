@@ -46,7 +46,10 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
   };
 
   Future<void> _createIdea() async {
-    final saved = await widget.controller.add(_draft.text, _category);
+    final category = widget.controller.categories.contains(_category)
+        ? _category
+        : 'inbox';
+    final saved = await widget.controller.add(_draft.text, category);
     if (!mounted) return;
     if (saved) {
       _draft.clear();
@@ -223,6 +226,35 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
     if (!await widget.controller.remove(idea) && mounted) _showSaveError();
   }
 
+  Future<void> _importLocalIdeas() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.ideasImportLocal),
+        content: Text(l10n.ideasImportPrompt),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.ideasImportLocal),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final imported = await widget.controller.importLocal();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(imported ? l10n.ideasImportDone : l10n.ideasSaveError),
+      ),
+    );
+  }
+
   Future<void> _openIdea(HomeIdea idea) async {
     final l10n = AppLocalizations.of(context);
     await showModalBottomSheet<void>(
@@ -304,6 +336,9 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
       final controller = widget.controller;
+      final selectedCategory = controller.categories.contains(_category)
+          ? _category
+          : 'inbox';
       if (controller.loading) {
         return const Center(child: CircularProgressIndicator());
       }
@@ -335,8 +370,18 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                 style: Theme.of(context).textTheme.titleMedium
                     ?.copyWith(color: _ideaMint, fontWeight: FontWeight.w800),
               ),
+              IconButton(
+                tooltip: l10n.refresh,
+                onPressed: controller.busy ? null : controller.load,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
             ],
           ),
+          if (controller.error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(l10n.ideasLoadError),
+            ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(18),
@@ -365,8 +410,8 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        key: ValueKey('idea-category-$_category'),
-                        initialValue: _category,
+                        key: ValueKey('idea-category-$selectedCategory'),
+                        initialValue: selectedCategory,
                         decoration: InputDecoration(
                           labelText: l10n.ideasCategory,
                         ),
@@ -415,7 +460,11 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  l10n.ideasLocalOnly,
+                  controller.serverSynced
+                      ? l10n.ideasServerSynced
+                      : controller.serverAccessGranted
+                      ? l10n.ideasSyncUnavailable
+                      : l10n.ideasLocalOnly,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -423,6 +472,12 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
               ),
             ],
           ),
+          if (controller.serverSynced && controller.pendingLocalCount > 0)
+            TextButton.icon(
+              onPressed: controller.busy ? null : _importLocalIdeas,
+              icon: const Icon(Icons.cloud_upload_outlined),
+              label: Text(l10n.ideasImportLocal),
+            ),
           const SizedBox(height: 24),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,

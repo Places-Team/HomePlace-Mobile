@@ -19,12 +19,13 @@ and icon; it does not display transfer contents or execute an action while the
 phone is locked. Tile activation still follows the saved-profile identity check
 and the existing share confirmation flow.
 
-Ideas are stored in Android Keystore-backed storage or iOS Keychain under a
-server-and-device-scoped key. They are not sent to the server, Desktop, another
-account, or a capability report. Copying an idea is an explicit action; when
-automatic clipboard relay is enabled, the app warns that a copy may be relayed
-to approved devices. Converting an idea to a reminder opens the permission-gated
-reminder editor and never sends the idea merely by viewing it.
+Device-local ideas are stored in Android Keystore-backed storage or iOS
+Keychain under a server-and-device-scoped key. They are not uploaded without
+`ideas.manage` and explicit import confirmation. Synced ideas use the
+authenticated, account-scoped server route and are not capability reports.
+Stable import source IDs make retries idempotent; the phone copy is retained.
+Copying an idea is explicit, with a warning if clipboard relay is enabled.
+A reminder receives idea text only after the user chooses that action.
 
 Plant names, care notes, watering dates, and optional photos stay in private application storage. The local collection is keyed by both the server ID and paired device ID, so another connection profile cannot display it. Plant data is not transmitted to HomePlace Link or included in capability reports. Deleting a plant also removes its stored photo.
 

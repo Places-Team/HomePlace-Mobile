@@ -1116,7 +1116,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ideasLocalOnly =>
-      'Только на этом телефоне и для текущего подключения. С Desktop пока не синхронизируется.';
+      'Только на этом телефоне. У этого устройства пока нет доступа к идеям аккаунта.';
+
+  @override
+  String get ideasServerSynced =>
+      'Сохраняется в вашем аккаунте HomePlace и доступно на ваших устройствах.';
+
+  @override
+  String get ideasSyncUnavailable =>
+      'Идеи аккаунта сейчас недоступны. Идеи телефона не загружены на сервер.';
+
+  @override
+  String get ideasImportLocal => 'Импортировать идеи телефона';
+
+  @override
+  String get ideasImportPrompt =>
+      'Скопировать идеи, сохранённые на телефоне, в ваш аккаунт HomePlace? Локальные копии останутся на этом устройстве.';
+
+  @override
+  String get ideasImportDone => 'Идеи телефона импортированы в HomePlace.';
 
   @override
   String get ideasModuleBody =>
