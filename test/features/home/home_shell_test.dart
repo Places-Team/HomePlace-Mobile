@@ -84,7 +84,7 @@ void main() {
     expect(find.text('Next up'), findsWidgets);
     await tester.tap(find.text('Plan').first);
     await tester.pumpAndSettle();
-    expect(find.text('Calendar'), findsWidgets);
+    expect(find.byTooltip('Calendar'), findsOneWidget);
 
     connection.dispose();
     home.dispose();
@@ -113,6 +113,16 @@ void main() {
     await tester.tap(find.byTooltip('Plan'));
     await tester.pumpAndSettle();
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
+    expect(find.text('HOMEPLACE'), findsNothing);
+    expect(find.text('HomePlace'), findsOneWidget);
+    expect(find.byTooltip('Calendar'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('plan-mode-calendar')),
+        matching: find.byType(Text),
+      ),
+      findsNothing,
+    );
     await tester.tap(find.byKey(const ValueKey('plan-mode-reminders')));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Add reminder'), findsOneWidget);
@@ -234,7 +244,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('module-row-plan')));
     await tester.pumpAndSettle();
-    expect(find.text('Reminders'), findsOneWidget);
+    expect(find.byTooltip('Reminders'), findsOneWidget);
     expect(tester.takeException(), isNull);
     connection.dispose();
     home.dispose();

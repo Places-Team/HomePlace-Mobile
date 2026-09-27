@@ -58,6 +58,7 @@ should earn a place here only when they expose a useful, real, everyday action.
 ### Plan
 
 ```text
+Four icon modes with accessible labels → calendar, reminders, plants, ideas
 Calendar mode → month selector → chosen day → day's calendar events
 Reminders mode → past due first → upcoming → expandable completed history
 Create / edit → date, time, repeat interval, save / delete

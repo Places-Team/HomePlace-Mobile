@@ -199,6 +199,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   _TopBar(
                     serverName:
                         widget.connection.profile?.serverName ?? l10n.appName,
+                    planTitle: tab == 1 ? l10n.calendarTab : null,
+                    planDescription: tab == 1 ? l10n.calendarModuleBody : null,
                     refreshing: home.refreshing,
                     hasError: home.error != null,
                     onRefresh: home.refresh,
@@ -922,76 +924,140 @@ class _OutgoingShareBanner extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.serverName,
+    required this.planTitle,
+    required this.planDescription,
     required this.refreshing,
     required this.hasError,
     required this.onRefresh,
     required this.onError,
   });
   final String serverName;
+  final String? planTitle;
+  final String? planDescription;
   final bool refreshing;
   final bool hasError;
   final VoidCallback onRefresh;
   final VoidCallback? onError;
 
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 12, 14, 8),
-    child: Row(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.inverseSurface,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: HomePlaceMark(
-            size: 28,
-            lightOnDark: Theme.of(context).brightness == Brightness.light,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'HOMEPLACE',
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(letterSpacing: 2.4, fontWeight: FontWeight.w900),
-              ),
-              Text(
-                serverName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-        ),
-        if (hasError)
-          IconButton.filledTonal(
-            tooltip: AppLocalizations.of(context).errorDetails,
-            onPressed: onError,
-            style: IconButton.styleFrom(
-              foregroundColor: _coral,
-              backgroundColor: _coral.withValues(alpha: .14),
-            ),
-            icon: const Icon(Icons.error_outline_rounded),
-          ),
-        IconButton(
-          tooltip: AppLocalizations.of(context).refresh,
-          onPressed: refreshing ? null : onRefresh,
-          icon: refreshing
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.refresh_rounded),
-        ),
-      ],
+  Widget _logo(BuildContext context) => Container(
+    width: 42,
+    height: 42,
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.inverseSurface,
+      borderRadius: BorderRadius.circular(15),
+    ),
+    child: HomePlaceMark(
+      size: 28,
+      lightOnDark: Theme.of(context).brightness == Brightness.light,
     ),
   );
+
+  List<Widget> _actions(BuildContext context) => [
+    if (hasError)
+      IconButton.filledTonal(
+        tooltip: AppLocalizations.of(context).errorDetails,
+        onPressed: onError,
+        style: IconButton.styleFrom(
+          foregroundColor: _coral,
+          backgroundColor: _coral.withValues(alpha: .14),
+        ),
+        icon: const Icon(Icons.error_outline_rounded),
+      ),
+    IconButton(
+      tooltip: AppLocalizations.of(context).refresh,
+      onPressed: refreshing ? null : onRefresh,
+      icon: refreshing
+          ? const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.refresh_rounded),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final title = planTitle;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 14, 8),
+      child: title == null
+          ? Row(
+              children: [
+                _logo(context),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    serverName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                ..._actions(context),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 82,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _logo(context),
+                      const SizedBox(height: 8),
+                      Tooltip(
+                        message: serverName,
+                        child: Text(
+                          serverName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          ..._actions(context),
+                        ],
+                      ),
+                      if (planDescription case final description?)
+                        Text(
+                          description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                height: 1.25,
+                              ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }
 
 class _OverviewPage extends StatelessWidget {
@@ -1632,7 +1698,6 @@ class _PlanPageState extends State<_PlanPage> {
   late DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
   late DateTime selected = _day(DateTime.now());
   late _PlanSection section = widget.selection.value;
-  final _modeKeys = {for (final mode in _PlanSection.values) mode: GlobalKey()};
 
   MobileOverview get overview => widget.overview;
   HomeController get home => widget.home;
@@ -1641,29 +1706,12 @@ class _PlanPageState extends State<_PlanPage> {
   void initState() {
     super.initState();
     widget.selection.addListener(_onSelectionChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadMonth();
-      _ensureModeVisible();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMonth());
   }
 
   void _onSelectionChanged() {
     if (!mounted) return;
     setState(() => section = widget.selection.value);
-    _ensureModeVisible();
-  }
-
-  void _ensureModeVisible() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final modeContext = _modeKeys[section]?.currentContext;
-      if (!mounted || modeContext == null) return;
-      Scrollable.ensureVisible(
-        modeContext,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOutCubic,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-      );
-    });
   }
 
   @override
@@ -1726,62 +1774,54 @@ class _PlanPageState extends State<_PlanPage> {
     return _ScrollPage(
       onRefresh: _refresh,
       children: [
-        _PageHeading(
-          title: l10n.calendarTab,
-          subtitle: l10n.calendarModuleBody,
-        ),
-        const SizedBox(height: 18),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final item in sections) ...[
-                Semantics(
-                  selected: section == item.$1,
+        Row(
+          children: [
+            for (var index = 0; index < sections.length; index++) ...[
+              if (index > 0) const SizedBox(width: 8),
+              Expanded(
+                child: Semantics(
+                  label: sections[index].$2,
+                  selected: section == sections[index].$1,
                   button: true,
-                  child: InkWell(
-                    key: _modeKeys[item.$1],
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      widget.selection.value = item.$1;
-                    },
-                    child: AnimatedContainer(
-                      key: ValueKey('plan-mode-${item.$1.name}'),
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 13,
-                      ),
-                      decoration: BoxDecoration(
-                        color: section == item.$1
-                            ? Theme.of(context).colorScheme.primary
-                                  .withValues(alpha: .17)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(item.$3, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            item.$2,
-                            style: TextStyle(
-                              fontWeight: section == item.$1
-                                  ? FontWeight.w800
-                                  : FontWeight.w500,
-                            ),
+                  child: Tooltip(
+                    message: sections[index].$2,
+                    excludeFromSemantics: true,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        widget.selection.value = sections[index].$1;
+                      },
+                      child: AnimatedContainer(
+                        key: ValueKey('plan-mode-${sections[index].$1.name}'),
+                        height: 56,
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        decoration: BoxDecoration(
+                          color: section == sections[index].$1
+                              ? Theme.of(context).colorScheme.primary
+                                    .withValues(alpha: .19)
+                              : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerLow
+                                    .withValues(alpha: .72),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: section == sections[index].$1
+                                ? Theme.of(context).colorScheme.primary
+                                      .withValues(alpha: .38)
+                                : Theme.of(context).colorScheme.outlineVariant
+                                      .withValues(alpha: .28),
                           ),
-                        ],
+                        ),
+                        child: Icon(sections[index].$3, size: 25),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
         const SizedBox(height: 18),
         if (section == _PlanSection.calendar) ...[
