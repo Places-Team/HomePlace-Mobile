@@ -77,6 +77,7 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
   bool _uploading = false;
   bool _downloading = false;
   bool _deleteAfterOpen = false;
+  bool _quick = false;
   int _expiresInSeconds = 3600;
   String _access = 'account';
   int? _maxFileBytes;
@@ -349,7 +350,7 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
   Future<void> _upload() async {
     final selected = _selected;
     if (_busy || selected == null) return;
-    if (_access == 'link' && !await _confirmPublic()) return;
+    if ((_access == 'link' || _quick) && !await _confirmPublic()) return;
     if (!mounted) return;
     final session = await _session();
     if (session == null || !mounted) return;
@@ -369,6 +370,7 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
       expiresInSeconds: _expiresInSeconds,
       access: _access,
       deleteAfterOpen: _deleteAfterOpen,
+      quick: _quick,
       cancellation: cancellation,
       onProgress: (sent, total) {
         if (mounted && total > 0) {
@@ -423,7 +425,13 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
     if (session == null || !mounted) return;
     await Clipboard.setData(
       ClipboardData(
-        text: session.address.uri.resolve('/x/${exchange.token}').toString(),
+        text: session.address.uri
+            .resolve(
+              exchange.shortCode == null
+                  ? '/x/${exchange.token}'
+                  : '/f/${exchange.shortCode}',
+            )
+            .toString(),
       ),
     );
     if (mounted) {
@@ -530,10 +538,20 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.fileExchangeQuick),
+                subtitle: Text(l10n.fileExchangeQuickWarning),
+                value: _quick,
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _quick = value),
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                key: ValueKey('file-exchange-access-$_quick'),
                 isExpanded: true,
-                initialValue: _access,
+                initialValue: _quick ? 'link' : _access,
                 decoration: InputDecoration(labelText: l10n.fileExchangeAccess),
                 items: [
                   DropdownMenuItem(
@@ -545,11 +563,11 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
                     child: Text(l10n.fileExchangePublic),
                   ),
                 ],
-                onChanged: _busy
+                onChanged: _busy || _quick
                     ? null
                     : (value) => setState(() => _access = value ?? 'account'),
               ),
-              if (_access == 'link') ...[
+              if (_access == 'link' && !_quick) ...[
                 const SizedBox(height: 8),
                 Text(
                   l10n.fileExchangePublicWarning,
@@ -558,7 +576,8 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
               ],
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                initialValue: _expiresInSeconds,
+                key: ValueKey('file-exchange-expiry-$_quick'),
+                initialValue: _quick ? 600 : _expiresInSeconds,
                 decoration: InputDecoration(labelText: l10n.exchangeExpiry),
                 items: [
                   DropdownMenuItem(
@@ -574,7 +593,7 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
                     child: Text(l10n.exchangeOneDay),
                   ),
                 ],
-                onChanged: _busy
+                onChanged: _busy || _quick
                     ? null
                     : (value) =>
                           setState(() => _expiresInSeconds = value ?? 3600),
@@ -583,8 +602,8 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.exchangeOneTime),
                 subtitle: Text(l10n.exchangeOneTimeWarning),
-                value: _deleteAfterOpen,
-                onChanged: _busy
+                value: _quick || _deleteAfterOpen,
+                onChanged: _busy || _quick
                     ? null
                     : (value) => setState(() => _deleteAfterOpen = value),
               ),
@@ -704,8 +723,8 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    '${_formatSize(exchange.size)} · ${exchange.access == 'account' ? l10n.fileExchangeAccount : l10n.fileExchangePublic} · ${exchange.expiresAt.toLocal().toString().substring(0, 16)}',
-                    maxLines: 2,
+                    '${exchange.shortCode == null ? '' : '${l10n.fileExchangeCode}: ${exchange.shortCode} · '}${_formatSize(exchange.size)} · ${exchange.access == 'account' ? l10n.fileExchangeAccount : l10n.fileExchangePublic} · ${exchange.expiresAt.toLocal().toString().substring(0, 16)}',
+                    maxLines: 3,
                   ),
                   trailing: Wrap(
                     spacing: 4,

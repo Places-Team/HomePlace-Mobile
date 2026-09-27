@@ -18,6 +18,11 @@ the saved file. A one-time download cannot be resumed after interruption.
 Upload and download run while the app is open; background exchange is not yet
 available. Older servers without a reported limit retain a 500 MiB fallback.
 Reverse proxies may impose a lower upload limit.
+Quick one-time file links use a five-character code and expire after 10 minutes;
+the server makes them public and consumes them when downloading starts. Ordinary
+account-only and longer-lived links remain available separately.
+Recipients enter quick codes on the server's `/f` page; the in-app Android
+receiver currently accepts ordinary `/x` links from its connected server.
 
 Android 16 support now includes an optional Quick Settings Transfers tile,
 system notification-settings access, private notification visibility, and

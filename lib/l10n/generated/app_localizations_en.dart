@@ -874,6 +874,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'This link is a secret. Anyone who gets it can download the file until it expires or you revoke it. Do not use it for private files unless you trust every recipient.';
 
   @override
+  String get fileExchangeQuick => 'Quick one-time code';
+
+  @override
+  String get fileExchangeQuickWarning =>
+      'Public · 10 minutes · one download. Interrupted downloads cannot resume.';
+
+  @override
+  String get fileExchangeCode => 'Code';
+
+  @override
   String get fileExchangeConfirmPublic => 'Create external link';
 
   @override
@@ -896,7 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fileExchangeInvalidLink =>
-      'Enter a code or a file link from this connected HomePlace server.';
+      'Enter a 22-character file code or /x link from this HomePlace server. Open five-character quick codes at the server\'s /f page in a browser.';
 
   @override
   String get fileExchangeDownload => 'Download to Downloads';

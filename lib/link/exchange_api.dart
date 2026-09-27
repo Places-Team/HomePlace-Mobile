@@ -43,6 +43,7 @@ final class TextExchange {
 final class FileExchange {
   const FileExchange({
     required this.token,
+    this.shortCode,
     required this.filename,
     required this.mimeType,
     required this.size,
@@ -52,6 +53,7 @@ final class FileExchange {
   });
 
   final String token;
+  final String? shortCode;
   final String filename;
   final String mimeType;
   final int size;
@@ -64,6 +66,10 @@ final class FileExchange {
         value['kind'] != 'file' ||
         value['token'] is! String ||
         !RegExp(r'^[A-Za-z0-9_-]{22}$').hasMatch(value['token'] as String) ||
+        (value['shortCode'] != null &&
+            (value['shortCode'] is! String ||
+                !RegExp(r'^[1-9A-HJ-NP-Za-km-z]{5}$')
+                    .hasMatch(value['shortCode'] as String))) ||
         value['filename'] is! String ||
         (value['filename'] as String).trim().isEmpty ||
         value['mimeType'] is! String ||
@@ -80,6 +86,7 @@ final class FileExchange {
     }
     return FileExchange(
       token: value['token'] as String,
+      shortCode: value['shortCode'] as String?,
       filename: value['filename'] as String,
       mimeType: value['mimeType'] as String,
       size: value['size'] as int,
@@ -114,6 +121,7 @@ abstract interface class FileExchangeGateway {
     required int expiresInSeconds,
     required String access,
     required bool deleteAfterOpen,
+    bool quick = false,
     void Function(int transferred, int total)? onProgress,
     LinkTransferCancellation? cancellation,
   });
@@ -253,6 +261,7 @@ final class ExchangeApi implements ExchangeGateway, FileExchangeGateway {
     required int expiresInSeconds,
     required String access,
     required bool deleteAfterOpen,
+    bool quick = false,
     void Function(int transferred, int total)? onProgress,
     LinkTransferCancellation? cancellation,
   }) async {
@@ -269,6 +278,7 @@ final class ExchangeApi implements ExchangeGateway, FileExchangeGateway {
       expiresInSeconds: expiresInSeconds,
       access: access,
       deleteAfterOpen: deleteAfterOpen,
+      quick: quick,
       maxBytes: (limit as LinkSuccess<int>).value,
       onProgress: onProgress,
       cancellation: cancellation,
@@ -280,7 +290,8 @@ final class ExchangeApi implements ExchangeGateway, FileExchangeGateway {
       final exchange = FileExchange.fromJson(
         (response as LinkSuccess<Map<String, dynamic>>).value['exchange'],
       );
-      if (exchange.access != access) {
+      if (exchange.access != (quick ? 'link' : access) ||
+          (quick && exchange.shortCode == null)) {
         throw const FormatException('Unexpected exchange access.');
       }
       return LinkSuccess(exchange);

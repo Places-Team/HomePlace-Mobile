@@ -73,13 +73,22 @@ void main() {
             'x-homeplace-expires',
             'x-homeplace-access',
             'x-homeplace-delete-after-open',
+            'x-homeplace-quick',
           ]) {
             headers[name] = request.headers.value(name);
           }
           uploaded = await request.expand((bytes) => bytes).toList();
           request.response.statusCode = HttpStatus.created;
           request.response.write(
-            jsonEncode({'exchange': _fileJson(token, contents.length)}),
+            jsonEncode({
+              'exchange': {
+                ..._fileJson(token, contents.length),
+                if (request.headers.value('x-homeplace-quick') == 'true')
+                  'shortCode': 'Ab3Xy',
+                if (request.headers.value('x-homeplace-quick') == 'true')
+                  'access': 'link',
+              },
+            }),
           );
         } else if (request.uri.path == '/api/exchange') {
           request.response.write(
@@ -130,7 +139,20 @@ void main() {
         'x-homeplace-expires': '600',
         'x-homeplace-access': 'account',
         'x-homeplace-delete-after-open': 'true',
+        'x-homeplace-quick': null,
       });
+      final quick = await api.createFile(
+        session,
+        source,
+        filename: 'archive.zip',
+        mimeType: 'application/zip',
+        expiresInSeconds: 3600,
+        access: 'account',
+        deleteAfterOpen: false,
+        quick: true,
+      );
+      expect((quick as LinkSuccess<FileExchange>).value.shortCode, 'Ab3Xy');
+      expect(headers['x-homeplace-quick'], 'true');
       final listed = await api.listFiles(session);
       expect(
         (listed as LinkSuccess<List<FileExchange>>).value.single.filename,
@@ -146,6 +168,8 @@ void main() {
       expect(downloaded, isA<LinkSuccess<DownloadedLinkFile>>());
       expect(await destination.readAsBytes(), contents);
       expect(requests, [
+        'GET /api/link/info',
+        'POST /api/exchange/file',
         'GET /api/link/info',
         'POST /api/exchange/file',
         'GET /api/exchange',

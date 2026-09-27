@@ -282,6 +282,7 @@ final class HttpLinkService implements LinkService {
     required int expiresInSeconds,
     required String access,
     required bool deleteAfterOpen,
+    bool quick = false,
     required int maxBytes,
     void Function(int transferred, int total)? onProgress,
     LinkTransferCancellation? cancellation,
@@ -326,6 +327,7 @@ final class HttpLinkService implements LinkService {
         'x-homeplace-delete-after-open',
         deleteAfterOpen ? 'true' : 'false',
       );
+      if (quick) request.headers.set('x-homeplace-quick', 'true');
       request.headers.contentType = _safeContentType(mimeType);
       var transferred = 0;
       await request.addStream(

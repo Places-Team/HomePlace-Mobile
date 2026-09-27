@@ -1656,6 +1656,24 @@ abstract class AppLocalizations {
   /// **'This link is a secret. Anyone who gets it can download the file until it expires or you revoke it. Do not use it for private files unless you trust every recipient.'**
   String get fileExchangePublicWarning;
 
+  /// No description provided for @fileExchangeQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick one-time code'**
+  String get fileExchangeQuick;
+
+  /// No description provided for @fileExchangeQuickWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Public · 10 minutes · one download. Interrupted downloads cannot resume.'**
+  String get fileExchangeQuickWarning;
+
+  /// No description provided for @fileExchangeCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get fileExchangeCode;
+
   /// No description provided for @fileExchangeConfirmPublic.
   ///
   /// In en, this message translates to:
@@ -1701,7 +1719,7 @@ abstract class AppLocalizations {
   /// No description provided for @fileExchangeInvalidLink.
   ///
   /// In en, this message translates to:
-  /// **'Enter a code or a file link from this connected HomePlace server.'**
+  /// **'Enter a 22-character file code or /x link from this HomePlace server. Open five-character quick codes at the server\'s /f page in a browser.'**
   String get fileExchangeInvalidLink;
 
   /// No description provided for @fileExchangeDownload.

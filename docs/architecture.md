@@ -75,6 +75,10 @@ refreshes `/api/link/info`, checks the server ID, and obeys the reported
 The server remains authoritative if free space changes or a proxy imposes a
 lower limit. Exchange uploads and
 downloads are foreground operations and do not imply background capability.
+Quick mode asks the server for a five-character public code and displays its
+`/f/{shortCode}` link. The server overrides access, expiry, and reuse options;
+the client requires a valid returned code instead of silently treating an old
+server's ordinary exchange as quick mode.
 
 
 The Ideas workspace follows Desktop's quick-capture workflow.

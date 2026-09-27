@@ -13,6 +13,7 @@ import 'package:homeplace/l10n/generated/app_localizations.dart';
 final class _Gateway implements FileExchangeGateway {
   final files = <FileExchange>[];
   String? uploadedAccess;
+  bool uploadedQuick = false;
   String? inspectedToken;
   bool downloaded = false;
 
@@ -20,8 +21,9 @@ final class _Gateway implements FileExchangeGateway {
   Future<LinkResult<int>> fileLimit(AuthenticatedLinkSession session) async =>
       const LinkSuccess(1024 * 1024 * 1024);
 
-  FileExchange exchange(String access) => FileExchange(
+  FileExchange exchange(String access, {String? shortCode}) => FileExchange(
     token: 'abcdefghijklmnopqrstuv',
+    shortCode: shortCode,
     filename: 'family.zip',
     mimeType: 'application/zip',
     size: 4,
@@ -44,14 +46,19 @@ final class _Gateway implements FileExchangeGateway {
     required int expiresInSeconds,
     required String access,
     required bool deleteAfterOpen,
+    bool quick = false,
     void Function(int transferred, int total)? onProgress,
     LinkTransferCancellation? cancellation,
   }) async {
     uploadedAccess = access;
+    uploadedQuick = quick;
     expect(filename, 'family.zip');
     expect(file.path, '/private/tmp/family.zip');
     onProgress?.call(4, 4);
-    final item = exchange(access);
+    final item = exchange(
+      quick ? 'link' : access,
+      shortCode: quick ? 'Ab3Xy' : null,
+    );
     files.add(item);
     return LinkSuccess(item);
   }
@@ -194,6 +201,20 @@ void main() {
       await tester.tap(find.text('Create external link'));
       await tester.pumpAndSettle();
       expect(gateway.uploadedAccess, 'link');
+
+      await tester.ensureVisible(find.text('Quick one-time code'));
+      await tester.tap(find.text('Quick one-time code'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Choose any file'));
+      await tester.tap(find.text('Choose any file'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Upload and create link'));
+      await tester.tap(find.text('Upload and create link'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Create external link'));
+      await tester.pumpAndSettle();
+      expect(gateway.uploadedQuick, isTrue);
+      expect(find.textContaining('Ab3Xy'), findsWidgets);
 
       await tester.ensureVisible(
         find.byKey(const ValueKey('file-exchange-link')),

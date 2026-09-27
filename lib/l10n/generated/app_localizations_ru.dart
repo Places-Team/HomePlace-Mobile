@@ -878,6 +878,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Эта ссылка — секрет. Любой, кто её получит, сможет скачать файл до истечения срока или отзыва ссылки. Не используйте её для личных файлов, если не доверяете всем получателям.';
 
   @override
+  String get fileExchangeQuick => 'Быстрый одноразовый код';
+
+  @override
+  String get fileExchangeQuickWarning =>
+      'Публичный · 10 минут · одно скачивание. Прерванную загрузку нельзя возобновить.';
+
+  @override
+  String get fileExchangeCode => 'Код';
+
+  @override
   String get fileExchangeConfirmPublic => 'Создать внешнюю ссылку';
 
   @override
@@ -900,7 +910,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get fileExchangeInvalidLink =>
-      'Введите код или ссылку на файл с подключённого сервера HomePlace.';
+      'Введите 22-символьный код файла или ссылку /x с этого сервера HomePlace. Пятисимвольный быстрый код откройте в браузере на странице /f этого сервера.';
 
   @override
   String get fileExchangeDownload => 'Скачать в Загрузки';
