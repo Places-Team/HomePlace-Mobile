@@ -617,7 +617,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeOverviewBody.
   ///
   /// In en, this message translates to:
-  /// **'Your day, services and HomePlace connections at a glance.'**
+  /// **'Your plants and the next thing to do at home.'**
   String get homeOverviewBody;
 
   /// No description provided for @onlineNow.

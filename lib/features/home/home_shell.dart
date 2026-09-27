@@ -198,6 +198,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           home: home,
                           connection: widget.connection,
                           plants: plants,
+                          onOpenPlan: () {
+                            setState(() => tab = 1);
+                            pages.animateToPage(
+                              1,
+                              duration: const Duration(milliseconds: 260),
+                              curve: Curves.easeOutCubic,
+                            );
+                          },
                         ),
                         _PlanPage(
                           overview: overview,
@@ -276,6 +284,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           builder: (routeContext) => HomeModulesPage(
             overview: overview,
             connection: widget.connection,
+            home: home,
             onOpenTab: (value) {
               setState(() => tab = value);
               if (pages.hasClients) pages.jumpToPage(value);
@@ -907,11 +916,13 @@ class _OverviewPage extends StatelessWidget {
     required this.home,
     required this.connection,
     required this.plants,
+    required this.onOpenPlan,
   });
   final MobileOverview overview;
   final HomeController home;
   final ConnectionController connection;
   final PlantController? plants;
+  final VoidCallback onOpenPlan;
 
   @override
   Widget build(BuildContext context) {
@@ -945,25 +956,20 @@ class _OverviewPage extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _MetricCard(
-                icon: Icons.wifi_tethering_rounded,
-                color: _mint,
-                value: '${overview.monitoring.online}',
-                label: l10n.onlineNow,
+              child: Text(
+                l10n.nextUp,
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                icon: Icons.bolt_rounded,
-                color: overview.monitoring.offline > 0 ? _coral : _violet,
-                value: '${overview.monitoring.offline}',
-                label: l10n.needsAttention,
-              ),
+            TextButton.icon(
+              onPressed: onOpenPlan,
+              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+              label: Text(l10n.calendarTab),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _Surface(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,11 +980,6 @@ class _OverviewPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.nextUp,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 5),
                     Text(
                       next?.$1 ?? l10n.nothingPlanned,
                       style: Theme.of(context).textTheme.titleMedium
@@ -997,65 +998,6 @@ class _OverviewPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        _Surface(
-          color: overview.telegram.enabled
-              ? _violet.withValues(alpha: .12)
-              : null,
-          child: Row(
-            children: [
-              const _RoundIcon(icon: Icons.send_rounded, color: _violet),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.telegramTitle,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      overview.telegram.enabled
-                          ? l10n.telegramConnected
-                          : l10n.telegramDisconnected,
-                    ),
-                  ],
-                ),
-              ),
-              if (overview.telegram.enabled &&
-                  overview.permissions.contains('telegram.send'))
-                IconButton.filledTonal(
-                  tooltip: l10n.telegramTest,
-                  onPressed: home.busyId == 'telegram'
-                      ? null
-                      : home.testTelegram,
-                  icon: home.busyId == 'telegram'
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.arrow_outward_rounded),
-                ),
-            ],
-          ),
-        ),
-        if (Platform.isAndroid &&
-            overview.permissions.contains('clipboard.relay')) ...[
-          const SizedBox(height: 12),
-          _ClipboardCard(
-            pending: connection.pendingClipboard,
-            sending: home.busyId == 'clipboard',
-            autoEnabled: home.autoClipboardEnabled,
-            onAutoChanged: home.setAutoClipboardEnabled,
-            onSend: () => home.sendClipboard(connection.readClipboardText),
-            onAccept: connection.acceptPendingClipboard,
-            onDismiss: connection.dismissPendingClipboard,
-          ),
-        ],
-        if (connection.notificationHistory.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _NotificationHistoryCard(connection: connection),
-        ],
         const SizedBox(height: 110),
       ],
     );
@@ -1089,6 +1031,19 @@ class _TransfersPage extends StatelessWidget {
           subtitle: l10n.transfersSubtitle,
         ),
         const SizedBox(height: 22),
+        if (Platform.isAndroid &&
+            home.overview?.permissions.contains('clipboard.relay') == true) ...[
+          _ClipboardCard(
+            pending: connection.pendingClipboard,
+            sending: home.busyId == 'clipboard',
+            autoEnabled: home.autoClipboardEnabled,
+            onAutoChanged: home.setAutoClipboardEnabled,
+            onSend: () => home.sendClipboard(connection.readClipboardText),
+            onAccept: connection.acceptPendingClipboard,
+            onDismiss: connection.dismissPendingClipboard,
+          ),
+          const SizedBox(height: 18),
+        ],
         if (empty)
           _EmptyCard(
             icon: Icons.swap_vert_circle_outlined,
@@ -1156,6 +1111,10 @@ class _TransfersPage extends StatelessWidget {
         if (home.transferActivity.isNotEmpty) ...[
           const SizedBox(height: 12),
           _TransferActivityCard(home: home, limit: 20),
+        ],
+        if (connection.notificationHistory.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _NotificationHistoryCard(connection: connection),
         ],
         const SizedBox(height: 110),
       ],
@@ -2966,8 +2925,9 @@ class _DateGlyph extends StatelessWidget {
         Text(
           MaterialLocalizations.of(context)
               .formatShortMonthDay(date)
-              .split(' ')
-              .first
+              .replaceAll(RegExp(r'\d+'), '')
+              .replaceAll(RegExp(r'[,\.]'), '')
+              .trim()
               .toUpperCase(),
           style: const TextStyle(
             color: _ink,

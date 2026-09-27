@@ -293,7 +293,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get homeOverviewBody =>
-      'День, сервисы и связи HomePlace — одним взглядом.';
+      'Растения и ближайшие домашние дела — без лишнего.';
 
   @override
   String get onlineNow => 'Сейчас в сети';

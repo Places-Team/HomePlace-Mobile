@@ -291,7 +291,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeOverviewBody =>
-      'Your day, services and HomePlace connections at a glance.';
+      'Your plants and the next thing to do at home.';
 
   @override
   String get onlineNow => 'Online now';

@@ -12,6 +12,30 @@ import 'package:homeplace/link/mobile_models.dart';
 import '../connection/test_doubles.dart';
 
 void main() {
+  testWidgets('Home keeps service setup out of the daily view', (tester) async {
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+
+    expect(find.text('Telegram bridge'), findsNothing);
+    expect(find.text('Next up'), findsWidgets);
+    await tester.tap(find.text('Plan').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Calendar'), findsWidgets);
+
+    connection.dispose();
+    home.dispose();
+  });
+
   testWidgets('dashboard tabs fit a compact Android viewport', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
@@ -32,7 +56,7 @@ void main() {
     );
     expect(find.text('Everything in its place'), findsOneWidget);
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
-    await tester.tap(find.text('Plan'));
+    await tester.tap(find.text('Plan').last);
     await tester.pumpAndSettle();
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
     final planScroll = find.descendant(
@@ -107,6 +131,18 @@ void main() {
     expect(find.text('Available for sharing'), findsWidgets);
     expect(find.text('Family tablet'), findsOneWidget);
     expect(find.text('file.receive'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Telegram bridge'),
+      350,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Telegram bridge'));
+    await tester.pumpAndSettle();
+    expect(find.text('Telegram bridge'), findsWidgets);
+    expect(find.text('Connected and ready'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -303,6 +339,8 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
+    await tester.tap(find.text('Transfers'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Notification history'),
       300,

@@ -1,5 +1,9 @@
 # Architecture
 
+The user-facing tab and module hierarchy is documented in
+[`mobile-experience-map.md`](mobile-experience-map.md). Its previews are not
+protocol contracts; only the HomePlace server defines Link behavior.
+
 HomePlace Mobile uses one Flutter application for Android and iOS. Shared Dart code owns product UI and Link behavior; Kotlin and Swift own security and system integration that cannot be represented faithfully as shared application logic.
 
 ## Layers

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../link/mobile_models.dart';
 import '../connection/connection_controller.dart';
+import 'home_controller.dart';
 
 const _moduleViolet = Color(0xff829eff);
 const _moduleCoral = Color(0xffff746c);
@@ -28,6 +29,7 @@ final class HomeModulesPage extends StatelessWidget {
   const HomeModulesPage({
     required this.overview,
     required this.connection,
+    required this.home,
     required this.onOpenTab,
     required this.onOpenSettings,
     super.key,
@@ -35,6 +37,7 @@ final class HomeModulesPage extends StatelessWidget {
 
   final MobileOverview overview;
   final ConnectionController connection;
+  final HomeController home;
   final ValueChanged<int> onOpenTab;
   final VoidCallback onOpenSettings;
 
@@ -150,10 +153,9 @@ final class HomeModulesPage extends StatelessWidget {
   void _open(BuildContext context, _ModuleKind kind) {
     final tab = switch (kind) {
       _ModuleKind.plan => 1,
-      _ModuleKind.clipboard => 0,
+      _ModuleKind.clipboard => 3,
       _ModuleKind.transfers => 3,
       _ModuleKind.media => 2,
-      _ModuleKind.telegram => 0,
       _ModuleKind.monitoring => 4,
       _ => null,
     };
@@ -171,6 +173,10 @@ final class HomeModulesPage extends StatelessWidget {
       _ModuleKind.devices => _DevicesModulePage(overview: overview),
       _ModuleKind.notifications => _NotificationsModulePage(
         connection: connection,
+      ),
+      _ModuleKind.telegram => _TelegramModulePage(
+        overview: overview,
+        home: home,
       ),
       _ModuleKind.automations => const _AutomationsModulePage(),
       _ModuleKind.smartHome => const _SmartHomeModulePage(),
@@ -608,6 +614,59 @@ class _AutomationsModulePage extends StatelessWidget {
       ],
     );
   }
+}
+
+class _TelegramModulePage extends StatelessWidget {
+  const _TelegramModulePage({required this.overview, required this.home});
+
+  final MobileOverview overview;
+  final HomeController home;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: home,
+    builder: (context, _) {
+      final l10n = AppLocalizations.of(context);
+      final available =
+          overview.telegram.enabled &&
+          overview.permissions.contains('telegram.send');
+      return _DetailScaffold(
+        title: l10n.telegramTitle,
+        subtitle: l10n.telegramModuleBody,
+        icon: Icons.send_rounded,
+        color: _moduleViolet,
+        children: [
+          _InfoPanel(
+            icon: Icons.hub_outlined,
+            text: overview.telegram.enabled
+                ? l10n.telegramConnected
+                : l10n.telegramDisconnected,
+          ),
+          if (!available) ...[
+            const SizedBox(height: 12),
+            Text(l10n.permissionsRequired),
+          ],
+          if (available) ...[
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: home.busyId == 'telegram' ? null : home.testTelegram,
+              icon: home.busyId == 'telegram'
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send_rounded),
+              label: Text(l10n.telegramTest),
+            ),
+          ],
+          if (home.error != null) ...[
+            const SizedBox(height: 16),
+            SelectableText(home.error!),
+          ],
+        ],
+      );
+    },
+  );
 }
 
 class _SmartHomeModulePage extends StatelessWidget {

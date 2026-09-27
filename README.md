@@ -82,4 +82,4 @@ requires one uninstall. Never commit the signing key to this repository.
 - Capabilities describe only functionality that is implemented and available on the current device.
 - Never commit credentials, signing material, provisioning profiles, or environment-specific configuration.
 
-Read [Architecture](docs/architecture.md), [Security](docs/security.md), [HomePlace Link](docs/homeplace-link.md), and [Development](docs/development.md) before changing connection behavior.
+Read [Architecture](docs/architecture.md), [Mobile experience map](docs/mobile-experience-map.md), [Security](docs/security.md), [HomePlace Link](docs/homeplace-link.md), and [Development](docs/development.md) before changing connection behavior.
