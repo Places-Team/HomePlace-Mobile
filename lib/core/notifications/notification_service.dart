@@ -181,7 +181,16 @@ final class LocalNotificationService implements NotificationService {
                 AndroidFlutterLocalNotificationsPlugin
               >()
               ?.areNotificationsEnabled() ??
-          true;
+          false;
+    }
+    if (Platform.isIOS) {
+      final permissions = await _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.checkPermissions();
+      return permissions?.isEnabled == true ||
+          permissions?.isProvisionalEnabled == true;
     }
     return false;
   }

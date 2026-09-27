@@ -365,18 +365,7 @@ final class ConnectionController extends ChangeNotifier {
     try {
       final notificationAvailable =
           requestNotifications && await _notifications.requestPermission();
-      final capabilities = CapabilityNegotiator.available(
-        PlatformFeatures(
-          notificationReceive: notificationAvailable,
-          foregroundPresence: true,
-          clipboardSend: _clipboard.isSupported,
-          clipboardReceive: _clipboard.isSupported,
-          shareSend: _sharing.isSupported,
-          textReceive: _sharing.isSupported,
-          urlOpen: _sharing.isSupported,
-          fileReceive: _sharing.isSupported,
-        ),
-      );
+      final capabilities = _availableCapabilities(notificationAvailable);
       final result = await _link.startPairing(
         address,
         await _description.describe(),
@@ -514,8 +503,25 @@ final class ConnectionController extends ChangeNotifier {
     );
   }
 
-  Future<bool> requestNotificationPermission() =>
-      _notifications.requestPermission();
+  Future<bool> requestNotificationPermission() async {
+    final granted = await _notifications.requestPermission();
+    if (granted) await _heartbeat();
+    return granted;
+  }
+
+  List<Capability> _availableCapabilities(bool notificationAvailable) =>
+      CapabilityNegotiator.available(
+        PlatformFeatures(
+          notificationReceive: notificationAvailable,
+          foregroundPresence: true,
+          clipboardSend: _clipboard.isSupported,
+          clipboardReceive: _clipboard.isSupported,
+          shareSend: _sharing.isSupported,
+          textReceive: _sharing.isSupported,
+          urlOpen: _sharing.isSupported,
+          fileReceive: _sharing.isSupported,
+        ),
+      );
 
   Future<void> clearNotificationHistory() async {
     final scope = _notificationHistoryScope;
@@ -780,6 +786,9 @@ final class ConnectionController extends ChangeNotifier {
         address,
         credential,
         _acknowledgedEventIds,
+        capabilities: _availableCapabilities(
+          await _notifications.isAvailable(),
+        ),
       );
       if (_disposed ||
           stage != ConnectionStage.connected ||

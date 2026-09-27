@@ -28,6 +28,7 @@ final class FakeLinkService implements LinkService {
   LinkResult<PairingClaim>? claimResult;
   final List<LinkResult<HeartbeatResponse>> heartbeatResults = [];
   final List<List<String>> heartbeatAcknowledgements = [];
+  final List<List<Capability>?> heartbeatCapabilities = [];
   List<Capability> reportedCapabilities = const [];
   List<String> requestedPermissions = const [];
 
@@ -76,9 +77,13 @@ final class FakeLinkService implements LinkService {
   Future<LinkResult<HeartbeatResponse>> heartbeat(
     ServerAddress address,
     String credential,
-    List<String> acknowledgedEventIds,
-  ) async {
+    List<String> acknowledgedEventIds, {
+    List<Capability>? capabilities,
+  }) async {
     heartbeatAcknowledgements.add(List.of(acknowledgedEventIds));
+    heartbeatCapabilities.add(
+      capabilities == null ? null : List.of(capabilities),
+    );
     if (heartbeatResults.isNotEmpty) return heartbeatResults.removeAt(0);
     return LinkSuccess(
       HeartbeatResponse(serverId: heartbeatServerId, events: const []),
@@ -129,7 +134,7 @@ final class MemoryCredentialStore implements CredentialStore {
 
 final class FakeNotificationService implements NotificationService {
   FakeNotificationService({this.permissionGranted = true});
-  final bool permissionGranted;
+  bool permissionGranted;
   final List<String> delivered = [];
   final List<String> incomingOffers = [];
   final List<IncomingNotificationAction> pendingActions = [];

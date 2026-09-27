@@ -167,8 +167,9 @@ abstract interface class LinkService {
   Future<LinkResult<HeartbeatResponse>> heartbeat(
     ServerAddress address,
     String credential,
-    List<String> acknowledgedEventIds,
-  );
+    List<String> acknowledgedEventIds, {
+    List<Capability>? capabilities,
+  });
   Future<LinkResult<void>> revoke(ServerAddress address, String credential);
 }
 
@@ -506,8 +507,9 @@ final class HttpLinkService implements LinkService {
   Future<LinkResult<HeartbeatResponse>> heartbeat(
     ServerAddress address,
     String credential,
-    List<String> acknowledgedEventIds,
-  ) async {
+    List<String> acknowledgedEventIds, {
+    List<Capability>? capabilities,
+  }) async {
     final response = await requestJson(
       address,
       'POST',
@@ -516,6 +518,10 @@ final class HttpLinkService implements LinkService {
       body: {
         'protocol': supportedLinkProtocol,
         'acknowledgedEventIds': acknowledgedEventIds,
+        if (capabilities != null)
+          'capabilities': capabilities
+              .map((capability) => capability.toJson())
+              .toList(),
       },
     );
     if (response is LinkFailure<Map<String, dynamic>>) {
