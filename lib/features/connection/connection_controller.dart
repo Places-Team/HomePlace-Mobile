@@ -166,6 +166,7 @@ final class ConnectionController extends ChangeNotifier {
       pendingIncomingShares.firstOrNull;
   Timer? _heartbeatTimer;
   bool _heartbeating = false;
+  bool _notificationCapabilitySyncPending = false;
   bool _polling = false;
   bool _disposed = false;
   List<String> _acknowledgedEventIds = const [];
@@ -505,7 +506,10 @@ final class ConnectionController extends ChangeNotifier {
 
   Future<bool> requestNotificationPermission() async {
     final granted = await _notifications.requestPermission();
-    if (granted) await _heartbeat();
+    if (granted) {
+      _notificationCapabilitySyncPending = true;
+      await _heartbeat();
+    }
     return granted;
   }
 
@@ -782,13 +786,14 @@ final class ConnectionController extends ChangeNotifier {
           ...newActions,
         ];
       }
+      final refreshCapabilities = _notificationCapabilitySyncPending;
       final result = await _link.heartbeat(
         address,
         credential,
         _acknowledgedEventIds,
-        capabilities: _availableCapabilities(
-          await _notifications.isAvailable(),
-        ),
+        capabilities: refreshCapabilities
+            ? _availableCapabilities(await _notifications.isAvailable())
+            : null,
       );
       if (_disposed ||
           stage != ConnectionStage.connected ||
@@ -810,6 +815,7 @@ final class ConnectionController extends ChangeNotifier {
         notifyListeners();
         return;
       }
+      if (refreshCapabilities) _notificationCapabilitySyncPending = false;
       await _loadNotificationHistory(
         connectedProfile.serverId,
         credential,

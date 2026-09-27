@@ -226,12 +226,7 @@ void main() {
       await controller.initialize();
       expect(controller.stage, ConnectionStage.connected);
       await controller.refreshEvents();
-      expect(
-        link.heartbeatCapabilities.last?.any(
-          (item) => item.name == 'notification.receive',
-        ),
-        isFalse,
-      );
+      expect(link.heartbeatCapabilities.last, isNull);
 
       notifications.permissionGranted = true;
       expect(await controller.requestNotificationPermission(), isTrue);
