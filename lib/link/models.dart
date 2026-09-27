@@ -38,6 +38,7 @@ final class ServerInfo {
     required this.protocol,
     required this.serverTime,
     required this.features,
+    this.maxFileBytes,
   });
 
   factory ServerInfo.fromJson(Map<String, dynamic> json) => ServerInfo(
@@ -52,6 +53,12 @@ final class ServerInfo {
     features: LinkFeatures.fromJson(
       json['features'] as Map<String, dynamic>? ?? const {},
     ),
+    maxFileBytes: switch (json['limits']) {
+      {'maxFileBytes': final int value}
+          when value >= 0 && value <= 10 * 1024 * 1024 * 1024 =>
+        value,
+      _ => null,
+    },
   );
 
   final String product;
@@ -59,6 +66,7 @@ final class ServerInfo {
   final LinkProtocolRange protocol;
   final String serverTime;
   final LinkFeatures features;
+  final int? maxFileBytes;
 
   bool get supportsClient =>
       product == 'HomePlace' &&

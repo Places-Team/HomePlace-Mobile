@@ -838,6 +838,93 @@ class AppLocalizationsRu extends AppLocalizations {
       'Подключитесь к HomePlace и попробуйте снова.';
 
   @override
+  String get fileExchangeTitle => 'Обмен файлами';
+
+  @override
+  String get fileExchangeSubtitle =>
+      'Загрузите файл и поделитесь краткосрочной ссылкой для скачивания. Прямая передача между устройствами остаётся отдельно.';
+
+  @override
+  String get fileExchangeOpen => 'Открыть обмен файлами';
+
+  @override
+  String get fileExchangeChoose => 'Выбрать любой файл';
+
+  @override
+  String fileExchangeSizeError(String limit) {
+    return 'Выберите непустой файл в пределах лимита загрузки этого сервера — $limit.';
+  }
+
+  @override
+  String fileExchangeLimit(String limit) {
+    return 'Текущий лимит сервера: $limit';
+  }
+
+  @override
+  String get fileExchangePickError =>
+      'Не удалось открыть файл. Выберите его ещё раз.';
+
+  @override
+  String get fileExchangeAccess => 'Кто может скачать';
+
+  @override
+  String get fileExchangeAccount => 'Мой аккаунт HomePlace';
+
+  @override
+  String get fileExchangePublic => 'Любой, у кого есть ссылка';
+
+  @override
+  String get fileExchangePublicWarning =>
+      'Эта ссылка — секрет. Любой, кто её получит, сможет скачать файл до истечения срока или отзыва ссылки. Не используйте её для личных файлов, если не доверяете всем получателям.';
+
+  @override
+  String get fileExchangeConfirmPublic => 'Создать внешнюю ссылку';
+
+  @override
+  String get fileExchangeUpload => 'Загрузить и создать ссылку';
+
+  @override
+  String get fileExchangeActive => 'Активные ссылки на файлы';
+
+  @override
+  String get fileExchangeEmpty => 'Активных ссылок на файлы нет.';
+
+  @override
+  String get fileExchangeReceive => 'Сохранить файл по ссылке';
+
+  @override
+  String get fileExchangeLink => 'Ссылка с этого сервера HomePlace';
+
+  @override
+  String get fileExchangeCheck => 'Проверить файл';
+
+  @override
+  String get fileExchangeInvalidLink =>
+      'Введите код или ссылку на файл с подключённого сервера HomePlace.';
+
+  @override
+  String get fileExchangeDownload => 'Скачать в Загрузки';
+
+  @override
+  String get fileExchangeSaveConfirm =>
+      'Подтвердите скачивание и сохранение файла на телефон.';
+
+  @override
+  String get fileExchangeOneTimeWarning =>
+      'Ссылка одноразовая. Начало скачивания использует её, даже если передача прервётся.';
+
+  @override
+  String get fileExchangeSaveError =>
+      'Не удалось сохранить файл. Перед повтором проверьте папку «Загрузки».';
+
+  @override
+  String get fileExchangeOpenSaved => 'Открыть сохранённый файл';
+
+  @override
+  String get fileExchangeOpenError =>
+      'Android не смог открыть сохранённый файл.';
+
+  @override
   String get noPendingTransfers =>
       'Сейчас нет передач, требующих вашего внимания.';
 

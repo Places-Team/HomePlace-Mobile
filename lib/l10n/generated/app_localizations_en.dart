@@ -834,6 +834,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exchangeReconnect => 'Reconnect to HomePlace and try again.';
 
   @override
+  String get fileExchangeTitle => 'File exchange';
+
+  @override
+  String get fileExchangeSubtitle =>
+      'Upload a file, then share a short-lived download link. Direct device transfers stay separate.';
+
+  @override
+  String get fileExchangeOpen => 'Open file exchange';
+
+  @override
+  String get fileExchangeChoose => 'Choose any file';
+
+  @override
+  String fileExchangeSizeError(String limit) {
+    return 'Choose a non-empty file within this server\'s $limit upload limit.';
+  }
+
+  @override
+  String fileExchangeLimit(String limit) {
+    return 'Current server limit: $limit';
+  }
+
+  @override
+  String get fileExchangePickError =>
+      'The file could not be opened. Choose it again.';
+
+  @override
+  String get fileExchangeAccess => 'Who can download';
+
+  @override
+  String get fileExchangeAccount => 'My HomePlace account';
+
+  @override
+  String get fileExchangePublic => 'Anyone with the link';
+
+  @override
+  String get fileExchangePublicWarning =>
+      'This link is a secret. Anyone who gets it can download the file until it expires or you revoke it. Do not use it for private files unless you trust every recipient.';
+
+  @override
+  String get fileExchangeConfirmPublic => 'Create external link';
+
+  @override
+  String get fileExchangeUpload => 'Upload and create link';
+
+  @override
+  String get fileExchangeActive => 'Active file links';
+
+  @override
+  String get fileExchangeEmpty => 'No active file links.';
+
+  @override
+  String get fileExchangeReceive => 'Save a file from a link';
+
+  @override
+  String get fileExchangeLink => 'Link from this HomePlace server';
+
+  @override
+  String get fileExchangeCheck => 'Check file';
+
+  @override
+  String get fileExchangeInvalidLink =>
+      'Enter a code or a file link from this connected HomePlace server.';
+
+  @override
+  String get fileExchangeDownload => 'Download to Downloads';
+
+  @override
+  String get fileExchangeSaveConfirm =>
+      'Confirm to download and save this file on your phone.';
+
+  @override
+  String get fileExchangeOneTimeWarning =>
+      'This link works only once. Starting the download uses it, even if the transfer is interrupted.';
+
+  @override
+  String get fileExchangeSaveError =>
+      'The file could not be saved. Check Downloads before trying again.';
+
+  @override
+  String get fileExchangeOpenSaved => 'Open saved file';
+
+  @override
+  String get fileExchangeOpenError => 'Android could not open the saved file.';
+
+  @override
   String get noPendingTransfers =>
       'No transfers need your attention right now.';
 

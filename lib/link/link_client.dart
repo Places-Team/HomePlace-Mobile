@@ -19,6 +19,7 @@ enum LinkFailureKind {
 }
 
 const maxShareFileBytes = 500 * 1024 * 1024;
+const maxExchangeFileBytes = 10 * 1024 * 1024 * 1024;
 
 sealed class LinkResult<T> {
   const LinkResult();
@@ -46,10 +47,22 @@ final class _TransferCancelled implements Exception {
 
 final class LinkTransferCancellation {
   bool _cancelled = false;
+  void Function()? _abort;
 
   bool get isCancelled => _cancelled;
 
-  void cancel() => _cancelled = true;
+  void cancel() {
+    if (_cancelled) return;
+    _cancelled = true;
+    _abort?.call();
+  }
+
+  void bindAbort(void Function() abort) {
+    _abort = abort;
+    if (_cancelled) abort();
+  }
+
+  void clearAbort() => _abort = null;
 }
 
 final class DownloadedLinkFile {
@@ -256,6 +269,261 @@ final class HttpLinkService implements LinkService {
         'The file could not be sent.',
       );
     } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<LinkResult<Map<String, dynamic>>> uploadExchangeFile(
+    ServerAddress address,
+    String credential,
+    File file, {
+    required String filename,
+    required String mimeType,
+    required int expiresInSeconds,
+    required String access,
+    required bool deleteAfterOpen,
+    required int maxBytes,
+    void Function(int transferred, int total)? onProgress,
+    LinkTransferCancellation? cancellation,
+  }) async {
+    if (!const [600, 3600, 86400].contains(expiresInSeconds) ||
+        !const ['account', 'link'].contains(access) ||
+        filename.trim().isEmpty ||
+        utf8.encode(filename).length > 255) {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'Invalid file exchange options.',
+      );
+    }
+    final client = _clientFor(address);
+    try {
+      final length = await file.length();
+      if (length < 1 || length > maxBytes || length > maxExchangeFileBytes) {
+        return LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'File exceeds this server upload limit ($maxBytes bytes).',
+        );
+      }
+      final request = await client
+          .openUrl('POST', address.uri.resolve('/api/exchange/file'))
+          .timeout(const Duration(seconds: 10));
+      cancellation?.bindAbort(() => request.abort(const _TransferCancelled()));
+      request.followRedirects = false;
+      request.bufferOutput = false;
+      request.contentLength = length;
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer $credential',
+      );
+      request.headers.set('x-homeplace-size', '$length');
+      request.headers.set(
+        'x-homeplace-filename-base64',
+        base64Encode(utf8.encode(filename)),
+      );
+      request.headers.set('x-homeplace-expires', '$expiresInSeconds');
+      request.headers.set('x-homeplace-access', access);
+      request.headers.set(
+        'x-homeplace-delete-after-open',
+        deleteAfterOpen ? 'true' : 'false',
+      );
+      request.headers.contentType = _safeContentType(mimeType);
+      var transferred = 0;
+      await request.addStream(
+        file.openRead().map((chunk) {
+          if (cancellation?.isCancelled == true) {
+            throw const _TransferCancelled();
+          }
+          transferred += chunk.length;
+          onProgress?.call(transferred, length);
+          return chunk;
+        }),
+      );
+      if (cancellation?.isCancelled == true) throw const _TransferCancelled();
+      final response = await request.close().timeout(
+        const Duration(seconds: 60),
+      );
+      if (response.isRedirect) {
+        await response.drain<void>();
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'HomePlace redirected the file upload unexpectedly.',
+        );
+      }
+      final body = await _readBody(response, 65536);
+      if (response.statusCode == HttpStatus.unauthorized ||
+          response.statusCode == HttpStatus.forbidden) {
+        return const LinkFailure(
+          LinkFailureKind.authentication,
+          'This device is not allowed to create file exchanges.',
+        );
+      }
+      if (response.statusCode != HttpStatus.created) {
+        return LinkFailure(
+          LinkFailureKind.invalidResponse,
+          _serverError(body) ??
+              (response.statusCode == HttpStatus.requestEntityTooLarge
+                  ? 'The server or reverse proxy rejected this file size (HTTP 413).'
+                  : 'HomePlace rejected the file exchange (HTTP ${response.statusCode}).'),
+        );
+      }
+      final decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid file exchange response.');
+      }
+      return LinkSuccess(decoded);
+    } on _TransferCancelled {
+      return const LinkFailure(
+        LinkFailureKind.cancelled,
+        'The file upload was cancelled.',
+      );
+    } on HandshakeException {
+      return const LinkFailure(LinkFailureKind.tls, 'TLS validation failed.');
+    } on TimeoutException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The file upload timed out. Check the exchange list before retrying.',
+      );
+    } on FormatException {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'HomePlace returned invalid file exchange data.',
+      );
+    } on Object {
+      if (cancellation?.isCancelled == true) {
+        return const LinkFailure(
+          LinkFailureKind.cancelled,
+          'The file upload was cancelled.',
+        );
+      }
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The file could not be uploaded. Check the exchange list before retrying.',
+      );
+    } finally {
+      cancellation?.clearAbort();
+      client.close(force: true);
+    }
+  }
+
+  Future<LinkResult<DownloadedLinkFile>> downloadExchangeFile(
+    ServerAddress address,
+    String credential,
+    String token, {
+    required File destination,
+    required int expectedSize,
+    void Function(int transferred, int total)? onProgress,
+    LinkTransferCancellation? cancellation,
+  }) async {
+    if (!RegExp(r'^[A-Za-z0-9_-]{22}$').hasMatch(token) ||
+        expectedSize < 1 ||
+        expectedSize > maxExchangeFileBytes) {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'Invalid file exchange metadata.',
+      );
+    }
+    final client = _clientFor(address);
+    File? temporary = destination;
+    try {
+      final request = await client
+          .getUrl(address.uri.resolve('/api/exchange/$token/file'))
+          .timeout(const Duration(seconds: 10));
+      cancellation?.bindAbort(() => request.abort(const _TransferCancelled()));
+      request.followRedirects = false;
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer $credential',
+      );
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
+      if (response.statusCode != HttpStatus.ok || response.isRedirect) {
+        await response.drain<void>();
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'The file link is unavailable or has expired.',
+        );
+      }
+      final digest = response.headers.value('x-homeplace-sha256');
+      if (response.contentLength != expectedSize ||
+          digest == null ||
+          !RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(digest)) {
+        await response.drain<void>();
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'The file link returned invalid integrity metadata.',
+        );
+      }
+      final output = temporary.openWrite();
+      var transferred = 0;
+      try {
+        await for (final chunk in response.timeout(
+          const Duration(seconds: 60),
+        )) {
+          if (cancellation?.isCancelled == true) {
+            throw const _TransferCancelled();
+          }
+          transferred += chunk.length;
+          if (transferred > expectedSize) throw const _ResponseTooLarge();
+          output.add(chunk);
+          onProgress?.call(transferred, expectedSize);
+        }
+        await output.flush();
+      } finally {
+        await output.close();
+      }
+      if (transferred != expectedSize ||
+          (await sha256.bind(temporary.openRead()).single)
+                  .toString()
+                  .toLowerCase() !=
+              digest.toLowerCase()) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'The downloaded file failed its integrity check.',
+        );
+      }
+      final completed = temporary;
+      temporary = null;
+      return LinkSuccess(
+        DownloadedLinkFile(file: completed, size: transferred),
+      );
+    } on _TransferCancelled {
+      return const LinkFailure(
+        LinkFailureKind.cancelled,
+        'Download cancelled.',
+      );
+    } on _ResponseTooLarge {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'The downloaded file exceeds its announced size.',
+      );
+    } on HandshakeException {
+      return const LinkFailure(LinkFailureKind.tls, 'TLS validation failed.');
+    } on TimeoutException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The download timed out.',
+      );
+    } on Object {
+      if (cancellation?.isCancelled == true) {
+        return const LinkFailure(
+          LinkFailureKind.cancelled,
+          'Download cancelled.',
+        );
+      }
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'The file could not be downloaded.',
+      );
+    } finally {
+      cancellation?.clearAbort();
+      if (temporary != null) {
+        try {
+          await temporary.delete();
+        } on Object {
+          // The transfer failure remains the actionable error.
+        }
+      }
       client.close(force: true);
     }
   }

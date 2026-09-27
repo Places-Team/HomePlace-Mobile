@@ -60,6 +60,22 @@ revoked. Expiry and one-time-open behavior are server-authoritative. This
 does not replace direct addressed Link offers, and exchange text is not
 persisted in mobile preferences or transfer history.
 
+File exchange uses the server's `/api/exchange/file` route with raw streamed
+bytes and exact content length; it does not buffer whole files in Dart. The
+file picker returns a temporary local path, and the paired credential is sent
+only to the connected server. Account-only is the default; public bearer links
+require a separate warning and confirmation. Recipient metadata is fetched
+before a confirmed Android download. The download requires the server's
+SHA-256 header, checks declared length and digest, then copies the verified
+temporary file to MediaStore Downloads and offers Open. Temporary files are
+removed on success, cancellation, and failure. Only links from the active
+server origin are accepted by the in-app receiver. Before upload, the client
+refreshes `/api/link/info`, checks the server ID, and obeys the reported
+`limits.maxFileBytes`; older servers use a 500 MiB compatibility fallback.
+The server remains authoritative if free space changes or a proxy imposes a
+lower limit. Exchange uploads and
+downloads are foreground operations and do not imply background capability.
+
 
 The Ideas workspace follows Desktop's quick-capture workflow.
 `IdeaController` owns UI state and validation; `IdeaStore` separates

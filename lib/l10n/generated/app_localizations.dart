@@ -1590,6 +1590,156 @@ abstract class AppLocalizations {
   /// **'Reconnect to HomePlace and try again.'**
   String get exchangeReconnect;
 
+  /// No description provided for @fileExchangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'File exchange'**
+  String get fileExchangeTitle;
+
+  /// No description provided for @fileExchangeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a file, then share a short-lived download link. Direct device transfers stay separate.'**
+  String get fileExchangeSubtitle;
+
+  /// No description provided for @fileExchangeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open file exchange'**
+  String get fileExchangeOpen;
+
+  /// No description provided for @fileExchangeChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose any file'**
+  String get fileExchangeChoose;
+
+  /// No description provided for @fileExchangeSizeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a non-empty file within this server\'s {limit} upload limit.'**
+  String fileExchangeSizeError(String limit);
+
+  /// No description provided for @fileExchangeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Current server limit: {limit}'**
+  String fileExchangeLimit(String limit);
+
+  /// No description provided for @fileExchangePickError.
+  ///
+  /// In en, this message translates to:
+  /// **'The file could not be opened. Choose it again.'**
+  String get fileExchangePickError;
+
+  /// No description provided for @fileExchangeAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can download'**
+  String get fileExchangeAccess;
+
+  /// No description provided for @fileExchangeAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'My HomePlace account'**
+  String get fileExchangeAccount;
+
+  /// No description provided for @fileExchangePublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with the link'**
+  String get fileExchangePublic;
+
+  /// No description provided for @fileExchangePublicWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This link is a secret. Anyone who gets it can download the file until it expires or you revoke it. Do not use it for private files unless you trust every recipient.'**
+  String get fileExchangePublicWarning;
+
+  /// No description provided for @fileExchangeConfirmPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Create external link'**
+  String get fileExchangeConfirmPublic;
+
+  /// No description provided for @fileExchangeUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload and create link'**
+  String get fileExchangeUpload;
+
+  /// No description provided for @fileExchangeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active file links'**
+  String get fileExchangeActive;
+
+  /// No description provided for @fileExchangeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active file links.'**
+  String get fileExchangeEmpty;
+
+  /// No description provided for @fileExchangeReceive.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a file from a link'**
+  String get fileExchangeReceive;
+
+  /// No description provided for @fileExchangeLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link from this HomePlace server'**
+  String get fileExchangeLink;
+
+  /// No description provided for @fileExchangeCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check file'**
+  String get fileExchangeCheck;
+
+  /// No description provided for @fileExchangeInvalidLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a code or a file link from this connected HomePlace server.'**
+  String get fileExchangeInvalidLink;
+
+  /// No description provided for @fileExchangeDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download to Downloads'**
+  String get fileExchangeDownload;
+
+  /// No description provided for @fileExchangeSaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm to download and save this file on your phone.'**
+  String get fileExchangeSaveConfirm;
+
+  /// No description provided for @fileExchangeOneTimeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This link works only once. Starting the download uses it, even if the transfer is interrupted.'**
+  String get fileExchangeOneTimeWarning;
+
+  /// No description provided for @fileExchangeSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'The file could not be saved. Check Downloads before trying again.'**
+  String get fileExchangeSaveError;
+
+  /// No description provided for @fileExchangeOpenSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Open saved file'**
+  String get fileExchangeOpenSaved;
+
+  /// No description provided for @fileExchangeOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Android could not open the saved file.'**
+  String get fileExchangeOpenError;
+
   /// No description provided for @noPendingTransfers.
   ///
   /// In en, this message translates to:

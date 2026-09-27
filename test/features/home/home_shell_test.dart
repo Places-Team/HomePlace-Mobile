@@ -406,11 +406,8 @@ void main() {
     );
     await tester.tap(find.byTooltip('Transfers'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Recent transfers'),
-      300,
-      scrollable: find.byType(Scrollable).hitTestable().first,
-    );
+    await tester.ensureVisible(find.text('Recent transfers'));
+    await tester.pumpAndSettle();
     expect(find.text('Received from Family tablet'), findsOneWidget);
     expect(find.textContaining('filenames are never saved'), findsOneWidget);
     await tester.tap(find.text('Clear'));
@@ -450,11 +447,8 @@ void main() {
     );
     await tester.tap(find.byTooltip('Transfers'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Notification history'),
-      300,
-      scrollable: find.byType(Scrollable).hitTestable().first,
-    );
+    await tester.ensureVisible(find.text('Notification history'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('The reminder is due.'), findsOneWidget);
     expect(find.textContaining('encrypted device storage'), findsOneWidget);
     await tester.tap(find.text('Clear').last);

@@ -15,6 +15,7 @@ import '../../link/mobile_models.dart';
 import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import '../exchange/text_exchange_card.dart';
+import '../exchange/file_exchange_card.dart';
 import '../ideas/idea_controller.dart';
 import '../ideas/idea_store.dart';
 import '../ideas/server_idea_store.dart';
@@ -1297,9 +1298,9 @@ class _TransfersPage extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 18),
-        TextExchangeCard(
+        FileExchangeCard(
           key: ValueKey(
-            'exchange-${connection.profile?.serverId}-${connection.profile?.deviceId}',
+            'file-exchange-${connection.profile?.serverId}-${connection.profile?.deviceId}',
           ),
           sessionProvider: connection.authenticatedSession,
           available: home.overview?.permissions.contains('share.relay') == true,
@@ -1326,6 +1327,15 @@ class _TransfersPage extends StatelessWidget {
           const SizedBox(height: 12),
           _NotificationHistoryCard(connection: connection),
         ],
+        const SizedBox(height: 12),
+        TextExchangeCard(
+          key: ValueKey(
+            'exchange-${connection.profile?.serverId}-${connection.profile?.deviceId}',
+          ),
+          sessionProvider: connection.authenticatedSession,
+          available: home.overview?.permissions.contains('share.relay') == true,
+          clipboardRelayEnabled: home.autoClipboardEnabled,
+        ),
         const SizedBox(height: 110),
       ],
     );

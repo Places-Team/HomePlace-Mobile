@@ -8,7 +8,16 @@ Transfers include account-only temporary text links through the server's
 `/api/exchange` API. They can expire after 10 minutes, one hour, or one day,
 optionally disappear after the first open, and be revoked from the phone.
 Direct device offers remain separate. This requires the paired device's
-`share.relay` permission. Temporary file links are not yet in the mobile UI.
+`share.relay` permission. File exchange accepts any file type within the
+connected server's current `/api/link/info` upload limit, streams the upload
+with progress and cancellation,
+and defaults to account-only access. Creating an external link requires a
+second confirmation. Android can inspect a link from the connected server,
+confirm the download, verify its SHA-256 digest, save it to Downloads, and open
+the saved file. A one-time download cannot be resumed after interruption.
+Upload and download run while the app is open; background exchange is not yet
+available. Older servers without a reported limit retain a 500 MiB fallback.
+Reverse proxies may impose a lower upload limit.
 
 Android 16 support now includes an optional Quick Settings Transfers tile,
 system notification-settings access, private notification visibility, and
