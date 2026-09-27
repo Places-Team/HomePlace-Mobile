@@ -1,38 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../core/settings/module_visibility_preferences.dart';
 import '../../link/mobile_models.dart';
 import '../connection/connection_controller.dart';
 import 'home_controller.dart';
 
-const _moduleViolet = Color(0xff829eff);
-const _moduleCoral = Color(0xffff746c);
-const _moduleMint = Color(0xff70e1b4);
-const _moduleGold = Color(0xffffc857);
+const _moduleViolet = Color(0xff68789f);
+const _moduleCoral = Color(0xffbd765b);
+const _moduleMint = Color(0xff4f9b77);
+const _moduleGold = Color(0xffbd9547);
 
 enum _ModuleKind {
-  plan,
-  ideas,
   notifications,
   devices,
-  clipboard,
-  transfers,
-  media,
   telegram,
   smartHome,
-  monitoring,
   automations,
   security,
   settings,
 }
 
-final class HomeModulesPage extends StatelessWidget {
+final class HomeModulesPage extends StatefulWidget {
   const HomeModulesPage({
     required this.overview,
     required this.connection,
     required this.home,
-    required this.onOpenTab,
-    this.onOpenIdeas,
     required this.onOpenSettings,
     super.key,
   });
@@ -40,66 +34,100 @@ final class HomeModulesPage extends StatelessWidget {
   final MobileOverview overview;
   final ConnectionController connection;
   final HomeController home;
-  final ValueChanged<int> onOpenTab;
-  final VoidCallback? onOpenIdeas;
   final VoidCallback onOpenSettings;
+
+  @override
+  State<HomeModulesPage> createState() => _HomeModulesPageState();
+}
+
+class _HomeModulesPageState extends State<HomeModulesPage> {
+  static const modules = [
+    _ModuleKind.notifications,
+    _ModuleKind.devices,
+    _ModuleKind.telegram,
+    _ModuleKind.smartHome,
+    _ModuleKind.automations,
+    _ModuleKind.security,
+    _ModuleKind.settings,
+  ];
+
+  late final ModuleVisibilityPreferences visibility =
+      ModuleVisibilityPreferences(modules.map((kind) => kind.name).toList());
+
+  @override
+  void initState() {
+    super.initState();
+    visibility.addListener(_onVisibilityChanged);
+    visibility.initialize();
+  }
+
+  void _onVisibilityChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    visibility.removeListener(_onVisibilityChanged);
+    visibility.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final sections = <(String, List<_ModuleKind>)>[
-      (
-        l10n.everydaySection,
-        const [_ModuleKind.plan, _ModuleKind.ideas, _ModuleKind.notifications],
-      ),
-      (
-        l10n.sharingSection,
-        const [
-          _ModuleKind.devices,
-          _ModuleKind.clipboard,
-          _ModuleKind.transfers,
-        ],
-      ),
+      (l10n.everydaySection, const [_ModuleKind.notifications]),
+      (l10n.sharingSection, const [_ModuleKind.devices]),
       (
         l10n.servicesSection,
-        const [_ModuleKind.media, _ModuleKind.telegram, _ModuleKind.smartHome],
+        const [_ModuleKind.telegram, _ModuleKind.smartHome],
       ),
       (
         l10n.systemSection,
         const [
-          _ModuleKind.monitoring,
           _ModuleKind.automations,
           _ModuleKind.security,
           _ModuleKind.settings,
         ],
       ),
     ];
+    final visibleSections = sections
+        .map(
+          (section) => (
+            section.$1,
+            section.$2
+                .where((kind) => visibility.isVisible(kind.name))
+                .toList(growable: false),
+          ),
+        )
+        .where((section) => section.$2.isNotEmpty)
+        .toList(growable: false);
 
     return Scaffold(
       body: Stack(
         children: [
-          const Positioned(
-            right: -110,
-            top: -100,
-            child: _Glow(color: _moduleViolet, size: 300),
-          ),
-          const Positioned(
-            left: -130,
-            bottom: -80,
-            child: _Glow(color: _moduleCoral, size: 280),
-          ),
           CustomScrollView(
             slivers: [
-              SliverAppBar.large(
-                backgroundColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
+          SliverAppBar.large(
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark,
                 title: Text(l10n.allSections),
+                actions: [
+                  IconButton(
+                    tooltip: l10n.customizeSections,
+                    onPressed: () => _showCustomize(context),
+                    icon: const Icon(Icons.tune_rounded),
+                  ),
+                ],
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 42),
                 sliver: SliverList.list(
                   children: [
-                    _WorkspaceHero(connection: connection),
+                    _WorkspaceHero(connection: widget.connection),
                     const SizedBox(height: 18),
                     Text(
                       l10n.allSectionsBody,
@@ -108,28 +136,34 @@ final class HomeModulesPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 26),
-                    for (final section in sections) ...[
-                      Text(
-                        section.$1.toUpperCase(),
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              letterSpacing: 1.7,
-                              fontWeight: FontWeight.w900,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                    if (visibleSections.isEmpty)
+                      _InfoPanel(
+                        icon: Icons.tune_rounded,
+                        text: l10n.hiddenSectionsEmpty,
+                      ),
+                    for (final section in visibleSections) ...[
+                      Row(
+                        children: [
+                          Container(
+                            width: 22,
+                            height: 3,
+                            color: _spec(l10n, section.$2.first).color,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            section.$1,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const Spacer(),
+                          Text('${section.$2.length}'),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       LayoutBuilder(
                         builder: (context, constraints) {
                           if (constraints.maxWidth < 600) {
                             return Material(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerLow,
-                              borderRadius: BorderRadius.circular(24),
-                              clipBehavior: Clip.antiAlias,
+                              color: Colors.transparent,
                               child: Column(
                                 children: [
                                   for (
@@ -137,15 +171,7 @@ final class HomeModulesPage extends StatelessWidget {
                                     index < section.$2.length;
                                     index++
                                   ) ...[
-                                    if (index > 0)
-                                      Divider(
-                                        height: 1,
-                                        indent: 68,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .outlineVariant
-                                            .withValues(alpha: .45),
-                                      ),
+                                    if (index > 0) const SizedBox(height: 8),
                                     _ModuleRow(
                                       key: ValueKey(
                                         'module-row-${section.$2[index].name}',
@@ -190,44 +216,85 @@ final class HomeModulesPage extends StatelessWidget {
     );
   }
 
+  Future<void> _showCustomize(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .8,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.customizeSections,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(l10n.customizeSectionsBody),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: visibility,
+                builder: (context, _) => ListView.builder(
+                  itemCount: modules.length,
+                  itemBuilder: (context, index) {
+                    final kind = modules[index];
+                    final spec = _spec(l10n, kind);
+                    return SwitchListTile.adaptive(
+                      key: ValueKey('module-toggle-${kind.name}'),
+                      secondary: _IconTile(icon: spec.icon, color: spec.color),
+                      title: Text(spec.title),
+                      value: visibility.isVisible(kind.name),
+                      onChanged: (value) =>
+                          visibility.setVisible(kind.name, value),
+                    );
+                  },
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: TextButton.icon(
+                onPressed: visibility.reset,
+                icon: const Icon(Icons.restart_alt_rounded),
+                label: Text(l10n.restoreSections),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _open(BuildContext context, _ModuleKind kind) {
-    if (kind == _ModuleKind.ideas) {
-      Navigator.pop(context);
-      (onOpenIdeas ?? () => onOpenTab(1))();
-      return;
-    }
-    final tab = switch (kind) {
-      _ModuleKind.plan => 1,
-      _ModuleKind.clipboard => 3,
-      _ModuleKind.transfers => 3,
-      _ModuleKind.media => 2,
-      _ModuleKind.monitoring => 4,
-      _ => null,
-    };
-    if (tab != null) {
-      Navigator.pop(context);
-      onOpenTab(tab);
-      return;
-    }
     if (kind == _ModuleKind.settings) {
-      Navigator.pop(context);
-      onOpenSettings();
+      widget.onOpenSettings();
       return;
     }
     final page = switch (kind) {
-      _ModuleKind.devices => _DevicesModulePage(overview: overview),
+      _ModuleKind.devices => _DevicesModulePage(overview: widget.overview),
       _ModuleKind.notifications => _NotificationsModulePage(
-        connection: connection,
+        connection: widget.connection,
       ),
       _ModuleKind.telegram => _TelegramModulePage(
-        overview: overview,
-        home: home,
+        overview: widget.overview,
+        home: widget.home,
       ),
       _ModuleKind.automations => const _AutomationsModulePage(),
       _ModuleKind.smartHome => const _SmartHomeModulePage(),
       _ModuleKind.security => _SecurityModulePage(
-        overview: overview,
-        connection: connection,
+        overview: widget.overview,
+        connection: widget.connection,
       ),
       _ => null,
     };
@@ -253,20 +320,6 @@ final class _ModuleSpec {
 }
 
 _ModuleSpec _spec(AppLocalizations l10n, _ModuleKind kind) => switch (kind) {
-  _ModuleKind.plan => _ModuleSpec(
-    title: l10n.calendarTitle,
-    body: l10n.calendarModuleBody,
-    icon: Icons.event_note_rounded,
-    color: _moduleViolet,
-    live: true,
-  ),
-  _ModuleKind.ideas => _ModuleSpec(
-    title: l10n.ideasTitle,
-    body: l10n.ideasModuleBody,
-    icon: Icons.lightbulb_outline_rounded,
-    color: _moduleMint,
-    live: true,
-  ),
   _ModuleKind.notifications => _ModuleSpec(
     title: l10n.notificationHistory,
     body: l10n.notificationsModuleBody,
@@ -279,27 +332,6 @@ _ModuleSpec _spec(AppLocalizations l10n, _ModuleKind kind) => switch (kind) {
     body: l10n.devicesBody,
     icon: Icons.devices_other_rounded,
     color: _moduleMint,
-    live: true,
-  ),
-  _ModuleKind.clipboard => _ModuleSpec(
-    title: l10n.clipboardTitle,
-    body: l10n.clipboardModuleBody,
-    icon: Icons.content_paste_go_rounded,
-    color: _moduleGold,
-    live: true,
-  ),
-  _ModuleKind.transfers => _ModuleSpec(
-    title: l10n.transfersTitle,
-    body: l10n.transfersModuleBody,
-    icon: Icons.swap_horiz_rounded,
-    color: _moduleViolet,
-    live: true,
-  ),
-  _ModuleKind.media => _ModuleSpec(
-    title: l10n.requestsTitle,
-    body: l10n.mediaModuleBody,
-    icon: Icons.movie_filter_outlined,
-    color: _moduleCoral,
     live: true,
   ),
   _ModuleKind.telegram => _ModuleSpec(
@@ -315,13 +347,6 @@ _ModuleSpec _spec(AppLocalizations l10n, _ModuleKind kind) => switch (kind) {
     icon: Icons.home_work_outlined,
     color: _moduleMint,
     live: false,
-  ),
-  _ModuleKind.monitoring => _ModuleSpec(
-    title: l10n.monitoringTitle,
-    body: l10n.monitoringModuleBody,
-    icon: Icons.monitor_heart_outlined,
-    color: _moduleMint,
-    live: true,
   ),
   _ModuleKind.automations => _ModuleSpec(
     title: l10n.automationsTitle,
@@ -357,54 +382,64 @@ class _ModuleRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Semantics(
       button: true,
-      child: InkWell(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 76),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-            child: Row(
-              children: [
-                _IconTile(icon: spec.icon, color: spec.color),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        spec.title,
-                        style: Theme.of(context).textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        spec.body,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (!spec.live) ...[
-                        const SizedBox(height: 4),
+      child: Material(
+        color: spec.color.withValues(alpha: .12),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(8),
+          bottomLeft: Radius.circular(8),
+          bottomRight: Radius.circular(24),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 88),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(17, 15, 12, 15),
+              child: Row(
+                children: [
+                  _IconTile(icon: spec.icon, color: spec.color),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          l10n.preview,
-                          style: Theme.of(context).textTheme.labelSmall
+                          spec.title,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          spec.body,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(context).colorScheme.tertiary,
-                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
+                        if (!spec.live) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.preview,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right_rounded, color: spec.color),
+                ],
+              ),
             ),
           ),
         ),
@@ -421,8 +456,14 @@ class _ModuleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
+    return Material(
+      color: spec.color.withValues(alpha: .12),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(28),
+        topRight: Radius.circular(10),
+        bottomLeft: Radius.circular(10),
+        bottomRight: Radius.circular(28),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -464,6 +505,11 @@ class _ModuleCard extends StatelessWidget {
                     height: 1.25,
                   ),
                 ),
+                const SizedBox(height: 15),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Icon(Icons.arrow_outward_rounded, color: spec.color),
+                ),
               ],
             ),
           ),
@@ -482,25 +528,28 @@ class _WorkspaceHero extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final profile = connection.profile;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 18),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xff242b39)
-            : const Color(0xffe8eee2),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: _moduleViolet.withValues(alpha: .22)),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
       ),
       child: Row(
         children: [
-          const _IconTile(icon: Icons.hub_rounded, color: _moduleViolet),
-          const SizedBox(width: 15),
+          const Icon(Icons.hub_rounded, color: _moduleViolet, size: 29),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   l10n.privateWorkspace,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -900,42 +949,55 @@ class _DetailScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title), actions: [?trailing]),
+    appBar: AppBar(
+      systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      actions: [?trailing],
+    ),
     body: ListView(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 36),
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
           decoration: BoxDecoration(
             color: color.withValues(alpha: .13),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(42),
+              topRight: Radius.circular(12),
+              bottomLeft: Radius.circular(12),
+              bottomRight: Radius.circular(42),
+            ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              _IconTile(icon: icon, color: color),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                        ),
-                        if (badge != null)
-                          _StatusChip(text: badge!, color: _moduleGold),
-                      ],
-                    ),
-                    const SizedBox(height: 7),
-                    Text(subtitle, style: const TextStyle(height: 1.35)),
-                  ],
+              Positioned(
+                right: -8,
+                top: -22,
+                child: Icon(
+                  icon,
+                  size: 132,
+                  color: color.withValues(alpha: .18),
                 ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(width: 44, height: 4, color: color),
+                  const SizedBox(height: 25),
+                  Icon(icon, size: 38, color: color),
+                  const SizedBox(height: 25),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  if (badge != null) ...[
+                    const SizedBox(height: 10),
+                    _StatusChip(text: badge!, color: _moduleGold),
+                  ],
+                  const SizedBox(height: 9),
+                  Text(subtitle, style: const TextStyle(height: 1.35)),
+                ],
               ),
             ],
           ),
@@ -1173,24 +1235,6 @@ class _StatusChip extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900),
-    ),
-  );
-}
-
-class _Glow extends StatelessWidget {
-  const _Glow({required this.color, required this.size});
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: .08),
-      ),
     ),
   );
 }

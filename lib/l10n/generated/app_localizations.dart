@@ -1737,8 +1737,32 @@ abstract class AppLocalizations {
   /// No description provided for @allSectionsBody.
   ///
   /// In en, this message translates to:
-  /// **'The complete HomePlace mobile workspace, arranged around what you want to do.'**
+  /// **'The spaces beyond your main tabs. Keep only what you use.'**
   String get allSectionsBody;
+
+  /// No description provided for @customizeSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize sections'**
+  String get customizeSections;
+
+  /// No description provided for @customizeSectionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what appears here. Your main tabs stay in place.'**
+  String get customizeSectionsBody;
+
+  /// No description provided for @restoreSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all sections'**
+  String get restoreSections;
+
+  /// No description provided for @hiddenSectionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No extra sections are visible. Use Customize to bring them back.'**
+  String get hiddenSectionsEmpty;
 
   /// No description provided for @everydaySection.
   ///

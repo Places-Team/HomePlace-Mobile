@@ -931,7 +931,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allSectionsBody =>
-      'The complete HomePlace mobile workspace, arranged around what you want to do.';
+      'The spaces beyond your main tabs. Keep only what you use.';
+
+  @override
+  String get customizeSections => 'Customize sections';
+
+  @override
+  String get customizeSectionsBody =>
+      'Choose what appears here. Your main tabs stay in place.';
+
+  @override
+  String get restoreSections => 'Show all sections';
+
+  @override
+  String get hiddenSectionsEmpty =>
+      'No extra sections are visible. Use Customize to bring them back.';
 
   @override
   String get everydaySection => 'Every day';

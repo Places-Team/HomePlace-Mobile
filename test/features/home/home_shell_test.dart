@@ -9,6 +9,7 @@ import 'package:homeplace/features/home/home_modules.dart';
 import 'package:homeplace/features/home/home_shell.dart';
 import 'package:homeplace/l10n/generated/app_localizations.dart';
 import 'package:homeplace/link/mobile_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../connection/test_doubles.dart';
 
@@ -16,6 +17,7 @@ void main() {
   testWidgets('module directory adapts to narrow and wide windows', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -36,30 +38,41 @@ void main() {
             overview: home.overview!,
             connection: connection,
             home: home,
-            onOpenTab: (_) {},
             onOpenSettings: () {},
           ),
         ),
       ),
     );
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('module-row-plan')),
+      find.byKey(const ValueKey('module-row-notifications')),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.byKey(const ValueKey('module-row-plan')), findsOneWidget);
-    expect(find.byKey(const ValueKey('module-card-plan')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('module-row-notifications')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('module-card-notifications')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
 
     tester.view.physicalSize = const Size(800, 640);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('module-card-plan')),
+      find.byKey(const ValueKey('module-card-notifications')),
       -200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.byKey(const ValueKey('module-card-plan')), findsOneWidget);
-    expect(find.byKey(const ValueKey('module-row-plan')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('module-card-notifications')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('module-row-notifications')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
 
     connection.dispose();
@@ -174,6 +187,7 @@ void main() {
   testWidgets('all sections maps live modules and honest previews', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(420, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -208,6 +222,7 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
+    expect(find.text('All sections'), findsWidgets);
     await tester.scrollUntilVisible(
       find.text('Telegram bridge'),
       350,
@@ -232,19 +247,32 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
+    expect(find.text('All sections'), findsWidgets);
+    expect(find.byKey(const ValueKey('module-row-plan')), findsNothing);
+    expect(find.byKey(const ValueKey('module-row-transfers')), findsNothing);
+    expect(find.byKey(const ValueKey('module-row-media')), findsNothing);
+    await tester.tap(find.byTooltip('Customize sections'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('module-toggle-devices')));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Devices'), findsNothing);
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('module-row-plan')),
-      -400,
+      find.byKey(const ValueKey('module-row-settings')),
+      300,
       scrollable: find.byType(Scrollable).first,
     );
-    await Scrollable.ensureVisible(
-      tester.element(find.byKey(const ValueKey('module-row-plan'))),
-      alignment: .5,
-    );
+    await tester.tap(find.byKey(const ValueKey('module-row-settings')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('module-row-plan')));
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Reminders'), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.text('All sections'), findsWidgets);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Everything in its place'), findsOneWidget);
     expect(tester.takeException(), isNull);
     connection.dispose();
     home.dispose();

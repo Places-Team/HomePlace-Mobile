@@ -192,6 +192,24 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         extendBody: true,
         body: Stack(
           children: [
+            Positioned.fill(
+              child: ValueListenableBuilder<int>(
+                valueListenable: selectedTab,
+                builder: (context, currentTab, _) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xff0b0d14)
+                      : switch (currentTab) {
+                          1 => const Color(0xfff8f1e9),
+                          2 => const Color(0xfff1f3ee),
+                          3 => const Color(0xfff8f3e5),
+                          4 => const Color(0xffeff4f1),
+                          _ => const Color(0xfff7f3e9),
+                        },
+                ),
+              ),
+            ),
             SafeArea(
               bottom: false,
               child: Column(
@@ -356,15 +374,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             overview: overview,
             connection: widget.connection,
             home: home,
-            onOpenIdeas: () {
-              planSection.value = _PlanSection.ideas;
-              _selectTab(1);
-              if (pages.hasClients) pages.jumpToPage(1);
-            },
-            onOpenTab: (value) {
-              _selectTab(value);
-              if (pages.hasClients) pages.jumpToPage(value);
-            },
             onOpenSettings: () {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
@@ -1183,6 +1192,7 @@ class _TransfersPage extends StatelessWidget {
         _PageHeading(
           title: l10n.transfersTitle,
           subtitle: l10n.transfersSubtitle,
+          accentColor: const Color(0xffaf843b),
         ),
         const SizedBox(height: 22),
         if (empty)
@@ -2337,7 +2347,11 @@ class _RequestsPageState extends State<_RequestsPage> {
     return _ScrollPage(
       onRefresh: widget.home.refresh,
       children: [
-        _PageHeading(title: l10n.requestsTitle, subtitle: l10n.requestsBody),
+        _PageHeading(
+          title: l10n.requestsTitle,
+          subtitle: l10n.requestsBody,
+          accentColor: const Color(0xff647d92),
+        ),
         const SizedBox(height: 18),
         Row(
           children: [
@@ -2476,7 +2490,9 @@ class _RequestsPageState extends State<_RequestsPage> {
                           Expanded(
                             child: Text(
                               instance.label,
-                              style: const TextStyle(fontWeight: FontWeight.w900),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
                           _TinyBadge(
@@ -2547,6 +2563,7 @@ class _MonitorPage extends StatelessWidget {
             child: _PageHeading(
               title: l10n.monitoringTitle,
               subtitle: l10n.monitoringBody,
+              accentColor: const Color(0xff4f8c7b),
             ),
           ),
           Padding(
@@ -3335,9 +3352,10 @@ class _AgendaRow extends StatelessWidget {
 }
 
 class _PageHeading extends StatelessWidget {
-  const _PageHeading({required this.title, this.subtitle});
+  const _PageHeading({required this.title, this.subtitle, this.accentColor});
   final String title;
   final String? subtitle;
+  final Color? accentColor;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3346,7 +3364,7 @@ class _PageHeading extends StatelessWidget {
         width: 38,
         height: 4,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
+          color: accentColor ?? Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(2),
         ),
       ),

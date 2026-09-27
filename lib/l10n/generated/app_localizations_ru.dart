@@ -933,7 +933,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get allSectionsBody =>
-      'Полное мобильное пространство HomePlace, собранное вокруг ваших задач.';
+      'То, что не вошло в основные вкладки. Оставьте только нужное.';
+
+  @override
+  String get customizeSections => 'Настроить разделы';
+
+  @override
+  String get customizeSectionsBody =>
+      'Выберите, что показывать здесь. Основные вкладки останутся на месте.';
+
+  @override
+  String get restoreSections => 'Показать все разделы';
+
+  @override
+  String get hiddenSectionsEmpty =>
+      'Дополнительные разделы скрыты. Откройте настройку, чтобы вернуть их.';
 
   @override
   String get everydaySection => 'Каждый день';
