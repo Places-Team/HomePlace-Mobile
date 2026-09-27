@@ -71,8 +71,8 @@ Failed refreshes do not replace cached ideas or upload local-only ideas.
 Synced ideas retain Desktop notes, pin state, and completion state. Mobile
 updates send only changed fields, leaving unrelated Desktop fields intact.
 These advanced controls are hidden for local-only ideas because the canonical
-legacy import accepts titles and categories only. Archived ideas remain a
-Desktop-only view until mobile archive navigation is implemented.
+legacy import accepts titles and categories only. Mobile reads both active
+and archived pages from the server and can restore account ideas from archive.
 
 ## Native boundaries
 

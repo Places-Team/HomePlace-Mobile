@@ -5,6 +5,7 @@ abstract interface class IdeaGateway {
   Future<LinkResult<Map<String, dynamic>>> page(
     AuthenticatedLinkSession session, {
     String? cursor,
+    bool archived = false,
   });
 
   Future<LinkResult<Map<String, dynamic>>> command(
@@ -23,12 +24,13 @@ final class IdeaApi implements IdeaGateway {
   Future<LinkResult<Map<String, dynamic>>> page(
     AuthenticatedLinkSession session, {
     String? cursor,
+    bool archived = false,
   }) => _client.requestJson(
     session.address,
     'GET',
     Uri(
       path: '/api/link/ideas',
-      queryParameters: cursor == null ? null : {'cursor': cursor},
+      queryParameters: {'cursor': ?cursor, if (archived) 'archived': '1'},
     ).toString(),
     credential: session.credential,
     maxResponseBytes: 524288,

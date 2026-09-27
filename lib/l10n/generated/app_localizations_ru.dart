@@ -1208,6 +1208,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ideasCompleted => 'Выполнено';
 
   @override
+  String get ideasActive => 'Текущие';
+
+  @override
+  String get ideasArchive => 'Архив';
+
+  @override
+  String get ideasArchiveAction => 'В архив';
+
+  @override
+  String get ideasRestore => 'Вернуть из архива';
+
+  @override
+  String get ideasArchiveEmpty => 'В архиве пока нет идей.';
+
+  @override
   String get ideasDuplicate => 'Дублировать';
 
   @override

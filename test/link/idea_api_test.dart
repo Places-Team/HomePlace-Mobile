@@ -46,6 +46,7 @@ void main() {
     );
     const api = IdeaApi();
     expect(await api.page(session, cursor: 'next-1'), isA<LinkSuccess>());
+    expect(await api.page(session, archived: true), isA<LinkSuccess>());
     expect(
       await api.command(session, {
         'action': 'createIdea',
@@ -55,6 +56,7 @@ void main() {
     );
     expect(requests, [
       'GET /api/link/ideas?cursor=next-1',
+      'GET /api/link/ideas?archived=1',
       'POST /api/link/ideas',
     ]);
   });

@@ -148,6 +148,7 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
   final _draft = TextEditingController();
   String _category = 'inbox';
   String? _filter;
+  bool _archived = false;
 
   @override
   void dispose() {
@@ -173,7 +174,10 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
     if (saved) {
       _draft.clear();
       FocusScope.of(context).unfocus();
-      setState(() => _filter = null);
+      setState(() {
+        _filter = null;
+        _archived = false;
+      });
     } else {
       _showSaveError();
     }
@@ -392,6 +396,27 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                     }
                   },
                 ),
+              if (widget.controller.serverSynced)
+                ListTile(
+                  leading: Icon(
+                    idea.archived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                  ),
+                  title: Text(
+                    idea.archived ? l10n.ideasRestore : l10n.ideasArchiveAction,
+                  ),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    if (!await widget.controller.setArchived(
+                          idea,
+                          !idea.archived,
+                        ) &&
+                        mounted) {
+                      _showSaveError();
+                    }
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.notifications_active_outlined),
                 title: Text(l10n.ideasToReminder),
@@ -456,8 +481,13 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
           ],
         );
       }
+      final showArchived = controller.serverSynced && _archived;
       final visible = controller.ideas
-          .where((idea) => _filter == null || idea.category == _filter)
+          .where(
+            (idea) =>
+                idea.archived == showArchived &&
+                (_filter == null || idea.category == _filter),
+          )
           .toList();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -472,7 +502,7 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                 ),
               ),
               Text(
-                '${controller.ideas.length}',
+                '${controller.ideas.where((idea) => idea.archived == showArchived).length}',
                 style: Theme.of(context).textTheme.titleMedium
                     ?.copyWith(color: _ideaMint, fontWeight: FontWeight.w800),
               ),
@@ -489,6 +519,24 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
               child: Text(l10n.ideasLoadError),
             ),
           const SizedBox(height: 14),
+          if (controller.serverSynced) ...[
+            Row(
+              children: [
+                ChoiceChip(
+                  label: Text(l10n.ideasActive),
+                  selected: !showArchived,
+                  onSelected: (_) => setState(() => _archived = false),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: Text(l10n.ideasArchive),
+                  selected: showArchived,
+                  onSelected: (_) => setState(() => _archived = true),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+          ],
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -618,12 +666,12 @@ class _IdeasWorkspaceState extends State<IdeasWorkspace> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    l10n.ideasEmptyTitle,
+                    showArchived ? l10n.ideasArchive : l10n.ideasEmptyTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    l10n.ideasEmptyBody,
+                    showArchived ? l10n.ideasArchiveEmpty : l10n.ideasEmptyBody,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,

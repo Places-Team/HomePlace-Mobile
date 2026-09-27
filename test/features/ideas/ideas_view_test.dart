@@ -150,6 +150,24 @@ void main() {
     await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
     expect(controller.ideas.single.note, 'Walk instead');
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archive idea'));
+    await tester.pumpAndSettle();
+    expect(controller.ideas.single.archived, isTrue);
+    expect(card, findsNothing);
+
+    await tester.tap(find.text('Archive').first);
+    await tester.pumpAndSettle();
+    expect(card, findsOneWidget);
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Restore idea'));
+    await tester.pumpAndSettle();
+    expect(controller.ideas.single.archived, isFalse);
+    await tester.tap(find.text('Current'));
+    await tester.pumpAndSettle();
+    expect(card, findsOneWidget);
     expect(tester.takeException(), isNull);
     controller.dispose();
   });

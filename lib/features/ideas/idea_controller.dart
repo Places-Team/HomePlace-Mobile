@@ -115,6 +115,7 @@ class IdeaController extends ChangeNotifier {
           createdAt: DateTime.now(),
           pinned: false,
           completed: false,
+          archived: false,
         ),
         ...ideas,
       ],
@@ -137,6 +138,16 @@ class IdeaController extends ChangeNotifier {
       ideas: [
         for (final item in ideas)
           if (item.id == idea.id) item.copyWith(completed: completed) else item,
+      ],
+      customCategories: collection.customCategories,
+    ),
+  );
+
+  Future<bool> setArchived(HomeIdea idea, bool archived) => _save(
+    IdeaCollection(
+      ideas: [
+        for (final item in ideas)
+          if (item.id == idea.id) item.copyWith(archived: archived) else item,
       ],
       customCategories: collection.customCategories,
     ),

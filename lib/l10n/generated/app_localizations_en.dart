@@ -1207,6 +1207,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ideasCompleted => 'Completed';
 
   @override
+  String get ideasActive => 'Current';
+
+  @override
+  String get ideasArchive => 'Archive';
+
+  @override
+  String get ideasArchiveAction => 'Archive idea';
+
+  @override
+  String get ideasRestore => 'Restore idea';
+
+  @override
+  String get ideasArchiveEmpty => 'No archived ideas yet.';
+
+  @override
   String get ideasDuplicate => 'Duplicate';
 
   @override

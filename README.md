@@ -15,7 +15,7 @@ the server-backed reminder editor. Ideas use the account-scoped
 `/api/link/ideas` API when the paired device has `ideas.manage`. Older
 pairings keep their secure device-local ideas until access is granted.
 The user can then confirm an idempotent import; phone copies remain intact.
-Synced ideas show and edit Desktop notes, pinning, and completion. Advanced
+Synced ideas show and edit Desktop notes, pinning, completion, and archive. Advanced
 controls are unavailable for device-local ideas until account access is granted.
 Android launcher shortcuts can open Ideas and Transfers after the normal
 connection flow; neither shortcut bypasses confirmation.

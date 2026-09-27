@@ -16,6 +16,7 @@ final class HomeIdea {
     this.note = '',
     this.pinned = false,
     this.completed = false,
+    this.archived = false,
   });
 
   final String id;
@@ -25,6 +26,7 @@ final class HomeIdea {
   final String note;
   final bool pinned;
   final bool completed;
+  final bool archived;
 
   HomeIdea copyWith({
     String? id,
@@ -34,6 +36,7 @@ final class HomeIdea {
     String? note,
     bool? pinned,
     bool? completed,
+    bool? archived,
   }) => HomeIdea(
     id: id ?? this.id,
     text: text ?? this.text,
@@ -42,6 +45,7 @@ final class HomeIdea {
     note: note ?? this.note,
     pinned: pinned ?? this.pinned,
     completed: completed ?? this.completed,
+    archived: archived ?? this.archived,
   );
 
   Map<String, Object?> toJson() => {
@@ -52,6 +56,7 @@ final class HomeIdea {
     'note': note,
     'pinned': pinned,
     'completed': completed,
+    'archived': archived,
   };
 
   static HomeIdea? fromJson(Object? value) {
@@ -62,6 +67,7 @@ final class HomeIdea {
     final note = value['note'] ?? '';
     final pinned = value['pinned'] ?? false;
     final completed = value['completed'] ?? false;
+    final archived = value['archived'] ?? false;
     final createdAt = DateTime.tryParse(value['createdAt']?.toString() ?? '');
     if (id is! String ||
         id.isEmpty ||
@@ -75,6 +81,7 @@ final class HomeIdea {
         note.length > 2000 ||
         pinned is! bool ||
         completed is! bool ||
+        archived is! bool ||
         createdAt == null) {
       return null;
     }
@@ -86,6 +93,7 @@ final class HomeIdea {
       note: note,
       pinned: pinned,
       completed: completed,
+      archived: archived,
     );
   }
 }

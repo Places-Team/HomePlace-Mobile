@@ -44,58 +44,65 @@ final class ServerIdeaStore implements IdeaStore {
     final session = await _session();
     final categories = <String, String>{};
     final ideas = <HomeIdea>[];
-    final seenCursors = <String>{};
-    String? cursor;
-    do {
-      final page = _value(await gateway.page(session, cursor: cursor));
-      final rawCategories = page['categories'];
-      final rawIdeas = page['ideas'];
-      if (rawCategories is! List || rawIdeas is! List) {
-        throw const FormatException('Invalid HomePlace ideas response.');
-      }
-      for (final raw in rawCategories) {
-        if (raw is! Map || raw['id'] is! String || raw['name'] is! String) {
-          throw const FormatException('Invalid HomePlace idea category.');
-        }
-        categories[_keyForName(raw['name'] as String)] = raw['id'] as String;
-      }
-      for (final raw in rawIdeas) {
-        if (raw is! Map ||
-            raw['id'] is! String ||
-            raw['title'] is! String ||
-            raw['categoryId'] is! String) {
-          throw const FormatException('Invalid HomePlace idea.');
-        }
-        final createdAt = DateTime.tryParse(raw['createdAt']?.toString() ?? '');
-        if (createdAt == null) {
-          throw const FormatException('Invalid HomePlace idea date.');
-        }
-        if (raw['note'] is! String ||
-            (raw['note'] as String).length > 2000 ||
-            raw['pinned'] is! bool) {
-          throw const FormatException('Invalid HomePlace idea details.');
-        }
-        final category = categories.entries
-            .where((entry) => entry.value == raw['categoryId'])
-            .map((entry) => entry.key)
-            .firstOrNull;
-        ideas.add(
-          HomeIdea(
-            id: raw['id'] as String,
-            text: raw['title'] as String,
-            category: category ?? 'inbox',
-            createdAt: createdAt,
-            note: raw['note'] as String,
-            pinned: raw['pinned'] as bool,
-            completed: raw['completedAt'] != null,
-          ),
+    for (final archived in [false, true]) {
+      final seenCursors = <String>{};
+      String? cursor;
+      do {
+        final page = _value(
+          await gateway.page(session, cursor: cursor, archived: archived),
         );
-      }
-      cursor = page['nextCursor'] as String?;
-      if (cursor != null && !seenCursors.add(cursor)) {
-        throw const FormatException('Repeated HomePlace ideas cursor.');
-      }
-    } while (cursor != null);
+        final rawCategories = page['categories'];
+        final rawIdeas = page['ideas'];
+        if (rawCategories is! List || rawIdeas is! List) {
+          throw const FormatException('Invalid HomePlace ideas response.');
+        }
+        for (final raw in rawCategories) {
+          if (raw is! Map || raw['id'] is! String || raw['name'] is! String) {
+            throw const FormatException('Invalid HomePlace idea category.');
+          }
+          categories[_keyForName(raw['name'] as String)] = raw['id'] as String;
+        }
+        for (final raw in rawIdeas) {
+          if (raw is! Map ||
+              raw['id'] is! String ||
+              raw['title'] is! String ||
+              raw['categoryId'] is! String) {
+            throw const FormatException('Invalid HomePlace idea.');
+          }
+          final createdAt = DateTime.tryParse(
+            raw['createdAt']?.toString() ?? '',
+          );
+          if (createdAt == null) {
+            throw const FormatException('Invalid HomePlace idea date.');
+          }
+          if (raw['note'] is! String ||
+              (raw['note'] as String).length > 2000 ||
+              raw['pinned'] is! bool) {
+            throw const FormatException('Invalid HomePlace idea details.');
+          }
+          final category = categories.entries
+              .where((entry) => entry.value == raw['categoryId'])
+              .map((entry) => entry.key)
+              .firstOrNull;
+          ideas.add(
+            HomeIdea(
+              id: raw['id'] as String,
+              text: raw['title'] as String,
+              category: category ?? 'inbox',
+              createdAt: createdAt,
+              note: raw['note'] as String,
+              pinned: raw['pinned'] as bool,
+              completed: raw['completedAt'] != null,
+              archived: archived,
+            ),
+          );
+        }
+        cursor = page['nextCursor'] as String?;
+        if (cursor != null && !seenCursors.add(cursor)) {
+          throw const FormatException('Repeated HomePlace ideas cursor.');
+        }
+      } while (cursor != null);
+    }
 
     _categoryIds
       ..clear()
@@ -156,7 +163,8 @@ final class ServerIdeaStore implements IdeaStore {
           old.category != idea.category ||
           old.note != idea.note ||
           old.pinned != idea.pinned ||
-          old.completed != idea.completed) {
+          old.completed != idea.completed ||
+          old.archived != idea.archived) {
         _needsRefresh = true;
         _value(
           await gateway.command(session, {
@@ -168,6 +176,7 @@ final class ServerIdeaStore implements IdeaStore {
             if (old.note != idea.note) 'note': idea.note,
             if (old.pinned != idea.pinned) 'pinned': idea.pinned,
             if (old.completed != idea.completed) 'completed': idea.completed,
+            if (old.archived != idea.archived) 'archived': idea.archived,
           }),
         );
       }

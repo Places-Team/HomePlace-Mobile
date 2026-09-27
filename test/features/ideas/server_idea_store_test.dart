@@ -31,9 +31,10 @@ final class _Gateway implements IdeaGateway {
   Future<LinkResult<Map<String, dynamic>>> page(
     AuthenticatedLinkSession session, {
     String? cursor,
+    bool archived = false,
   }) async => LinkSuccess({
     'categories': categories,
-    'ideas': ideas,
+    'ideas': ideas.where((idea) => idea['archived'] == archived).toList(),
     'nextCursor': null,
   });
 
@@ -58,6 +59,7 @@ final class _Gateway implements IdeaGateway {
           'title': body['title'],
           'note': body['note'] ?? '',
           'pinned': false,
+          'archived': false,
           'completedAt': null,
           'categoryId': body['categoryId'],
           'createdAt': DateTime.utc(2026, 9, 27).toIso8601String(),
@@ -72,6 +74,7 @@ final class _Gateway implements IdeaGateway {
           idea['categoryId'] = body['categoryId'];
         }
         if (body.containsKey('pinned')) idea['pinned'] = body['pinned'];
+        if (body.containsKey('archived')) idea['archived'] = body['archived'];
         if (body.containsKey('completed')) {
           idea['completedAt'] = body['completed'] == true
               ? DateTime.utc(2026, 9, 27).toIso8601String()
@@ -92,6 +95,7 @@ final class _UnavailableGateway implements IdeaGateway {
   Future<LinkResult<Map<String, dynamic>>> page(
     AuthenticatedLinkSession session, {
     String? cursor,
+    bool archived = false,
   }) async =>
       const LinkFailure(LinkFailureKind.invalidResponse, 'Not deployed');
 
@@ -174,6 +178,7 @@ void main() {
         'title': 'Plan weekend',
         'note': 'Take the train',
         'pinned': true,
+        'archived': false,
         'completedAt': DateTime.utc(2026, 9, 26).toIso8601String(),
         'categoryId': 'inbox-id',
         'createdAt': DateTime.utc(2026, 9, 25).toIso8601String(),
@@ -208,6 +213,18 @@ void main() {
         'completed': false,
       });
       expect(store.current.ideas.single.note, 'Walk instead');
+
+      await store.write(
+        IdeaCollection(
+          ideas: [store.current.ideas.single.copyWith(archived: true)],
+        ),
+      );
+      expect(gateway.commands.last, {
+        'action': 'updateIdea',
+        'id': 'desktop-idea',
+        'archived': true,
+      });
+      expect(store.current.ideas.single.archived, isTrue);
     },
   );
 

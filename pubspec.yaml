@@ -1,7 +1,7 @@
 name: homeplace
 description: Flutter clients for connecting to a self-hosted HomePlace server.
 publish_to: 'none'
-version: 0.5.11+27
+version: 0.5.12+28
 
 environment:
   sdk: ^3.13.3

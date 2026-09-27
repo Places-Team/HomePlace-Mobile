@@ -2232,6 +2232,36 @@ abstract class AppLocalizations {
   /// **'Completed'**
   String get ideasCompleted;
 
+  /// No description provided for @ideasActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get ideasActive;
+
+  /// No description provided for @ideasArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get ideasArchive;
+
+  /// No description provided for @ideasArchiveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive idea'**
+  String get ideasArchiveAction;
+
+  /// No description provided for @ideasRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore idea'**
+  String get ideasRestore;
+
+  /// No description provided for @ideasArchiveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived ideas yet.'**
+  String get ideasArchiveEmpty;
+
   /// No description provided for @ideasDuplicate.
   ///
   /// In en, this message translates to:
