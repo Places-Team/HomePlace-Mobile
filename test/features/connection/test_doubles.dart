@@ -136,6 +136,7 @@ final class FakeNotificationService implements NotificationService {
   FakeNotificationService({this.permissionGranted = true});
   bool permissionGranted;
   final List<String> delivered = [];
+  final List<String> urgentDelivered = [];
   final List<String> incomingOffers = [];
   final List<IncomingNotificationAction> pendingActions = [];
   final List<IncomingNotificationAction> restoredActions = [];
@@ -165,8 +166,14 @@ final class FakeNotificationService implements NotificationService {
   Future<bool> requestPermission() async => permissionGranted;
 
   @override
-  Future<void> show(String id, String title, String body) async {
+  Future<void> show(
+    String id,
+    String title,
+    String body, {
+    bool urgent = false,
+  }) async {
     delivered.add('$title:$body');
+    if (urgent) urgentDelivered.add(id);
   }
 
   @override

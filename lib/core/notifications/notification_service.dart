@@ -26,7 +26,12 @@ abstract interface class NotificationService {
   Future<void> restoreIncomingActions(List<IncomingNotificationAction> actions);
   Future<bool> requestPermission();
   Future<bool> isAvailable();
-  Future<void> show(String id, String title, String body);
+  Future<void> show(
+    String id,
+    String title,
+    String body, {
+    bool urgent = false,
+  });
   Future<void> showIncomingOffer(
     String id,
     String serverId,
@@ -196,21 +201,28 @@ final class LocalNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> show(String id, String title, String body) => _plugin.show(
+  Future<void> show(
+    String id,
+    String title,
+    String body, {
+    bool urgent = false,
+  }) => _plugin.show(
     id.hashCode & 0x7fffffff,
     title,
     body,
-    const NotificationDetails(
+    NotificationDetails(
       android: AndroidNotificationDetails(
-        'homeplace_received',
-        'Received from HomePlace',
-        channelDescription: 'Notifications delivered by your HomePlace server',
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
+        urgent ? 'homeplace_alerts' : 'homeplace_received',
+        urgent ? 'HomePlace alerts' : 'Received from HomePlace',
+        channelDescription: urgent
+            ? 'Urgent incidents from your HomePlace server'
+            : 'Notifications delivered by your HomePlace server',
+        importance: urgent ? Importance.high : Importance.defaultImportance,
+        priority: urgent ? Priority.high : Priority.defaultPriority,
         visibility: NotificationVisibility.private,
         category: AndroidNotificationCategory.message,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     ),
   );
 

@@ -935,7 +935,12 @@ final class ConnectionController extends ChangeNotifier {
             body.length > 2000) {
           continue;
         }
-        await _notifications.show(event.id, title, body);
+        await _notifications.show(
+          event.id,
+          title,
+          body,
+          urgent: event.payload['urgent'] == true,
+        );
         await _recordNotification(event.id, title, body);
         acknowledged.add(event.id);
         lastNotification = '$title — $body';

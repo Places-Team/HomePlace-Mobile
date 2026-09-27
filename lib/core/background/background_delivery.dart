@@ -372,7 +372,12 @@ final class BackgroundHeartbeatRunner {
           body.length > 2000) {
         continue;
       }
-      await notifications.show(event.id, title, body);
+      await notifications.show(
+        event.id,
+        title,
+        body,
+        urgent: event.payload['urgent'] == true,
+      );
       try {
         await appendNotificationHistory(
           notificationHistoryStore,

@@ -31,7 +31,11 @@ void main() {
               DeviceEvent(
                 id: 'notification-1',
                 type: 'notification.deliver',
-                payload: {'title': 'HomePlace', 'body': 'Test delivered'},
+                payload: {
+                  'title': 'HomePlace',
+                  'body': 'Test delivered',
+                  'urgent': true,
+                },
               ),
               DeviceEvent(
                 id: 'clipboard-1',
@@ -65,6 +69,7 @@ void main() {
 
     expect(successfulProfiles, 1);
     expect(notifications.delivered, ['HomePlace:Test delivered']);
+    expect(notifications.urgentDelivered, ['notification-1']);
     expect(link.heartbeatAcknowledgements, [
       <String>[],
       ['notification-1'],
