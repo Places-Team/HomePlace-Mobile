@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_ideas">Идеи</string>
+    <string name="shortcut_ideas_long">Открыть идеи HomePlace</string>
+    <string name="shortcut_transfers">Передачи</string>
+    <string name="shortcut_transfers_long">Открыть передачи HomePlace</string>
+</resources>

@@ -17,11 +17,11 @@ Home first. Returning from a detail screen preserves the selected tab.
 | Place | Primary question | Belongs here | Does not belong here |
 | --- | --- | --- | --- |
 | Home | What needs doing around my home? | Plant care, the nearest home task, entry to the plan | Telegram connection, clipboard relay, container counts, raw diagnostics |
-| Plan | What is scheduled? | Calendar, reminders, completed/overdue work, plant watering schedule | Server configuration |
+| Plan | What needs a date or a place to start? | Calendar, reminders, plant watering, private ideas | Server configuration |
 | Requests | What did I ask HomePlace to do? | Existing media requests and their status | Home chores or file inbox |
 | Transfers | What am I sending or receiving? | Named devices, explicit share confirmation, files, links, text, Android clipboard, transfer history | Monitoring graphs |
 | Monitor | Is HomePlace healthy? | Service/container state, health checks, recent events, drill-down diagnostics | Household chores |
-| All sections | Where is a less-frequent tool? | Devices, notification history, Telegram, media, smart home preview, automations preview, security, settings | A second competing home dashboard |
+| All sections | Where is a less-frequent tool? | Ideas, devices, notification history, Telegram, media, smart home preview, automations preview, security, settings | A second competing home dashboard |
 
 ## Screen sketches
 
@@ -62,11 +62,16 @@ Calendar mode → month selector → chosen day → day's calendar events
 Reminders mode → past due first → upcoming → expandable completed history
 Create / edit → date, time, repeat interval, save / delete
 Plants mode → watering timeline → plant details or mark watered
+Ideas mode → quick capture → category filter → edit / duplicate / delete
+Idea action → prefill the server-backed reminder editor without deleting the idea
 ```
 
 Calendar and reminders are server-backed and permission-gated. Plant watering
-is local. The modes keep those sources and storage boundaries clear. Flexible reminder recurrence must use the
-server's supported format; the UI must not promise schedules it cannot save.
+and ideas are local. Ideas use platform-secure storage scoped to the paired
+server and device; they do not sync with Desktop or the server yet. The modes
+keep those sources and storage boundaries clear. Flexible reminder recurrence
+must use the server's supported format; the UI must not promise schedules it
+cannot save.
 
 ### Requests
 
@@ -128,6 +133,7 @@ troubleshooting. Destructive or cross-device actions need explicit confirmation.
 | --- | --- | --- |
 | Connection and pairing | Implemented for supported Link v1 servers | Recheck recovery copy and real TLS/identity failures |
 | Plants | Local cards, photos, interval, watering and undo | Opt-in local watering alerts with native scheduling and permission checks |
+| Ideas | Private local capture, categories, editing and reminder handoff | Connect to a canonical, account-scoped server API when it exists; plan conflict handling and migration before enabling sync |
 | Calendar and reminders | Server-backed viewing and editing | Refine day agenda and recurrence validation against current server |
 | Requests | Existing server-backed media actions | Improve per-request status and actionable failures |
 | Files, links, text | Recipient selection, confirmation, receiving and save flow | Validate large-file and background paths on real devices |
@@ -138,6 +144,9 @@ troubleshooting. Destructive or cross-device actions need explicit confirmation.
 | iOS platform behavior | Native build and supported Link behavior | Verify parity on a physical iPhone before advertising more capabilities |
 
 ## Design rules
+
+On Android, launcher shortcuts open Ideas and Transfers after the saved
+connection has been restored; they do not bypass pairing or share confirmation.
 
 The Home screen is calm and task-first: one visual hero for plant care, one
 nearest-action block, generous breathing room, and no row of infrastructure

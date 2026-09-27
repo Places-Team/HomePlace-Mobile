@@ -28,12 +28,15 @@ import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private var shareChannel: MethodChannel? = null
+    private var navigationChannel: MethodChannel? = null
+    private var pendingShortcutDestination: String? = null
     private val pendingShares = ArrayDeque<Map<String, Any>>()
     private var shareReceiverReady = false
     private val shareExecutor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingShortcutDestination = shortcutDestination(intent)
         preferHighestRefreshRate()
     }
 
@@ -56,6 +59,17 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        navigationChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NAVIGATION_CHANNEL).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "takePendingDestination" -> {
+                        result.success(pendingShortcutDestination)
+                        pendingShortcutDestination = null
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, IDENTITY_CHANNEL).setMethodCallHandler { call, result ->
             if (call.method != "publicKey") {
                 result.notImplemented()
@@ -122,7 +136,17 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        shortcutDestination(intent)?.let { destination ->
+            pendingShortcutDestination = destination
+            navigationChannel?.invokeMethod("shortcutOpened", null)
+        }
         captureShareIntent(intent)
+    }
+
+    private fun shortcutDestination(intent: Intent?): String? = when (intent?.action) {
+        "com.homeplace.mobile.OPEN_IDEAS" -> "ideas"
+        "com.homeplace.mobile.OPEN_TRANSFERS" -> "transfers"
+        else -> null
     }
 
     private fun captureShareIntent(incoming: Intent?) {
@@ -309,6 +333,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         shareReceiverReady = false
+        navigationChannel = null
         shareExecutor.shutdownNow()
         super.onDestroy()
     }
@@ -338,6 +363,7 @@ class MainActivity : FlutterActivity() {
         private const val IDENTITY_CHANNEL = "com.homeplace.mobile/identity"
         private const val CLIPBOARD_CHANNEL = "com.homeplace.mobile/clipboard"
         private const val SHARE_CHANNEL = "com.homeplace.mobile/share"
+        private const val NAVIGATION_CHANNEL = "com.homeplace.mobile/navigation"
         private const val MAX_TEXT_LENGTH = 8000
         private const val MAX_URL_LENGTH = 4096
         private const val MAX_SHARED_ITEMS = 10

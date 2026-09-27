@@ -113,7 +113,7 @@ void main() {
     await tester.tap(find.byTooltip('Plan'));
     await tester.pumpAndSettle();
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Reminders'));
+    await tester.tap(find.byKey(const ValueKey('plan-mode-reminders')));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Add reminder'), findsOneWidget);
     final planScroll = find.descendant(

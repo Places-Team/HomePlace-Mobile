@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/generated/app_localizations.dart';
@@ -12,6 +13,9 @@ import '../../core/storage/transfer_activity_store.dart';
 import '../../link/mobile_models.dart';
 import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
+import '../ideas/idea_controller.dart';
+import '../ideas/idea_store.dart';
+import '../ideas/ideas_view.dart';
 import 'home_controller.dart';
 import 'home_modules.dart';
 import '../plants/plant_controller.dart';
@@ -46,6 +50,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late final PlantController? plants = widget.connection.profile == null
       ? null
       : PlantController(PlantStore(widget.connection.profile!));
+  late final IdeaController? ideas = widget.connection.profile == null
+      ? null
+      : IdeaController(SecureIdeaStore(widget.connection.profile!));
+  final ValueNotifier<_PlanSection> planSection = ValueNotifier(
+    _PlanSection.calendar,
+  );
+  static const _shortcutChannel = MethodChannel(
+    'com.homeplace.mobile/navigation',
+  );
+  String? _pendingShortcut;
   late final PageController pages;
   final Set<String> _automaticIncoming = {};
   bool _sendingShareBatch = false;
@@ -62,14 +76,56 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     home.bindClipboardReader(widget.connection.readClipboardTextForAutoRelay);
     if (ownsHome) home.initialize();
     plants?.load();
+    ideas?.load();
+    if (Platform.isAndroid) {
+      _shortcutChannel.setMethodCallHandler((call) async {
+        if (call.method == 'shortcutOpened') await _takeShortcut();
+      });
+      unawaited(_takeShortcut());
+    }
+  }
+
+  Future<void> _takeShortcut() async {
+    try {
+      final destination = await _shortcutChannel.invokeMethod<String>(
+        'takePendingDestination',
+      );
+      if (mounted && destination != null) {
+        setState(() => _pendingShortcut = destination);
+      }
+    } on PlatformException {
+      // A launcher shortcut must never block the regular connection flow.
+    }
+  }
+
+  void _routeShortcut() {
+    if (_pendingShortcut == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !pages.hasClients) return;
+      final destination = _pendingShortcut;
+      _pendingShortcut = null;
+      if (destination == 'ideas' && ideas != null) {
+        planSection.value = _PlanSection.ideas;
+        setState(() => tab = 1);
+        pages.jumpToPage(1);
+      } else if (destination == 'transfers') {
+        setState(() => tab = 3);
+        pages.jumpToPage(3);
+      }
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (Platform.isAndroid) {
+      _shortcutChannel.setMethodCallHandler(null);
+    }
     pages.dispose();
     if (ownsHome) home.dispose();
     plants?.dispose();
+    ideas?.dispose();
+    planSection.dispose();
     super.dispose();
   }
 
@@ -117,6 +173,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         );
       }
       final overview = home.overview!;
+      _routeShortcut();
       _routeOutgoingShare(overview, outgoing);
       return Scaffold(
         extendBody: true,
@@ -209,6 +266,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           overview: overview,
                           home: home,
                           plants: plants,
+                          ideas: ideas,
+                          selection: planSection,
                         ),
                         _RequestsPage(overview: overview, home: home),
                         _TransfersPage(
@@ -284,6 +343,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             overview: overview,
             connection: widget.connection,
             home: home,
+            onOpenIdeas: () {
+              planSection.value = _PlanSection.ideas;
+              setState(() => tab = 1);
+              if (pages.hasClients) pages.jumpToPage(1);
+            },
             onOpenTab: (value) {
               setState(() => tab = value);
               if (pages.hasClients) pages.jumpToPage(value);
@@ -1509,17 +1573,21 @@ class _ClipboardCard extends StatelessWidget {
   }
 }
 
-enum _PlanSection { calendar, reminders, plants }
+enum _PlanSection { calendar, reminders, plants, ideas }
 
 class _PlanPage extends StatefulWidget {
   const _PlanPage({
     required this.overview,
     required this.home,
     required this.plants,
+    required this.ideas,
+    required this.selection,
   });
   final MobileOverview overview;
   final HomeController home;
   final PlantController? plants;
+  final IdeaController? ideas;
+  final ValueNotifier<_PlanSection> selection;
 
   @override
   State<_PlanPage> createState() => _PlanPageState();
@@ -1528,7 +1596,8 @@ class _PlanPage extends StatefulWidget {
 class _PlanPageState extends State<_PlanPage> {
   late DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
   late DateTime selected = _day(DateTime.now());
-  _PlanSection section = _PlanSection.calendar;
+  late _PlanSection section = widget.selection.value;
+  final _modeKeys = {for (final mode in _PlanSection.values) mode: GlobalKey()};
 
   MobileOverview get overview => widget.overview;
   HomeController get home => widget.home;
@@ -1536,7 +1605,36 @@ class _PlanPageState extends State<_PlanPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMonth());
+    widget.selection.addListener(_onSelectionChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMonth();
+      _ensureModeVisible();
+    });
+  }
+
+  void _onSelectionChanged() {
+    if (!mounted) return;
+    setState(() => section = widget.selection.value);
+    _ensureModeVisible();
+  }
+
+  void _ensureModeVisible() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final modeContext = _modeKeys[section]?.currentContext;
+      if (!mounted || modeContext == null) return;
+      Scrollable.ensureVisible(
+        modeContext,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.selection.removeListener(_onSelectionChanged);
+    super.dispose();
   }
 
   void _loadMonth() {
@@ -1587,6 +1685,8 @@ class _PlanPageState extends State<_PlanPage> {
       ),
       if (widget.plants != null)
         (_PlanSection.plants, l10n.plantsTitle, Icons.spa_outlined),
+      if (widget.ideas != null)
+        (_PlanSection.ideas, l10n.ideasTitle, Icons.lightbulb_outline_rounded),
     ];
     return _ScrollPage(
       onRefresh: _refresh,
@@ -1601,12 +1701,44 @@ class _PlanPageState extends State<_PlanPage> {
           child: Row(
             children: [
               for (final item in sections) ...[
-                ChoiceChip(
-                  label: Text(item.$2),
-                  avatar: Icon(item.$3, size: 18),
+                Semantics(
                   selected: section == item.$1,
-                  showCheckmark: false,
-                  onSelected: (_) => setState(() => section = item.$1),
+                  button: true,
+                  child: InkWell(
+                    key: _modeKeys[item.$1],
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => widget.selection.value = item.$1,
+                    child: AnimatedContainer(
+                      key: ValueKey('plan-mode-${item.$1.name}'),
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
+                      decoration: BoxDecoration(
+                        color: section == item.$1
+                            ? Theme.of(context).colorScheme.primary
+                                  .withValues(alpha: .17)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(item.$3, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            item.$2,
+                            style: TextStyle(
+                              fontWeight: section == item.$1
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -1660,6 +1792,14 @@ class _PlanPageState extends State<_PlanPage> {
         ],
         if (section == _PlanSection.plants && widget.plants != null)
           PlantsPlanSection(controller: widget.plants!),
+        if (section == _PlanSection.ideas && widget.ideas != null)
+          IdeasWorkspace(
+            controller: widget.ideas!,
+            canMakeReminder: overview.permissions.contains('reminder.manage'),
+            clipboardRelayEnabled: home.autoClipboardEnabled,
+            onMakeReminder: (text) =>
+                _showReminderEditor(context, home, null, draftTitle: text),
+          ),
         if (section == _PlanSection.reminders) ...[
           Row(
             children: [
@@ -2026,6 +2166,8 @@ class _ReminderCard extends StatelessWidget {
                     children: [
                       Text(
                         reminder.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           decoration: reminder.done
@@ -3457,10 +3599,19 @@ Future<void> _editReminder(
 Future<void> _showReminderEditor(
   BuildContext context,
   HomeController home,
-  MobileReminder? reminder,
-) async {
+  MobileReminder? reminder, {
+  String? draftTitle,
+}) async {
   final l10n = AppLocalizations.of(context);
-  final title = TextEditingController(text: reminder?.title ?? '');
+  final title = TextEditingController(
+    text:
+        reminder?.title ??
+        (draftTitle == null
+            ? ''
+            : draftTitle.length > 200
+            ? draftTitle.substring(0, 200)
+            : draftTitle),
+  );
   var at =
       reminder?.at.toLocal() ?? DateTime.now().add(const Duration(hours: 1));
   var repeat = reminder?.repeat ?? 'none';

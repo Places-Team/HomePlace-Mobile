@@ -1065,7 +1065,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarModuleBody =>
-      'Calendar, reminders and plant care in one place.';
+      'Calendar, reminders, plants and ideas in one place.';
 
   @override
   String get mediaModuleBody =>
@@ -1092,4 +1092,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get plannedServerApi => 'Waiting for a compatible server API';
+
+  @override
+  String get ideasTitle => 'Ideas';
+
+  @override
+  String get ideasSubtitle => 'Catch a thought before it slips away.';
+
+  @override
+  String get ideasLocalOnly =>
+      'Private to this phone and connection. Ideas do not sync with Desktop yet.';
+
+  @override
+  String get ideasModuleBody =>
+      'Private quick capture, categories and reminder handoff.';
+
+  @override
+  String get ideasCaptureHint => 'An idea, a link, or the next step…';
+
+  @override
+  String get ideasAdd => 'Save idea';
+
+  @override
+  String get ideasAll => 'All';
+
+  @override
+  String get ideasEmptyTitle => 'A clear page';
+
+  @override
+  String get ideasEmptyBody =>
+      'Save your first thought here. Turn it into a reminder when it needs a date.';
+
+  @override
+  String get ideasInbox => 'Inbox';
+
+  @override
+  String get ideasHome => 'Home';
+
+  @override
+  String get ideasWork => 'Work';
+
+  @override
+  String get ideasMedia => 'Media';
+
+  @override
+  String get ideasLater => 'Later';
+
+  @override
+  String get ideasCategory => 'Category';
+
+  @override
+  String get ideasNewCategory => 'New category';
+
+  @override
+  String get ideasCategoryName => 'Category name';
+
+  @override
+  String get ideasCategoryExists => 'Use a different category name.';
+
+  @override
+  String get ideasEdit => 'Edit idea';
+
+  @override
+  String get ideasDuplicate => 'Duplicate';
+
+  @override
+  String get ideasDelete => 'Delete idea';
+
+  @override
+  String get ideasDeleteConfirm => 'Delete this idea from this phone?';
+
+  @override
+  String get ideasToReminder => 'Make reminder';
+
+  @override
+  String get ideasCopy => 'Copy text';
+
+  @override
+  String get ideasClipboardWarning =>
+      'Automatic clipboard sharing is on. Copying this idea may send it to your approved devices.';
+
+  @override
+  String get ideasCopyConfirm => 'Copy anyway';
+
+  @override
+  String get ideasSaveError => 'The idea could not be saved. Try again.';
+
+  @override
+  String get ideasLoadError => 'Ideas could not be opened on this device.';
+
+  @override
+  String get ideasSave => 'Save changes';
 }

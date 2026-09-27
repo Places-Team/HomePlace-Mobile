@@ -1977,7 +1977,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarModuleBody.
   ///
   /// In en, this message translates to:
-  /// **'Calendar, reminders and plant care in one place.'**
+  /// **'Calendar, reminders, plants and ideas in one place.'**
   String get calendarModuleBody;
 
   /// No description provided for @mediaModuleBody.
@@ -2021,6 +2021,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for a compatible server API'**
   String get plannedServerApi;
+
+  /// No description provided for @ideasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas'**
+  String get ideasTitle;
+
+  /// No description provided for @ideasSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch a thought before it slips away.'**
+  String get ideasSubtitle;
+
+  /// No description provided for @ideasLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Private to this phone and connection. Ideas do not sync with Desktop yet.'**
+  String get ideasLocalOnly;
+
+  /// No description provided for @ideasModuleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Private quick capture, categories and reminder handoff.'**
+  String get ideasModuleBody;
+
+  /// No description provided for @ideasCaptureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An idea, a link, or the next step…'**
+  String get ideasCaptureHint;
+
+  /// No description provided for @ideasAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Save idea'**
+  String get ideasAdd;
+
+  /// No description provided for @ideasAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get ideasAll;
+
+  /// No description provided for @ideasEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A clear page'**
+  String get ideasEmptyTitle;
+
+  /// No description provided for @ideasEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your first thought here. Turn it into a reminder when it needs a date.'**
+  String get ideasEmptyBody;
+
+  /// No description provided for @ideasInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get ideasInbox;
+
+  /// No description provided for @ideasHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get ideasHome;
+
+  /// No description provided for @ideasWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get ideasWork;
+
+  /// No description provided for @ideasMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get ideasMedia;
+
+  /// No description provided for @ideasLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get ideasLater;
+
+  /// No description provided for @ideasCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get ideasCategory;
+
+  /// No description provided for @ideasNewCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'New category'**
+  String get ideasNewCategory;
+
+  /// No description provided for @ideasCategoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Category name'**
+  String get ideasCategoryName;
+
+  /// No description provided for @ideasCategoryExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different category name.'**
+  String get ideasCategoryExists;
+
+  /// No description provided for @ideasEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit idea'**
+  String get ideasEdit;
+
+  /// No description provided for @ideasDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get ideasDuplicate;
+
+  /// No description provided for @ideasDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete idea'**
+  String get ideasDelete;
+
+  /// No description provided for @ideasDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this idea from this phone?'**
+  String get ideasDeleteConfirm;
+
+  /// No description provided for @ideasToReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Make reminder'**
+  String get ideasToReminder;
+
+  /// No description provided for @ideasCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get ideasCopy;
+
+  /// No description provided for @ideasClipboardWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic clipboard sharing is on. Copying this idea may send it to your approved devices.'**
+  String get ideasClipboardWarning;
+
+  /// No description provided for @ideasCopyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy anyway'**
+  String get ideasCopyConfirm;
+
+  /// No description provided for @ideasSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'The idea could not be saved. Try again.'**
+  String get ideasSaveError;
+
+  /// No description provided for @ideasLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas could not be opened on this device.'**
+  String get ideasLoadError;
+
+  /// No description provided for @ideasSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get ideasSave;
 }
 
 class _AppLocalizationsDelegate

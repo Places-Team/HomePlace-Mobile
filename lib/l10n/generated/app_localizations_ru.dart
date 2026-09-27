@@ -1066,7 +1066,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get calendarModuleBody =>
-      'Календарь, напоминания и уход за растениями в одном месте.';
+      'Календарь, напоминания, растения и идеи в одном месте.';
 
   @override
   String get mediaModuleBody =>
@@ -1093,4 +1093,95 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get plannedServerApi => 'Ожидает совместимого API сервера';
+
+  @override
+  String get ideasTitle => 'Идеи';
+
+  @override
+  String get ideasSubtitle => 'Сохраните мысль, пока она не потерялась.';
+
+  @override
+  String get ideasLocalOnly =>
+      'Только на этом телефоне и для текущего подключения. С Desktop пока не синхронизируется.';
+
+  @override
+  String get ideasModuleBody =>
+      'Приватные заметки, категории и превращение в напоминания.';
+
+  @override
+  String get ideasCaptureHint => 'Идея, ссылка или следующий шаг…';
+
+  @override
+  String get ideasAdd => 'Сохранить идею';
+
+  @override
+  String get ideasAll => 'Все';
+
+  @override
+  String get ideasEmptyTitle => 'Чистый лист';
+
+  @override
+  String get ideasEmptyBody =>
+      'Запишите первую мысль. Когда появится срок, превратите её в напоминание.';
+
+  @override
+  String get ideasInbox => 'Входящие';
+
+  @override
+  String get ideasHome => 'Дом';
+
+  @override
+  String get ideasWork => 'Работа';
+
+  @override
+  String get ideasMedia => 'Медиа';
+
+  @override
+  String get ideasLater => 'Потом';
+
+  @override
+  String get ideasCategory => 'Категория';
+
+  @override
+  String get ideasNewCategory => 'Новая категория';
+
+  @override
+  String get ideasCategoryName => 'Название категории';
+
+  @override
+  String get ideasCategoryExists => 'Выберите другое название категории.';
+
+  @override
+  String get ideasEdit => 'Изменить идею';
+
+  @override
+  String get ideasDuplicate => 'Дублировать';
+
+  @override
+  String get ideasDelete => 'Удалить идею';
+
+  @override
+  String get ideasDeleteConfirm => 'Удалить эту идею с телефона?';
+
+  @override
+  String get ideasToReminder => 'Сделать напоминанием';
+
+  @override
+  String get ideasCopy => 'Копировать текст';
+
+  @override
+  String get ideasClipboardWarning =>
+      'Автоматическая передача буфера включена. Скопированный текст может отправиться на ваши подтверждённые устройства.';
+
+  @override
+  String get ideasCopyConfirm => 'Всё равно копировать';
+
+  @override
+  String get ideasSaveError => 'Не удалось сохранить идею. Попробуйте ещё раз.';
+
+  @override
+  String get ideasLoadError => 'Не удалось открыть идеи на этом устройстве.';
+
+  @override
+  String get ideasSave => 'Сохранить изменения';
 }

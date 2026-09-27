@@ -13,6 +13,13 @@ HomePlace Mobile treats server addresses, QR payloads, local networks, certifica
 
 ## Secrets
 
+Ideas are stored in Android Keystore-backed storage or iOS Keychain under a
+server-and-device-scoped key. They are not sent to the server, Desktop, another
+account, or a capability report. Copying an idea is an explicit action; when
+automatic clipboard relay is enabled, the app warns that a copy may be relayed
+to approved devices. Converting an idea to a reminder opens the permission-gated
+reminder editor and never sends the idea merely by viewing it.
+
 Plant names, care notes, watering dates, and optional photos stay in private application storage. The local collection is keyed by both the server ID and paired device ID, so another connection profile cannot display it. Plant data is not transmitted to HomePlace Link or included in capability reports. Deleting a plant also removes its stored photo.
 
 Android identity keys are generated in Android Keystore. iOS identity keys are generated in Keychain. Both platforms send the P-256 public key as Base64-encoded SubjectPublicKeyInfo DER. Device credentials use secure platform storage. Pairing secrets, credentials, private keys, authorization headers, and full sensitive payloads must never enter logs, analytics, diagnostics, or UI errors.

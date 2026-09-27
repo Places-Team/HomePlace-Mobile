@@ -4,6 +4,14 @@ The Flutter application for connecting Android and iOS devices to a self-hosted 
 
 ## Current milestone
 
+Plans now includes an Ideas workspace based on Desktop's quick-capture flow:
+private notes, categories, editing, duplication, deletion, and an explicit
+handoff to the server-backed reminder editor. Ideas are stored in Android
+Keystore-backed storage or iOS Keychain for the current paired profile. They do
+not sync with Desktop or the server until HomePlace defines a compatible,
+account-scoped API. Android launcher shortcuts can open Ideas and Transfers
+after the normal connection flow; neither shortcut bypasses confirmation.
+
 The first Flutter application slice is implemented with Android as the primary validation target. It includes:
 
 - English and Russian onboarding;

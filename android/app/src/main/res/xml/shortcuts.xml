@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="ideas"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_ideas"
+        android:shortcutLongLabel="@string/shortcut_ideas_long">
+        <intent
+            android:action="com.homeplace.mobile.OPEN_IDEAS"
+            android:targetPackage="com.homeplace.mobile"
+            android:targetClass="com.homeplace.mobile.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="transfers"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_transfers"
+        android:shortcutLongLabel="@string/shortcut_transfers_long">
+        <intent
+            android:action="com.homeplace.mobile.OPEN_TRANSFERS"
+            android:targetPackage="com.homeplace.mobile"
+            android:targetClass="com.homeplace.mobile.MainActivity" />
+    </shortcut>
+</shortcuts>

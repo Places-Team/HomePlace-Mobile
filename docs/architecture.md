@@ -49,9 +49,22 @@ Plant cards are a device-local feature. `PlantStore` persists bounded metadata i
 
 Saved profiles restore on startup. A failed connection check enters a retry state that keeps the saved address and credentials. The client still checks `/api/link/info` and the server ID before using credentials. Entering a different address remains an explicit choice.
 
+## Local ideas
+
+The Ideas workspace follows Desktop's quick-capture and category workflow but
+does not claim to synchronize with Desktop. `IdeaController` owns validation and
+editing; `IdeaStore` owns persistence. The current `SecureIdeaStore` stores a
+versioned collection in Android Keystore-backed storage or iOS Keychain, keyed
+by a hash of the paired server and device IDs. A different connection profile
+cannot read the same collection. An idea may prefill the existing server-backed
+reminder editor only after the user chooses that action and has reminder
+permission. When the server defines an account-scoped Ideas API, replace the
+storage implementation behind this boundary with an explicit migration and
+conflict policy; do not assume a Desktop-local record is already server data.
+
 ## Native boundaries
 
-- Android generates a P-256 identity key in Android Keystore. Narrow Kotlin channels perform foreground clipboard access, Share Sheet ingestion, safe URL opening, and confirmed file saving. A registered application-context plugin exposes only protected temporary-file creation and MediaStore saving to headless WorkManager engines. Workers periodically validate each server, deliver notifications, resolve declines, and download only explicitly accepted or server-verified same-account files.
+- Android generates a P-256 identity key in Android Keystore. Narrow Kotlin channels perform foreground clipboard access, Share Sheet ingestion, safe URL opening, and confirmed file saving. A registered application-context plugin exposes only protected temporary-file creation and MediaStore saving to headless WorkManager engines. Workers periodically validate each server, deliver notifications, resolve declines, and download only explicitly accepted or server-verified same-account files. Launcher shortcuts open Ideas or Transfers only after the normal connection flow and grant no additional capability.
 - iOS generates a P-256 identity key in Keychain. Notification, a future Share Extension, and permitted background behavior remain iOS-specific. The current iOS build does not advertise sharing capabilities.
 - Shared code never claims unrestricted background execution, arbitrary app launching, or remote system control. Android clipboard relay is foreground-only and incoming text requires an explicit copy action. iOS does not advertise clipboard relay.
 

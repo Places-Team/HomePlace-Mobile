@@ -12,6 +12,7 @@ const _moduleGold = Color(0xffffc857);
 
 enum _ModuleKind {
   plan,
+  ideas,
   notifications,
   devices,
   clipboard,
@@ -31,6 +32,7 @@ final class HomeModulesPage extends StatelessWidget {
     required this.connection,
     required this.home,
     required this.onOpenTab,
+    this.onOpenIdeas,
     required this.onOpenSettings,
     super.key,
   });
@@ -39,6 +41,7 @@ final class HomeModulesPage extends StatelessWidget {
   final ConnectionController connection;
   final HomeController home;
   final ValueChanged<int> onOpenTab;
+  final VoidCallback? onOpenIdeas;
   final VoidCallback onOpenSettings;
 
   @override
@@ -47,7 +50,7 @@ final class HomeModulesPage extends StatelessWidget {
     final sections = <(String, List<_ModuleKind>)>[
       (
         l10n.everydaySection,
-        const [_ModuleKind.plan, _ModuleKind.notifications],
+        const [_ModuleKind.plan, _ModuleKind.ideas, _ModuleKind.notifications],
       ),
       (
         l10n.sharingSection,
@@ -188,6 +191,11 @@ final class HomeModulesPage extends StatelessWidget {
   }
 
   void _open(BuildContext context, _ModuleKind kind) {
+    if (kind == _ModuleKind.ideas) {
+      Navigator.pop(context);
+      (onOpenIdeas ?? () => onOpenTab(1))();
+      return;
+    }
     final tab = switch (kind) {
       _ModuleKind.plan => 1,
       _ModuleKind.clipboard => 3,
@@ -250,6 +258,13 @@ _ModuleSpec _spec(AppLocalizations l10n, _ModuleKind kind) => switch (kind) {
     body: l10n.calendarModuleBody,
     icon: Icons.event_note_rounded,
     color: _moduleViolet,
+    live: true,
+  ),
+  _ModuleKind.ideas => _ModuleSpec(
+    title: l10n.ideasTitle,
+    body: l10n.ideasModuleBody,
+    icon: Icons.lightbulb_outline_rounded,
+    color: _moduleMint,
     live: true,
   ),
   _ModuleKind.notifications => _ModuleSpec(
