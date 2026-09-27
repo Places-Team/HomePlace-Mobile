@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="transfer_tile_label">Передачи HomePlace</string>
     <string name="shortcut_ideas">Идеи</string>
     <string name="shortcut_ideas_long">Открыть идеи HomePlace</string>
     <string name="shortcut_transfers">Передачи</string>

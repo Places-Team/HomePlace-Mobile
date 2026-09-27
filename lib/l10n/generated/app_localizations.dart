@@ -2195,6 +2195,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save changes'**
   String get ideasSave;
+
+  /// No description provided for @quickTransferTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Transfers to Quick Settings'**
+  String get quickTransferTile;
+
+  /// No description provided for @quickTransferTileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Transfers from the Samsung quick panel without starting on Home. Sending still needs confirmation.'**
+  String get quickTransferTileBody;
+
+  /// No description provided for @quickTransferTileAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers was added to Quick Settings.'**
+  String get quickTransferTileAdded;
+
+  /// No description provided for @quickTransferTileAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers is already in Quick Settings.'**
+  String get quickTransferTileAlreadyAdded;
+
+  /// No description provided for @quickTransferTileNotAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Tile not added. You can add it manually while editing Quick Settings.'**
+  String get quickTransferTileNotAdded;
+
+  /// No description provided for @quickTransferTileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic tile setup is unavailable. Add HomePlace transfers from the Quick Settings editor.'**
+  String get quickTransferTileUnavailable;
+
+  /// No description provided for @androidNotificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Android notification settings'**
+  String get androidNotificationSettings;
+
+  /// No description provided for @androidNotificationSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage notification permission, channels and lock-screen privacy in system settings.'**
+  String get androidNotificationSettingsBody;
 }
 
 class _AppLocalizationsDelegate

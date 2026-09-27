@@ -198,6 +198,8 @@ final class LocalNotificationService implements NotificationService {
         channelDescription: 'Notifications delivered by your HomePlace server',
         importance: Importance.defaultImportance,
         priority: Priority.defaultPriority,
+        visibility: NotificationVisibility.private,
+        category: AndroidNotificationCategory.message,
       ),
       iOS: DarwinNotificationDetails(),
     ),

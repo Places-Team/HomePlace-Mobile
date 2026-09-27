@@ -1183,4 +1183,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ideasSave => 'Save changes';
+
+  @override
+  String get quickTransferTile => 'Add Transfers to Quick Settings';
+
+  @override
+  String get quickTransferTileBody =>
+      'Open Transfers from the Samsung quick panel without starting on Home. Sending still needs confirmation.';
+
+  @override
+  String get quickTransferTileAdded => 'Transfers was added to Quick Settings.';
+
+  @override
+  String get quickTransferTileAlreadyAdded =>
+      'Transfers is already in Quick Settings.';
+
+  @override
+  String get quickTransferTileNotAdded =>
+      'Tile not added. You can add it manually while editing Quick Settings.';
+
+  @override
+  String get quickTransferTileUnavailable =>
+      'Automatic tile setup is unavailable. Add HomePlace transfers from the Quick Settings editor.';
+
+  @override
+  String get androidNotificationSettings => 'Android notification settings';
+
+  @override
+  String get androidNotificationSettingsBody =>
+      'Manage notification permission, channels and lock-screen privacy in system settings.';
 }

@@ -1184,4 +1184,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ideasSave => 'Сохранить изменения';
+
+  @override
+  String get quickTransferTile => 'Добавить «Передачи» в быстрые настройки';
+
+  @override
+  String get quickTransferTileBody =>
+      'Открывайте передачи из шторки Samsung, минуя главную страницу. Отправка по-прежнему требует подтверждения.';
+
+  @override
+  String get quickTransferTileAdded =>
+      '«Передачи» добавлены в быстрые настройки.';
+
+  @override
+  String get quickTransferTileAlreadyAdded =>
+      '«Передачи» уже есть в быстрых настройках.';
+
+  @override
+  String get quickTransferTileNotAdded =>
+      'Плитка не добавлена. Её можно добавить вручную при редактировании быстрых настроек.';
+
+  @override
+  String get quickTransferTileUnavailable =>
+      'Автоматическое добавление недоступно. Добавьте «Передачи HomePlace» в редакторе быстрых настроек.';
+
+  @override
+  String get androidNotificationSettings => 'Настройки уведомлений Android';
+
+  @override
+  String get androidNotificationSettingsBody =>
+      'Управление разрешением, категориями и приватностью на экране блокировки.';
 }

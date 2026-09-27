@@ -13,6 +13,12 @@ HomePlace Mobile treats server addresses, QR payloads, local networks, certifica
 
 ## Secrets
 
+Android received notifications and incoming offers use private lock-screen
+visibility. The optional Quick Settings tile exposes only a navigation label
+and icon; it does not display transfer contents or execute an action while the
+phone is locked. Tile activation still follows the saved-profile identity check
+and the existing share confirmation flow.
+
 Ideas are stored in Android Keystore-backed storage or iOS Keychain under a
 server-and-device-scoped key. They are not sent to the server, Desktop, another
 account, or a capability report. Copying an idea is an explicit action; when

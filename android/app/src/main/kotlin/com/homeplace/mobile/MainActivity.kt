@@ -1,16 +1,20 @@
 package com.homeplace.mobile
 
+import android.app.StatusBarManager
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
+import android.content.ComponentName
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -68,6 +72,47 @@ class MainActivity : FlutterActivity() {
                     }
                     else -> result.notImplemented()
                 }
+            }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SYSTEM_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "requestTransferTile" -> {
+                    if (Build.VERSION.SDK_INT < 33) {
+                        result.success("unsupported")
+                    } else {
+                        val manager = getSystemService(StatusBarManager::class.java)
+                        if (manager == null) {
+                            result.success("unavailable")
+                        } else {
+                            try {
+                                manager.requestAddTileService(
+                                    ComponentName(this, TransferTileService::class.java),
+                                    getString(R.string.transfer_tile_label),
+                                    Icon.createWithResource(this, R.drawable.ic_transfer_tile),
+                                    mainExecutor,
+                                ) { status ->
+                                    result.success(
+                                        when (status) {
+                                            StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> "added"
+                                            StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> "already_added"
+                                            StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> "not_added"
+                                            else -> "unavailable"
+                                        },
+                                    )
+                                }
+                            } catch (_: RuntimeException) {
+                                result.success("unavailable")
+                            }
+                        }
+                    }
+                }
+                "openNotificationSettings" -> {
+                    val settings = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    }
+                    result.success(runCatching { startActivity(settings); true }.getOrDefault(false))
+                }
+                else -> result.notImplemented()
             }
         }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, IDENTITY_CHANNEL).setMethodCallHandler { call, result ->
@@ -364,6 +409,7 @@ class MainActivity : FlutterActivity() {
         private const val CLIPBOARD_CHANNEL = "com.homeplace.mobile/clipboard"
         private const val SHARE_CHANNEL = "com.homeplace.mobile/share"
         private const val NAVIGATION_CHANNEL = "com.homeplace.mobile/navigation"
+        private const val SYSTEM_CHANNEL = "com.homeplace.mobile/system"
         private const val MAX_TEXT_LENGTH = 8000
         private const val MAX_URL_LENGTH = 4096
         private const val MAX_SHARED_ITEMS = 10

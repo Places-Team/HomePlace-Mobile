@@ -9,6 +9,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../core/background/background_delivery.dart';
 import '../../core/branding/brand_mark.dart';
 import '../../core/settings/app_preferences.dart';
+import '../../core/platform/android_system_actions.dart';
 import '../../core/storage/transfer_activity_store.dart';
 import '../../link/mobile_models.dart';
 import '../../core/sharing/share_service.dart';
@@ -105,10 +106,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       final destination = _pendingShortcut;
       _pendingShortcut = null;
       if (destination == 'ideas' && ideas != null) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
         planSection.value = _PlanSection.ideas;
         setState(() => tab = 1);
         pages.jumpToPage(1);
       } else if (destination == 'transfers') {
+        Navigator.of(context).popUntil((route) => route.isFirst);
         setState(() => tab = 3);
         pages.jumpToPage(3);
       }
@@ -549,6 +552,38 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   subtitle: Text(l10n.backgroundIncomingOffersBody),
                   secondary: const Icon(Icons.move_to_inbox_outlined),
                 ),
+              if (Platform.isAndroid) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.dashboard_customize_outlined),
+                  title: Text(l10n.quickTransferTile),
+                  subtitle: Text(l10n.quickTransferTileBody),
+                  onTap: () async {
+                    final result = await const AndroidSystemActions()
+                        .requestTransferTile();
+                    if (!context.mounted) return;
+                    final message = switch (result) {
+                      TransferTileResult.added => l10n.quickTransferTileAdded,
+                      TransferTileResult.alreadyAdded =>
+                        l10n.quickTransferTileAlreadyAdded,
+                      TransferTileResult.notAdded =>
+                        l10n.quickTransferTileNotAdded,
+                      TransferTileResult.unavailable =>
+                        l10n.quickTransferTileUnavailable,
+                    };
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(message)));
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: Text(l10n.androidNotificationSettings),
+                  subtitle: Text(l10n.androidNotificationSettingsBody),
+                  onTap: () =>
+                      const AndroidSystemActions().openNotificationSettings(),
+                ),
+              ],
               if (Platform.isAndroid &&
                   widget.preferences?.backgroundDeliveryEnabled == true)
                 FutureBuilder<BackgroundDeliveryStatus?>(
@@ -1707,7 +1742,10 @@ class _PlanPageState extends State<_PlanPage> {
                   child: InkWell(
                     key: _modeKeys[item.$1],
                     borderRadius: BorderRadius.circular(16),
-                    onTap: () => widget.selection.value = item.$1,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      widget.selection.value = item.$1;
+                    },
                     child: AnimatedContainer(
                       key: ValueKey('plan-mode-${item.$1.name}'),
                       duration: const Duration(milliseconds: 220),
@@ -2887,7 +2925,10 @@ class _PillNavigation extends StatelessWidget {
                         label: items[i].$2,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(27),
-                          onTap: () => onChanged(i),
+                          onTap: () {
+                            if (index != i) HapticFeedback.selectionClick();
+                            onChanged(i);
+                          },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 220),
                             curve: Curves.easeOutCubic,
@@ -2974,7 +3015,10 @@ class _PillNavigation extends StatelessWidget {
                   ),
                   child: IconButton(
                     tooltip: l10n.allSections,
-                    onPressed: onMore,
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      onMore();
+                    },
                     icon: const Icon(
                       Icons.grid_view_rounded,
                       color: Colors.white,

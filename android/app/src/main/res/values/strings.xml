@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="transfer_tile_label">HomePlace transfers</string>
     <string name="shortcut_ideas">Ideas</string>
     <string name="shortcut_ideas_long">Open HomePlace Ideas</string>
     <string name="shortcut_transfers">Transfers</string>

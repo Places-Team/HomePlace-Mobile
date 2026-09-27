@@ -4,6 +4,11 @@ The Flutter application for connecting Android and iOS devices to a self-hosted 
 
 ## Current milestone
 
+Android 16 support now includes an optional Quick Settings Transfers tile,
+system notification-settings access, private notification visibility, and
+subtle system haptics in navigation. See [Android platform integration](docs/android-platform.md)
+for the implemented One UI/Android behavior and the Android 17 permission gate.
+
 Plans now includes an Ideas workspace based on Desktop's quick-capture flow:
 private notes, categories, editing, duplication, deletion, and an explicit
 handoff to the server-backed reminder editor. Ideas are stored in Android

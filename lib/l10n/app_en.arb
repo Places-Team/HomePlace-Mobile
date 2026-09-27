@@ -381,5 +381,13 @@
   "ideasCopyConfirm": "Copy anyway",
   "ideasSaveError": "The idea could not be saved. Try again.",
   "ideasLoadError": "Ideas could not be opened on this device.",
-  "ideasSave": "Save changes"
+  "ideasSave": "Save changes",
+  "quickTransferTile": "Add Transfers to Quick Settings",
+  "quickTransferTileBody": "Open Transfers from the Samsung quick panel without starting on Home. Sending still needs confirmation.",
+  "quickTransferTileAdded": "Transfers was added to Quick Settings.",
+  "quickTransferTileAlreadyAdded": "Transfers is already in Quick Settings.",
+  "quickTransferTileNotAdded": "Tile not added. You can add it manually while editing Quick Settings.",
+  "quickTransferTileUnavailable": "Automatic tile setup is unavailable. Add HomePlace transfers from the Quick Settings editor.",
+  "androidNotificationSettings": "Android notification settings",
+  "androidNotificationSettingsBody": "Manage notification permission, channels and lock-screen privacy in system settings."
 }
