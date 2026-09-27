@@ -17,6 +17,8 @@ import '../../link/link_client.dart';
 import '../../link/models.dart';
 
 enum ConnectionStage {
+  restoring,
+  reconnecting,
   welcome,
   address,
   validating,
@@ -142,7 +144,8 @@ final class ConnectionController extends ChangeNotifier {
   final ShareService _sharing;
   final NotificationHistoryStore _notificationHistory;
 
-  ConnectionStage stage = ConnectionStage.welcome;
+  ConnectionStage stage = ConnectionStage.restoring;
+  ConnectionProfile? pendingProfile;
   String addressInput = '';
   String? error;
   String? diagnostics;
@@ -170,24 +173,35 @@ final class ConnectionController extends ChangeNotifier {
   bool _seamlessOwnAccountTransfersEnabled = false;
 
   Future<void> initialize() async {
-    await _notifications.initialize();
-    _incomingNotificationActions = await _notifications.takeIncomingActions();
-    profiles = await _profiles.readAll();
-    if (profiles.isNotEmpty) {
-      final requestedServerId =
-          _incomingNotificationActions.lastOrNull?.serverId;
-      final requestedProfile = profiles
-          .where((candidate) => candidate.serverId == requestedServerId)
-          .lastOrNull;
-      await _activateProfile(
-        requestedProfile ?? profiles.last,
-        persistSelection: false,
-      );
-    }
-    await _sharing.initialize((content) {
-      _enqueueOutgoingShare(content);
+    try {
+      await _notifications.initialize();
+      _incomingNotificationActions = await _notifications.takeIncomingActions();
+      profiles = await _profiles.readAll();
+      if (profiles.isNotEmpty) {
+        final requestedServerId =
+            _incomingNotificationActions.lastOrNull?.serverId;
+        final requestedProfile = profiles
+            .where((candidate) => candidate.serverId == requestedServerId)
+            .lastOrNull;
+        pendingProfile = requestedProfile ?? profiles.last;
+        addressInput = pendingProfile!.preferredUrl;
+        if (!await _activateProfile(pendingProfile!, persistSelection: false)) {
+          stage = ConnectionStage.reconnecting;
+          notifyListeners();
+        }
+      } else {
+        stage = ConnectionStage.welcome;
+        notifyListeners();
+      }
+      await _sharing.initialize((content) {
+        _enqueueOutgoingShare(content);
+        notifyListeners();
+      });
+    } on Object {
+      error = 'Could not restore the saved HomePlace connection.';
+      stage = ConnectionStage.reconnecting;
       notifyListeners();
-    });
+    }
   }
 
   Future<void> setSeamlessOwnAccountTransfersEnabled(bool enabled) async {
@@ -197,6 +211,23 @@ final class ConnectionController extends ChangeNotifier {
 
   Future<bool> switchProfile(ConnectionProfile candidate) =>
       _activateProfile(candidate, persistSelection: true);
+
+  Future<void> retrySavedConnection() async {
+    final candidate = pendingProfile;
+    if (candidate == null) {
+      stage = ConnectionStage.restoring;
+      notifyListeners();
+      await initialize();
+      return;
+    }
+    stage = ConnectionStage.restoring;
+    error = null;
+    notifyListeners();
+    if (!await _activateProfile(candidate, persistSelection: false)) {
+      stage = ConnectionStage.reconnecting;
+      notifyListeners();
+    }
+  }
 
   Future<bool> _activateProfile(
     ConnectionProfile candidate, {
@@ -247,6 +278,7 @@ final class ConnectionController extends ChangeNotifier {
     serverAddress = restored;
     serverInfo = result.value;
     profile = candidate;
+    pendingProfile = candidate;
     addressInput = candidate.preferredUrl;
     pairingSession = null;
     error = null;
@@ -653,6 +685,7 @@ final class ConnectionController extends ChangeNotifier {
     await _credentials.remove(connectedProfile.serverId);
     await _profiles.remove(connectedProfile.serverId);
     profiles = await _profiles.readAll();
+    pendingProfile = profiles.lastOrNull;
     serverAddress = null;
     serverInfo = null;
     profile = null;
@@ -668,7 +701,10 @@ final class ConnectionController extends ChangeNotifier {
     pendingOutgoingShares = const [];
     _acknowledgedEventIds = const [];
     if (profiles.isNotEmpty) {
-      await _activateProfile(profiles.last, persistSelection: false);
+      if (!await _activateProfile(profiles.last, persistSelection: false)) {
+        stage = ConnectionStage.reconnecting;
+        notifyListeners();
+      }
       return;
     }
     stage = ConnectionStage.welcome;

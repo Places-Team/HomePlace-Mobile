@@ -7,6 +7,9 @@ import 'core/branding/brand_mark.dart';
 import 'core/settings/app_preferences.dart';
 import 'features/connection/connection_controller.dart';
 import 'features/home/home_shell.dart';
+import 'features/plants/plant_controller.dart';
+import 'features/plants/plant_store.dart';
+import 'features/plants/plants_view.dart';
 import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
@@ -69,7 +72,9 @@ class ConnectionShell extends StatelessWidget {
       final l10n = AppLocalizations.of(context);
       if (controller.stage == ConnectionStage.connected) {
         return HomeShell(
-          key: ValueKey(controller.profile?.serverId),
+          key: ValueKey(
+            '${controller.profile?.serverId}:${controller.profile?.deviceId}',
+          ),
           connection: controller,
           preferences: preferences,
         );
@@ -112,6 +117,15 @@ class ConnectionShell extends StatelessWidget {
     ConnectionController controller,
     AppLocalizations l10n,
   ) => switch (controller.stage) {
+    ConnectionStage.restoring => const Center(
+      key: ValueKey('restoring'),
+      child: CircularProgressIndicator(),
+    ),
+    ConnectionStage.reconnecting => _SavedConnection(
+      key: ValueKey(controller.pendingProfile?.deviceId),
+      controller: controller,
+      l10n: l10n,
+    ),
     ConnectionStage.welcome => _Welcome(controller: controller, l10n: l10n),
     ConnectionStage.address ||
     ConnectionStage.validating => _Address(controller: controller, l10n: l10n),
@@ -190,6 +204,86 @@ ThemeData _theme(Brightness brightness) {
       elevation: 0,
     ),
   );
+}
+
+class _SavedConnection extends StatefulWidget {
+  const _SavedConnection({
+    required this.controller,
+    required this.l10n,
+    super.key,
+  });
+
+  final ConnectionController controller;
+  final AppLocalizations l10n;
+
+  @override
+  State<_SavedConnection> createState() => _SavedConnectionState();
+}
+
+class _SavedConnectionState extends State<_SavedConnection> {
+  PlantController? plants;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.controller.pendingProfile;
+    if (profile != null) {
+      plants = PlantController(PlantStore(profile))..load();
+    }
+  }
+
+  @override
+  void dispose() {
+    plants?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final saved = widget.controller.pendingProfile;
+    final l10n = widget.l10n;
+    return Column(
+      key: const ValueKey('saved-connection'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Center(child: HomePlaceMark(size: 64)),
+        const SizedBox(height: 24),
+        Text(
+          l10n.savedConnectionTitle,
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          saved?.serverName ?? l10n.appName,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        if (saved != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            saved.preferredUrl,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+        const SizedBox(height: 20),
+        Text(widget.controller.error ?? l10n.savedConnectionUnavailable),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          onPressed: widget.controller.retrySavedConnection,
+          icon: const Icon(Icons.refresh_rounded),
+          label: Text(l10n.retryConnection),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: widget.controller.useAnotherAddress,
+          child: Text(l10n.changeServerAddress),
+        ),
+        if (plants != null) ...[
+          const SizedBox(height: 28),
+          PlantsHomeSection(controller: plants!),
+        ],
+      ],
+    );
+  }
 }
 
 class _Welcome extends StatelessWidget {

@@ -104,6 +104,234 @@ abstract class AppLocalizations {
   /// **'HomePlace'**
   String get appName;
 
+  /// No description provided for @savedConnectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your HomePlace is saved'**
+  String get savedConnectionTitle;
+
+  /// No description provided for @savedConnectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is unavailable right now. Your connection is still saved.'**
+  String get savedConnectionUnavailable;
+
+  /// No description provided for @retryConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Try connecting again'**
+  String get retryConnection;
+
+  /// No description provided for @changeServerAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Use another address'**
+  String get changeServerAddress;
+
+  /// No description provided for @plantsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plants'**
+  String get plantsTitle;
+
+  /// No description provided for @plantsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A calmer way to care for what grows at home.'**
+  String get plantsSubtitle;
+
+  /// No description provided for @plantsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first plant and its watering rhythm.'**
+  String get plantsEmpty;
+
+  /// No description provided for @plantsSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get plantsSeeAll;
+
+  /// No description provided for @plantsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add plant'**
+  String get plantsAdd;
+
+  /// No description provided for @plantsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get plantsName;
+
+  /// No description provided for @plantsSpecies.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant or species'**
+  String get plantsSpecies;
+
+  /// No description provided for @plantsRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room or place'**
+  String get plantsRoom;
+
+  /// No description provided for @plantsNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Care notes'**
+  String get plantsNotes;
+
+  /// No description provided for @plantsPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a photo'**
+  String get plantsPhoto;
+
+  /// No description provided for @plantsChangePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get plantsChangePhoto;
+
+  /// No description provided for @plantsGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get plantsGallery;
+
+  /// No description provided for @plantsCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get plantsCamera;
+
+  /// No description provided for @plantsEveryDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Water every {days} days'**
+  String plantsEveryDays(int days);
+
+  /// No description provided for @plantsEveryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Water every day'**
+  String get plantsEveryDay;
+
+  /// No description provided for @plantsInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Watering interval'**
+  String get plantsInterval;
+
+  /// No description provided for @plantsLastWatered.
+  ///
+  /// In en, this message translates to:
+  /// **'Last watered'**
+  String get plantsLastWatered;
+
+  /// No description provided for @plantsWaterNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Watered now'**
+  String get plantsWaterNow;
+
+  /// No description provided for @plantsWatered.
+  ///
+  /// In en, this message translates to:
+  /// **'Watering recorded'**
+  String get plantsWatered;
+
+  /// No description provided for @plantsUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get plantsUndo;
+
+  /// No description provided for @plantsDueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Water today'**
+  String get plantsDueToday;
+
+  /// No description provided for @plantsOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue by {days} days'**
+  String plantsOverdue(int days);
+
+  /// No description provided for @plantsDueIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In {days} days'**
+  String plantsDueIn(int days);
+
+  /// No description provided for @plantsDueCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} need water'**
+  String plantsDueCount(int count);
+
+  /// No description provided for @plantsAllGood.
+  ///
+  /// In en, this message translates to:
+  /// **'All cared for'**
+  String get plantsAllGood;
+
+  /// No description provided for @plantsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit plant'**
+  String get plantsEdit;
+
+  /// No description provided for @plantsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save plant'**
+  String get plantsSave;
+
+  /// No description provided for @plantsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete plant'**
+  String get plantsDelete;
+
+  /// No description provided for @plantsDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this plant and its photo from this device?'**
+  String get plantsDeleteConfirm;
+
+  /// No description provided for @plantsLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant cards stay in this app\'s private storage for this connection. They are not sent to HomePlace.'**
+  String get plantsLocalOnly;
+
+  /// No description provided for @plantsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant cards could not be loaded. Try again.'**
+  String get plantsLoadError;
+
+  /// No description provided for @plantsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the plant. Try again.'**
+  String get plantsSaveError;
+
+  /// No description provided for @plantsPhotoError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not use this photo. Choose a smaller image.'**
+  String get plantsPhotoError;
+
+  /// No description provided for @plantsPickDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose date'**
+  String get plantsPickDate;
+
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:

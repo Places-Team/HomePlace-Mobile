@@ -14,7 +14,10 @@ void main() {
       deviceIdentity: const FakeDeviceIdentity(),
       notificationService: FakeNotificationService(),
       descriptionProvider: const FakeDescriptionProvider(),
+      shareService: FakeShareService(),
     );
+
+    await controller.initialize();
 
     await tester.pumpWidget(
       HomePlaceApp(controller: controller, preferences: AppPreferences()),

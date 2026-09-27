@@ -155,8 +155,46 @@ void main() {
 
     await controller.initialize();
 
-    expect(controller.stage, ConnectionStage.welcome);
+    expect(controller.stage, ConnectionStage.reconnecting);
     expect(controller.error, contains('different identity'));
+    controller.dispose();
+  });
+
+  test('keeps a saved connection after a temporary network failure', () async {
+    const saved = ConnectionProfile(
+      serverId: testServerId,
+      serverName: 'Test Home',
+      preferredUrl: 'https://home.example.test',
+      deviceId: 'device-1',
+      secure: true,
+    );
+    final link = FakeLinkService()
+      ..infoResult = const LinkFailure(
+        LinkFailureKind.network,
+        'The server is unreachable.',
+      );
+    final profiles = MemoryProfileStore()..profiles.add(saved);
+    final credentials = MemoryCredentialStore()
+      ..values[testServerId] = 'device-credential';
+    final controller = ConnectionController(
+      linkService: link,
+      profileStore: profiles,
+      credentialStore: credentials,
+      deviceIdentity: const FakeDeviceIdentity(),
+      notificationService: FakeNotificationService(),
+      descriptionProvider: const FakeDescriptionProvider(),
+      shareService: FakeShareService(),
+    );
+
+    await controller.initialize();
+    expect(controller.stage, ConnectionStage.reconnecting);
+    expect(controller.pendingProfile?.serverId, testServerId);
+    expect(profiles.profiles, contains(saved));
+
+    link.infoResult = const LinkSuccess(testServerInfo);
+    await controller.retrySavedConnection();
+    expect(controller.stage, ConnectionStage.connected);
+    expect(controller.profile?.serverId, testServerId);
     controller.dispose();
   });
 

@@ -13,6 +13,132 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appName => 'HomePlace';
 
   @override
+  String get savedConnectionTitle => 'Your HomePlace is saved';
+
+  @override
+  String get savedConnectionUnavailable =>
+      'The server is unavailable right now. Your connection is still saved.';
+
+  @override
+  String get retryConnection => 'Try connecting again';
+
+  @override
+  String get changeServerAddress => 'Use another address';
+
+  @override
+  String get plantsTitle => 'Your plants';
+
+  @override
+  String get plantsSubtitle => 'A calmer way to care for what grows at home.';
+
+  @override
+  String get plantsEmpty => 'Add your first plant and its watering rhythm.';
+
+  @override
+  String get plantsSeeAll => 'See all';
+
+  @override
+  String get plantsAdd => 'Add plant';
+
+  @override
+  String get plantsName => 'Name';
+
+  @override
+  String get plantsSpecies => 'Plant or species';
+
+  @override
+  String get plantsRoom => 'Room or place';
+
+  @override
+  String get plantsNotes => 'Care notes';
+
+  @override
+  String get plantsPhoto => 'Add a photo';
+
+  @override
+  String get plantsChangePhoto => 'Change photo';
+
+  @override
+  String get plantsGallery => 'Choose from gallery';
+
+  @override
+  String get plantsCamera => 'Take a photo';
+
+  @override
+  String plantsEveryDays(int days) {
+    return 'Water every $days days';
+  }
+
+  @override
+  String get plantsEveryDay => 'Water every day';
+
+  @override
+  String get plantsInterval => 'Watering interval';
+
+  @override
+  String get plantsLastWatered => 'Last watered';
+
+  @override
+  String get plantsWaterNow => 'Watered now';
+
+  @override
+  String get plantsWatered => 'Watering recorded';
+
+  @override
+  String get plantsUndo => 'Undo';
+
+  @override
+  String get plantsDueToday => 'Water today';
+
+  @override
+  String plantsOverdue(int days) {
+    return 'Overdue by $days days';
+  }
+
+  @override
+  String plantsDueIn(int days) {
+    return 'In $days days';
+  }
+
+  @override
+  String plantsDueCount(int count) {
+    return '$count need water';
+  }
+
+  @override
+  String get plantsAllGood => 'All cared for';
+
+  @override
+  String get plantsEdit => 'Edit plant';
+
+  @override
+  String get plantsSave => 'Save plant';
+
+  @override
+  String get plantsDelete => 'Delete plant';
+
+  @override
+  String get plantsDeleteConfirm =>
+      'Delete this plant and its photo from this device?';
+
+  @override
+  String get plantsLocalOnly =>
+      'Plant cards stay in this app\'s private storage for this connection. They are not sent to HomePlace.';
+
+  @override
+  String get plantsLoadError => 'Plant cards could not be loaded. Try again.';
+
+  @override
+  String get plantsSaveError => 'Could not save the plant. Try again.';
+
+  @override
+  String get plantsPhotoError =>
+      'Could not use this photo. Choose a smaller image.';
+
+  @override
+  String get plantsPickDate => 'Choose date';
+
+  @override
   String get welcomeTitle => 'Your HomePlace, on your phone';
 
   @override

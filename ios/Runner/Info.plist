@@ -17,7 +17,9 @@
 	<key>CFBundleName</key>
 	<string>HomePlace</string>
 	<key>NSCameraUsageDescription</key>
-	<string>HomePlace uses the camera only while scanning a connection QR code.</string>
+	<string>HomePlace uses the camera to scan connection QR codes and photograph your plants when you choose.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>HomePlace lets you choose a photo for a plant card and stores it in the app's private storage.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>HomePlace connects directly to the server you choose on your local network.</string>
 	<key>NSAppTransportSecurity</key>

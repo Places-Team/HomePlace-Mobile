@@ -13,6 +13,134 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appName => 'HomePlace';
 
   @override
+  String get savedConnectionTitle => 'Ваш HomePlace сохранён';
+
+  @override
+  String get savedConnectionUnavailable =>
+      'Сервер сейчас недоступен. Подключение осталось на устройстве.';
+
+  @override
+  String get retryConnection => 'Повторить подключение';
+
+  @override
+  String get changeServerAddress => 'Указать другой адрес';
+
+  @override
+  String get plantsTitle => 'Мои растения';
+
+  @override
+  String get plantsSubtitle => 'Спокойный уход за тем, что растёт дома.';
+
+  @override
+  String get plantsEmpty => 'Добавьте первое растение и ритм его полива.';
+
+  @override
+  String get plantsSeeAll => 'Все растения';
+
+  @override
+  String get plantsAdd => 'Добавить растение';
+
+  @override
+  String get plantsName => 'Название';
+
+  @override
+  String get plantsSpecies => 'Вид растения';
+
+  @override
+  String get plantsRoom => 'Комната или место';
+
+  @override
+  String get plantsNotes => 'Заметки по уходу';
+
+  @override
+  String get plantsPhoto => 'Добавить фото';
+
+  @override
+  String get plantsChangePhoto => 'Заменить фото';
+
+  @override
+  String get plantsGallery => 'Выбрать из галереи';
+
+  @override
+  String get plantsCamera => 'Сфотографировать';
+
+  @override
+  String plantsEveryDays(int days) {
+    return 'Поливать каждые $days дн.';
+  }
+
+  @override
+  String get plantsEveryDay => 'Поливать каждый день';
+
+  @override
+  String get plantsInterval => 'Интервал полива';
+
+  @override
+  String get plantsLastWatered => 'Последний полив';
+
+  @override
+  String get plantsWaterNow => 'Полито сейчас';
+
+  @override
+  String get plantsWatered => 'Полив отмечен';
+
+  @override
+  String get plantsUndo => 'Отменить';
+
+  @override
+  String get plantsDueToday => 'Полить сегодня';
+
+  @override
+  String plantsOverdue(int days) {
+    return 'Просрочено на $days дн.';
+  }
+
+  @override
+  String plantsDueIn(int days) {
+    return 'Через $days дн.';
+  }
+
+  @override
+  String plantsDueCount(int count) {
+    return 'Нужен полив: $count';
+  }
+
+  @override
+  String get plantsAllGood => 'Все политы';
+
+  @override
+  String get plantsEdit => 'Изменить растение';
+
+  @override
+  String get plantsSave => 'Сохранить растение';
+
+  @override
+  String get plantsDelete => 'Удалить растение';
+
+  @override
+  String get plantsDeleteConfirm =>
+      'Удалить растение и его фото с этого устройства?';
+
+  @override
+  String get plantsLocalOnly =>
+      'Карточки хранятся в закрытом хранилище приложения для этого подключения и не отправляются в HomePlace.';
+
+  @override
+  String get plantsLoadError =>
+      'Не удалось загрузить карточки растений. Повторите попытку.';
+
+  @override
+  String get plantsSaveError =>
+      'Не удалось сохранить растение. Повторите попытку.';
+
+  @override
+  String get plantsPhotoError =>
+      'Не удалось использовать фото. Выберите изображение поменьше.';
+
+  @override
+  String get plantsPickDate => 'Выбрать дату';
+
+  @override
   String get welcomeTitle => 'Ваш HomePlace — теперь в телефоне';
 
   @override

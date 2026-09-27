@@ -15,6 +15,7 @@ The first Flutter application slice is implemented with Android as the primary v
 - capability negotiation, foreground heartbeat, event acknowledgement, and test notifications;
 - multiple saved connection profiles with server identity checks, diagnostics, revoke, and disconnect actions;
 - a five-tab pill navigation shell for home, plans, media requests, transfers, and monitoring;
+- local plant care on Home and Plans: editable photo cards, flexible 1–90 day watering intervals, due and overdue states, and a one-tap watering action;
 - an "All sections" workspace map inspired by the server and desktop information architecture, with live routes for implemented modules and clearly labelled previews for automations and smart-home controls that still require server APIs;
 - dedicated mobile views for share-capable devices, encrypted notification history, approved permissions, server identity, account isolation, and connection security;
 - Google Calendar agenda and full reminder management: upcoming, overdue and completed sections, create, edit, repeat, complete, restore and confirmed deletion;
@@ -30,10 +31,12 @@ The first Flutter application slice is implemented with Android as the primary v
 - non-blocking error indicators in the top bar with details available on demand;
 - opt-in Android background notification checks through WorkManager, with server identity validation on every run;
 - encrypted per-profile notification history and visible background-check diagnostics;
-- opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and foreground confirmation;
+- opt-in background discovery of incoming clipboard, text, link and file offers, with private Android notifications and explicit acceptance;
 - confirmed Android files download and save through a headless WorkManager engine without opening the application; failed work remains queued for a safe retry and is acknowledged only after MediaStore succeeds;
-- opt-in seamless saving for integrity-checked files sent by another device owned by the same account while the app is open;
+- opt-in seamless saving for integrity-checked files sent by another device owned by the same account, including during enabled Android background checks;
 - bounded incoming and outgoing queues so concurrent files and links remain independently reviewable.
+
+Saved connections reopen automatically. If a server is temporarily unavailable, HomePlace keeps the saved profile and offers a retry without asking for the address again. Plant cards and photos are local to the current paired device profile. Watering dates appear in Home and Plans; scheduled system alerts and server synchronization are not implemented yet because HomePlace Link has no plant API.
 
 Foreground presence and clipboard relay operate while the application is open. Android can periodically check for notifications and incoming share offers in the background, but Android controls the timing and may defer the 15-minute schedule or an immediate queued task. Private notifications provide Accept and Decline actions; accepting a file queues a headless verified download and MediaStore save without opening the Flutter interface. The optional seamless mode applies only to files from another device with the same server-verified account; when background checks are enabled, those files can also be saved by the worker. Household files, links, text, and clipboard always require a specific action. Android does not permit ordinary applications to read the system clipboard while they are in the background. The Android activity requests the highest refresh mode available at the current resolution, while the operating system retains final control under adaptive refresh and power-saving policies. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 

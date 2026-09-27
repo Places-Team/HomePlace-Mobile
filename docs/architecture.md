@@ -39,6 +39,12 @@ configured read-only Docker endpoints. The client derives aggregate counts and
 average latency only from the current response and does not create a competing
 monitoring data source.
 
+## Local plant care
+
+Plant cards are a device-local feature. `PlantStore` persists bounded metadata in application preferences and optional photos in private application documents. The storage namespace is a hash of the saved server and paired device IDs, so another connection profile cannot display the same cards. The Home page shows the nearest watering dates; Plans shows the same local schedule beside server-backed calendar and reminders. Watering an item updates its last-watered date and derives the next date from a 1–90 day interval. No plant record is sent to HomePlace Link or advertised as a server capability because the canonical server has no plant API.
+
+Saved profiles restore on startup. A failed connection check enters a retry state that keeps the saved address and credentials. The client still checks `/api/link/info` and the server ID before using credentials. Entering a different address remains an explicit choice.
+
 ## Native boundaries
 
 - Android generates a P-256 identity key in Android Keystore. Narrow Kotlin channels perform foreground clipboard access, Share Sheet ingestion, safe URL opening, and confirmed file saving. A registered application-context plugin exposes only protected temporary-file creation and MediaStore saving to headless WorkManager engines. Workers periodically validate each server, deliver notifications, resolve declines, and download only explicitly accepted or server-verified same-account files.

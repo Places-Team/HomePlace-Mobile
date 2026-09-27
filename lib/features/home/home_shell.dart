@@ -14,6 +14,9 @@ import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import 'home_controller.dart';
 import 'home_modules.dart';
+import '../plants/plant_controller.dart';
+import '../plants/plant_store.dart';
+import '../plants/plants_view.dart';
 
 const _violet = Color(0xff829eff);
 const _coral = Color(0xffff746c);
@@ -40,6 +43,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       widget.homeController ??
       HomeController(sessionProvider: widget.connection.authenticatedSession);
   late final bool ownsHome = widget.homeController == null;
+  late final PlantController? plants = widget.connection.profile == null
+      ? null
+      : PlantController(PlantStore(widget.connection.profile!));
   late final PageController pages;
   final Set<String> _automaticIncoming = {};
   bool _sendingShareBatch = false;
@@ -55,6 +61,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     pages = PageController(initialPage: tab);
     home.bindClipboardReader(widget.connection.readClipboardTextForAutoRelay);
     if (ownsHome) home.initialize();
+    plants?.load();
   }
 
   @override
@@ -62,6 +69,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     pages.dispose();
     if (ownsHome) home.dispose();
+    plants?.dispose();
     super.dispose();
   }
 
@@ -69,6 +77,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(widget.connection.refreshEvents());
+      if (plants != null) unawaited(plants!.load());
     }
   }
 
@@ -188,8 +197,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                           overview: overview,
                           home: home,
                           connection: widget.connection,
+                          plants: plants,
                         ),
-                        _PlanPage(overview: overview, home: home),
+                        _PlanPage(
+                          overview: overview,
+                          home: home,
+                          plants: plants,
+                        ),
                         _RequestsPage(overview: overview, home: home),
                         _TransfersPage(
                           home: home,
@@ -892,10 +906,12 @@ class _OverviewPage extends StatelessWidget {
     required this.overview,
     required this.home,
     required this.connection,
+    required this.plants,
   });
   final MobileOverview overview;
   final HomeController home;
   final ConnectionController connection;
+  final PlantController? plants;
 
   @override
   Widget build(BuildContext context) {
@@ -916,6 +932,8 @@ class _OverviewPage extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyLarge
               ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
+        const SizedBox(height: 22),
+        if (plants != null) PlantsHomeSection(controller: plants!),
         if (missingPermissions) ...[
           const SizedBox(height: 16),
           _Surface(
@@ -1545,9 +1563,14 @@ class _ClipboardCard extends StatelessWidget {
 }
 
 class _PlanPage extends StatefulWidget {
-  const _PlanPage({required this.overview, required this.home});
+  const _PlanPage({
+    required this.overview,
+    required this.home,
+    required this.plants,
+  });
   final MobileOverview overview;
   final HomeController home;
+  final PlantController? plants;
 
   @override
   State<_PlanPage> createState() => _PlanPageState();
@@ -1646,6 +1669,8 @@ class _PlanPageState extends State<_PlanPage> {
               _rangeEnd(month),
             ),
           ),
+        if (widget.plants != null)
+          PlantsPlanSection(controller: widget.plants!),
         const SizedBox(height: 22),
         Row(
           children: [
