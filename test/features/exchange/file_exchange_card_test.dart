@@ -15,6 +15,7 @@ final class _Gateway implements FileExchangeGateway {
   String? uploadedAccess;
   bool uploadedQuick = false;
   String? inspectedToken;
+  String? resolvedCode;
   bool downloaded = false;
 
   @override
@@ -70,6 +71,15 @@ final class _Gateway implements FileExchangeGateway {
   ) async {
     inspectedToken = token;
     return LinkSuccess(exchange('account'));
+  }
+
+  @override
+  Future<LinkResult<String>> resolveShortCode(
+    AuthenticatedLinkSession session,
+    String code,
+  ) async {
+    resolvedCode = code;
+    return const LinkSuccess('abcdefghijklmnopqrstuv');
   }
 
   @override
@@ -236,6 +246,23 @@ void main() {
       await tester.tap(find.text('Check file'));
       await tester.pumpAndSettle();
       expect(gateway.inspectedToken, 'abcdefghijklmnopqrstuv');
+      await tester.enterText(
+        find.byKey(const ValueKey('file-exchange-link')),
+        'Ab3Xy',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Check file'));
+      await tester.pumpAndSettle();
+      expect(gateway.resolvedCode, 'Ab3Xy');
+      expect(gateway.inspectedToken, 'abcdefghijklmnopqrstuv');
+      await tester.enterText(
+        find.byKey(const ValueKey('file-exchange-link')),
+        'https://home.example.test/f/Ab3Xy',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Check file'));
+      await tester.pumpAndSettle();
+      expect(gateway.resolvedCode, 'Ab3Xy');
       await tester.ensureVisible(find.text('Download to Downloads'));
       await tester.tap(find.text('Download to Downloads'));
       await tester.pumpAndSettle();

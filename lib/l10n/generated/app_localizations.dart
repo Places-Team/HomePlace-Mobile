@@ -863,8 +863,140 @@ abstract class AppLocalizations {
   /// No description provided for @requestsBody.
   ///
   /// In en, this message translates to:
-  /// **'Search your connected Sonarr and Radarr libraries.'**
+  /// **'Discover films and series, then send requests through HomePlace.'**
   String get requestsBody;
+
+  /// No description provided for @mediaAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get mediaAll;
+
+  /// No description provided for @mediaAutomation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sonarr, Radarr and download queues'**
+  String get mediaAutomation;
+
+  /// No description provided for @mediaMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'Films'**
+  String get mediaMovies;
+
+  /// No description provided for @mediaSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get mediaSeries;
+
+  /// No description provided for @mediaAnime.
+  ///
+  /// In en, this message translates to:
+  /// **'Anime'**
+  String get mediaAnime;
+
+  /// No description provided for @mediaQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality profile'**
+  String get mediaQuality;
+
+  /// No description provided for @mediaDefaultQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Server default'**
+  String get mediaDefaultQuality;
+
+  /// No description provided for @mediaSeasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasons'**
+  String get mediaSeasons;
+
+  /// No description provided for @mediaAllSeasonsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave all unselected to request every season.'**
+  String get mediaAllSeasonsHint;
+
+  /// No description provided for @mediaRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent to HomePlace.'**
+  String get mediaRequested;
+
+  /// No description provided for @mediaPermissionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable media.request for this device in HomePlace Devices to browse the catalog.'**
+  String get mediaPermissionNeeded;
+
+  /// No description provided for @mediaNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Seerr in HomePlace to browse the catalog.'**
+  String get mediaNotConfigured;
+
+  /// No description provided for @mediaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The media service is temporarily unavailable. Try again later.'**
+  String get mediaUnavailable;
+
+  /// No description provided for @mediaNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No titles found. Try another search.'**
+  String get mediaNoResults;
+
+  /// No description provided for @mediaPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get mediaPrevious;
+
+  /// No description provided for @mediaNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get mediaNext;
+
+  /// No description provided for @mediaStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: {status}'**
+  String mediaStatus(String status);
+
+  /// No description provided for @mediaAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get mediaAvailable;
+
+  /// No description provided for @mediaPartiallyAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially available'**
+  String get mediaPartiallyAvailable;
+
+  /// No description provided for @mediaAlreadyRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get mediaAlreadyRequested;
+
+  /// No description provided for @mediaPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending approval'**
+  String get mediaPending;
+
+  /// No description provided for @mediaMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Not requested'**
+  String get mediaMissing;
 
   /// No description provided for @searchMedia.
   ///
@@ -1719,7 +1851,7 @@ abstract class AppLocalizations {
   /// No description provided for @fileExchangeInvalidLink.
   ///
   /// In en, this message translates to:
-  /// **'Enter a 22-character file code or /x link from this HomePlace server. Open five-character quick codes at the server\'s /f page in a browser.'**
+  /// **'Enter a 22-character file token, a five-character quick code, or a link from this HomePlace server.'**
   String get fileExchangeInvalidLink;
 
   /// No description provided for @fileExchangeDownload.

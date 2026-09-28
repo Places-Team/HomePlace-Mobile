@@ -109,12 +109,35 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
     return RegExp(r'^[A-Za-z0-9_-]{22}$').hasMatch(token) ? token : null;
   }
 
+  String? _shortCodeFromInput(String value, Uri server) {
+    final trimmed = value.trim();
+    final codePattern = RegExp(r'^[1-9A-HJ-NP-Za-km-z]{5}$');
+    if (codePattern.hasMatch(trimmed)) return trimmed;
+    final link = Uri.tryParse(trimmed);
+    if (link == null ||
+        link.scheme != server.scheme ||
+        link.host != server.host ||
+        link.port != server.port ||
+        link.userInfo.isNotEmpty ||
+        link.hasQuery ||
+        link.hasFragment ||
+        link.pathSegments.length != 2 ||
+        link.pathSegments.first != 'f') {
+      return null;
+    }
+    final code = link.pathSegments.last;
+    return codePattern.hasMatch(code) ? code : null;
+  }
+
   Future<void> _inspect() async {
     if (_busy) return;
     final session = await _session();
     if (session == null || !mounted) return;
-    final token = _tokenFromInput(_link.text, session.address.uri);
-    if (token == null) {
+    var token = _tokenFromInput(_link.text, session.address.uri);
+    final shortCode = token == null
+        ? _shortCodeFromInput(_link.text, session.address.uri)
+        : null;
+    if (token == null && shortCode == null) {
       setState(
         () => _error = AppLocalizations.of(context).fileExchangeInvalidLink,
       );
@@ -126,7 +149,22 @@ class _FileExchangeCardState extends State<FileExchangeCard> {
       _saved = null;
       _error = null;
     });
-    final result = await widget.gateway.inspectFile(session, token);
+    if (shortCode != null) {
+      final resolved = await widget.gateway.resolveShortCode(
+        session,
+        shortCode,
+      );
+      if (!mounted) return;
+      if (resolved case LinkFailure<String> failure) {
+        setState(() {
+          _busy = false;
+          _error = failure.message;
+        });
+        return;
+      }
+      token = (resolved as LinkSuccess<String>).value;
+    }
+    final result = await widget.gateway.inspectFile(session, token!);
     if (!mounted) return;
     setState(() {
       _busy = false;

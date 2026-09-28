@@ -21,8 +21,17 @@ Reverse proxies may impose a lower upload limit.
 Quick one-time file links use a five-character code and expire after 10 minutes;
 the server makes them public and consumes them when downloading starts. Ordinary
 account-only and longer-lived links remain available separately.
-Recipients enter quick codes on the server's `/f` page; the in-app Android
-receiver currently accepts ordinary `/x` links from its connected server.
+Recipients can enter a quick code or `/f` link in the mobile app, or use the
+server's `/f` page. The app resolves only same-server codes and requires
+explicit confirmation before downloading.
+
+The Media requests tab browses the paired server's Seerr catalog in English or
+Russian, filters films, series, and anime, and opens details with season and
+quality-profile selection. Creating a request requires an explicit tap and the
+device's `media.request` permission. The prior Sonarr/Radarr search and queue
+view remains available in a collapsible section. Catalog images are fetched
+only from approved paths on the paired server with the device credential;
+external image URLs are ignored.
 
 Android 16 support now includes an optional Quick Settings Transfers tile,
 system notification-settings access, private notification visibility, and

@@ -80,6 +80,22 @@ Quick mode asks the server for a five-character public code and displays its
 the client requires a valid returned code instead of silently treating an old
 server's ordinary exchange as quick mode.
 
+The receiver resolves five-character codes through the canonical `/f/{code}`
+route after checking `/api/link/info` against the paired server ID. Automatic
+redirects are disabled; only an exact relative `/x/{token}` response is
+accepted. No device credential is sent during code resolution. Metadata
+inspection and confirmed download remain separate actions.
+
+The Media requests tab uses the server-owned `/api/link/media` catalog, details,
+and request routes documented in the HomePlace server repository. The mobile
+client sends `media.request`-authorized device credentials only to the paired
+origin. Server-relative image paths are allowlisted before loading.
+`configured: false`, upstream unavailability, empty results, and network
+failures have distinct UI states. A request uses the selected TMDB ID and kind,
+optional seasons, and a server-provided quality-profile key; the server
+remains authoritative for account role, permission, and request validation.
+Existing direct Sonarr/Radarr controls remain available behind a collapsible
+panel.
 
 The Ideas workspace follows Desktop's quick-capture workflow.
 `IdeaController` owns UI state and validation; `IdeaStore` separates

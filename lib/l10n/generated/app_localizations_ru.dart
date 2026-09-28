@@ -424,7 +424,78 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get requestsBody =>
-      'Поиск по подключённым библиотекам Sonarr и Radarr.';
+      'Находите фильмы и сериалы и отправляйте заявки через HomePlace.';
+
+  @override
+  String get mediaAll => 'Все';
+
+  @override
+  String get mediaAutomation => 'Sonarr, Radarr и очереди загрузок';
+
+  @override
+  String get mediaMovies => 'Фильмы';
+
+  @override
+  String get mediaSeries => 'Сериалы';
+
+  @override
+  String get mediaAnime => 'Аниме';
+
+  @override
+  String get mediaQuality => 'Профиль качества';
+
+  @override
+  String get mediaDefaultQuality => 'По умолчанию на сервере';
+
+  @override
+  String get mediaSeasons => 'Сезоны';
+
+  @override
+  String get mediaAllSeasonsHint => 'Не выбирайте сезоны, чтобы запросить все.';
+
+  @override
+  String get mediaRequested => 'Заявка отправлена в HomePlace.';
+
+  @override
+  String get mediaPermissionNeeded =>
+      'Разрешите media.request для этого устройства в разделе «Устройства» HomePlace.';
+
+  @override
+  String get mediaNotConfigured =>
+      'Настройте Seerr в HomePlace для просмотра каталога.';
+
+  @override
+  String get mediaUnavailable =>
+      'Медиасервис временно недоступен. Попробуйте позже.';
+
+  @override
+  String get mediaNoResults => 'Ничего не найдено. Попробуйте другой запрос.';
+
+  @override
+  String get mediaPrevious => 'Предыдущая страница';
+
+  @override
+  String get mediaNext => 'Следующая страница';
+
+  @override
+  String mediaStatus(String status) {
+    return 'Статус: $status';
+  }
+
+  @override
+  String get mediaAvailable => 'Доступно';
+
+  @override
+  String get mediaPartiallyAvailable => 'Доступно частично';
+
+  @override
+  String get mediaAlreadyRequested => 'Заявка создана';
+
+  @override
+  String get mediaPending => 'Ожидает одобрения';
+
+  @override
+  String get mediaMissing => 'Нет заявки';
 
   @override
   String get searchMedia => 'Найти фильм или сериал';
@@ -910,7 +981,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get fileExchangeInvalidLink =>
-      'Введите 22-символьный код файла или ссылку /x с этого сервера HomePlace. Пятисимвольный быстрый код откройте в браузере на странице /f этого сервера.';
+      'Введите 22-символьный токен файла, пятисимвольный быстрый код или ссылку с этого сервера HomePlace.';
 
   @override
   String get fileExchangeDownload => 'Скачать в Загрузки';

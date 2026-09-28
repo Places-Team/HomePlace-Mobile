@@ -422,7 +422,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get requestsBody =>
-      'Search your connected Sonarr and Radarr libraries.';
+      'Discover films and series, then send requests through HomePlace.';
+
+  @override
+  String get mediaAll => 'All';
+
+  @override
+  String get mediaAutomation => 'Sonarr, Radarr and download queues';
+
+  @override
+  String get mediaMovies => 'Films';
+
+  @override
+  String get mediaSeries => 'Series';
+
+  @override
+  String get mediaAnime => 'Anime';
+
+  @override
+  String get mediaQuality => 'Quality profile';
+
+  @override
+  String get mediaDefaultQuality => 'Server default';
+
+  @override
+  String get mediaSeasons => 'Seasons';
+
+  @override
+  String get mediaAllSeasonsHint =>
+      'Leave all unselected to request every season.';
+
+  @override
+  String get mediaRequested => 'Request sent to HomePlace.';
+
+  @override
+  String get mediaPermissionNeeded =>
+      'Enable media.request for this device in HomePlace Devices to browse the catalog.';
+
+  @override
+  String get mediaNotConfigured =>
+      'Set up Seerr in HomePlace to browse the catalog.';
+
+  @override
+  String get mediaUnavailable =>
+      'The media service is temporarily unavailable. Try again later.';
+
+  @override
+  String get mediaNoResults => 'No titles found. Try another search.';
+
+  @override
+  String get mediaPrevious => 'Previous page';
+
+  @override
+  String get mediaNext => 'Next page';
+
+  @override
+  String mediaStatus(String status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String get mediaAvailable => 'Available';
+
+  @override
+  String get mediaPartiallyAvailable => 'Partially available';
+
+  @override
+  String get mediaAlreadyRequested => 'Requested';
+
+  @override
+  String get mediaPending => 'Pending approval';
+
+  @override
+  String get mediaMissing => 'Not requested';
 
   @override
   String get searchMedia => 'Search films and series';
@@ -906,7 +978,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fileExchangeInvalidLink =>
-      'Enter a 22-character file code or /x link from this HomePlace server. Open five-character quick codes at the server\'s /f page in a browser.';
+      'Enter a 22-character file token, a five-character quick code, or a link from this HomePlace server.';
 
   @override
   String get fileExchangeDownload => 'Download to Downloads';

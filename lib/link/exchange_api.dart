@@ -99,6 +99,10 @@ final class FileExchange {
 
 abstract interface class FileExchangeGateway {
   Future<LinkResult<int>> fileLimit(AuthenticatedLinkSession session);
+  Future<LinkResult<String>> resolveShortCode(
+    AuthenticatedLinkSession session,
+    String code,
+  );
   Future<LinkResult<FileExchange>> inspectFile(
     AuthenticatedLinkSession session,
     String token,
@@ -150,6 +154,24 @@ final class ExchangeApi implements ExchangeGateway, FileExchangeGateway {
     : _client = client ?? const HttpLinkService();
 
   final HttpLinkService _client;
+
+  @override
+  Future<LinkResult<String>> resolveShortCode(
+    AuthenticatedLinkSession session,
+    String code,
+  ) async {
+    final info = await _client.fetchInfo(session.address);
+    if (info case LinkFailure<ServerInfo> failure) {
+      return LinkFailure(failure.kind, failure.message);
+    }
+    if ((info as LinkSuccess<ServerInfo>).value.server.id != session.serverId) {
+      return const LinkFailure(
+        LinkFailureKind.serverIdentity,
+        'This address now belongs to a different HomePlace server.',
+      );
+    }
+    return _client.resolveFileCode(session.address, code);
+  }
 
   @override
   Future<LinkResult<int>> fileLimit(AuthenticatedLinkSession session) async {

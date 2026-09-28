@@ -683,6 +683,67 @@ final class HttpLinkService implements LinkService {
     return client;
   }
 
+  Future<LinkResult<String>> resolveFileCode(
+    ServerAddress address,
+    String code,
+  ) async {
+    if (!RegExp(r'^[1-9A-HJ-NP-Za-km-z]{5}$').hasMatch(code)) {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'Invalid quick file code.',
+      );
+    }
+    final client = _clientFor(address);
+    try {
+      final request = await client
+          .getUrl(address.uri.resolve('/f/$code'))
+          .timeout(const Duration(seconds: 10));
+      request.followRedirects = false;
+      final response = await request.close().timeout(
+        const Duration(seconds: 12),
+      );
+      if (response.statusCode == HttpStatus.notFound) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'This quick code has expired or is unavailable.',
+        );
+      }
+      if (response.statusCode != HttpStatus.seeOther) {
+        return LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'HomePlace could not resolve the quick code (HTTP ${response.statusCode}).',
+        );
+      }
+      final location = response.headers.value(HttpHeaders.locationHeader);
+      final match = RegExp(r'^/x/([A-Za-z0-9_-]{22})$')
+          .firstMatch(location ?? '');
+      if (match == null) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'HomePlace returned an invalid quick-code destination.',
+        );
+      }
+      return LinkSuccess(match.group(1)!);
+    } on HandshakeException {
+      return const LinkFailure(
+        LinkFailureKind.tls,
+        'The server certificate could not be verified.',
+      );
+    } on TimeoutException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'HomePlace did not respond in time.',
+      );
+    } on SocketException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'HomePlace could not be reached. Check address and network.',
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   @override
   Future<LinkResult<ServerInfo>> fetchInfo(ServerAddress address) async {
     final response = await requestJson(address, 'GET', '/api/link/info');

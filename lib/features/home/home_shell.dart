@@ -16,6 +16,7 @@ import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import '../exchange/text_exchange_card.dart';
 import '../exchange/file_exchange_card.dart';
+import '../media/media_catalog_view.dart';
 import '../ideas/idea_controller.dart';
 import '../ideas/idea_store.dart';
 import '../ideas/server_idea_store.dart';
@@ -2409,183 +2410,201 @@ class _RequestsPageState extends State<_RequestsPage> {
           accentColor: const Color(0xff647d92),
         ),
         const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: field,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  hintText: l10n.searchMedia,
-                ),
-                onSubmitted: widget.home.search,
-              ),
-            ),
-            const SizedBox(width: 10),
-            IconButton.filled(
-              tooltip: l10n.search,
-              onPressed: widget.home.searching
-                  ? null
-                  : () => widget.home.search(field.text),
-              icon: widget.home.searching
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.arrow_forward_rounded),
-            ),
-          ],
+        MediaCatalogView(
+          sessionProvider: widget.home.sessionProvider,
+          available: overview.permissions.contains('media.request'),
         ),
         const SizedBox(height: 18),
-        if (overview.requests.instances.isEmpty)
-          _EmptyCard(
-            icon: Icons.movie_filter_outlined,
-            text: l10n.noMediaServices,
-          )
-        else ...[
-          if (overview.requests.qbittorrent case final qbit?)
-            _Surface(
-              child: Row(
-                children: [
-                  const _RoundIcon(
-                    icon: Icons.downloading_rounded,
-                    color: _mint,
+        ExpansionTile(
+          title: Text(l10n.mediaAutomation),
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: field,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      hintText: l10n.searchMedia,
+                    ),
+                    onSubmitted: widget.home.search,
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.downloads,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        Text(l10n.activeDownloads(qbit.active)),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    _bytesPerSecond(qbit.downloadSpeed),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 14),
-          ...widget.home.searchResults.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _Surface(
-                child: Row(
-                  children: [
-                    _RoundIcon(
-                      icon: item.kind.toLowerCase().contains('sonarr')
-                          ? Icons.tv_rounded
-                          : Icons.movie_rounded,
-                      color: item.kind.toLowerCase().contains('sonarr')
-                          ? _violet
-                          : _coral,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                          Text(
-                            [
-                              if (item.year != null) '${item.year}',
-                              item.instanceLabel,
-                            ].join(' · '),
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    FilledButton.tonal(
-                      onPressed:
-                          item.inLibrary ||
-                              widget.home.busyId ==
-                                  '${item.instanceLabel}:${item.externalId}'
-                          ? null
-                          : () => widget.home.addRequest(item),
-                      child:
-                          widget.home.busyId ==
-                              '${item.instanceLabel}:${item.externalId}'
-                          ? const SizedBox.square(
-                              dimension: 17,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              item.inLibrary ? l10n.inLibrary : l10n.request,
-                            ),
-                    ),
-                  ],
                 ),
-              ),
+                const SizedBox(width: 10),
+                IconButton.filled(
+                  tooltip: l10n.search,
+                  onPressed: widget.home.searching
+                      ? null
+                      : () => widget.home.search(field.text),
+                  icon: widget.home.searching
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.arrow_forward_rounded),
+                ),
+              ],
             ),
-          ),
-          if (widget.home.searchResults.isEmpty)
-            ...overview.requests.instances.map(
-              (instance) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _Surface(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 18),
+            if (overview.requests.instances.isEmpty)
+              _EmptyCard(
+                icon: Icons.movie_filter_outlined,
+                text: l10n.noMediaServices,
+              )
+            else ...[
+              if (overview.requests.qbittorrent case final qbit?)
+                _Surface(
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              instance.label,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                          _TinyBadge(
-                            text:
-                                '${instance.queueCount} ${l10n.queue.toLowerCase()}',
-                            color: instance.warnings > 0 ? _coral : _mint,
-                          ),
-                        ],
+                      const _RoundIcon(
+                        icon: Icons.downloading_rounded,
+                        color: _mint,
                       ),
-                      if (instance.upcoming.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          l10n.upcomingMedia,
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        ...instance.upcoming
-                            .take(3)
-                            .map(
-                              (item) => Padding(
-                                padding: const EdgeInsets.only(top: 6),
-                                child: Text(
-                                  '• ${item.title}${item.sub == null ? '' : ' · ${item.sub}'}',
-                                ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.downloads,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                      ],
+                            Text(l10n.activeDownloads(qbit.active)),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        _bytesPerSecond(qbit.downloadSpeed),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ],
                   ),
                 ),
+              const SizedBox(height: 14),
+              ...widget.home.searchResults.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _Surface(
+                    child: Row(
+                      children: [
+                        _RoundIcon(
+                          icon: item.kind.toLowerCase().contains('sonarr')
+                              ? Icons.tv_rounded
+                              : Icons.movie_rounded,
+                          color: item.kind.toLowerCase().contains('sonarr')
+                              ? _violet
+                              : _coral,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                [
+                                  if (item.year != null) '${item.year}',
+                                  item.instanceLabel,
+                                ].join(' · '),
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton.tonal(
+                          onPressed:
+                              item.inLibrary ||
+                                  widget.home.busyId ==
+                                      '${item.instanceLabel}:${item.externalId}'
+                              ? null
+                              : () => widget.home.addRequest(item),
+                          child:
+                              widget.home.busyId ==
+                                  '${item.instanceLabel}:${item.externalId}'
+                              ? const SizedBox.square(
+                                  dimension: 17,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  item.inLibrary
+                                      ? l10n.inLibrary
+                                      : l10n.request,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-        ],
+              if (widget.home.searchResults.isEmpty)
+                ...overview.requests.instances.map(
+                  (instance) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _Surface(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  instance.label,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                              _TinyBadge(
+                                text:
+                                    '${instance.queueCount} ${l10n.queue.toLowerCase()}',
+                                color: instance.warnings > 0 ? _coral : _mint,
+                              ),
+                            ],
+                          ),
+                          if (instance.upcoming.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              l10n.upcomingMedia,
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            ...instance.upcoming
+                                .take(3)
+                                .map(
+                                  (item) => Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      '• ${item.title}${item.sub == null ? '' : ' · ${item.sub}'}',
+                                    ),
+                                  ),
+                                ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
         const SizedBox(height: 110),
       ],
     );
