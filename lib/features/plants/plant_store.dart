@@ -47,6 +47,7 @@ final class HomePlant {
   }
 
   HomePlant copyWith({
+    String? id,
     String? name,
     String? species,
     String? location,
@@ -56,7 +57,7 @@ final class HomePlant {
     bool clearPhoto = false,
     String? notes,
   }) => HomePlant(
-    id: id,
+    id: id ?? this.id,
     name: name ?? this.name,
     species: species ?? this.species,
     location: location ?? this.location,
@@ -92,7 +93,7 @@ final class HomePlant {
         name.isEmpty ||
         interval is! int ||
         interval < 1 ||
-        interval > 90 ||
+        interval > 365 ||
         last == null ||
         created == null) {
       return null;

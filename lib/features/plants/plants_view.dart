@@ -198,6 +198,70 @@ class PlantsPage extends StatefulWidget {
 }
 
 class _PlantsPageState extends State<PlantsPage> {
+  Future<void> _importLocal() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.plantsImportTitle),
+        content: Text(
+          l10n.plantsImportConfirm(widget.controller.localOnlyCount),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.plantsImport),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.controller.importLocal();
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.plantsSaveError)));
+      }
+    }
+  }
+
+  Future<void> _resolveConflict(String id, bool useServer) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.plantsConflict),
+        content: Text(
+          useServer ? l10n.plantsUseServerConfirm : l10n.plantsKeepMineConfirm,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(useServer ? l10n.plantsUseServer : l10n.plantsKeepMine),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.controller.resolveConflict(id, useServer: useServer);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.plantsSaveError)));
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -236,6 +300,80 @@ class _PlantsPageState extends State<PlantsPage> {
               const SizedBox(height: 18),
               _Summary(pCount: plants.length, dueCount: due),
               const SizedBox(height: 20),
+              if (widget.controller.serverSynced) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.sync_rounded),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.controller.syncError != null
+                                    ? l10n.plantsSyncNeedsAttention
+                                    : widget.controller.pendingSyncCount == 0
+                                    ? l10n.plantsSynced
+                                    : l10n.plantsPending(
+                                        widget.controller.pendingSyncCount,
+                                      ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: l10n.retry,
+                              onPressed: widget.controller.sync,
+                              icon: const Icon(Icons.refresh_rounded),
+                            ),
+                          ],
+                        ),
+                        if (widget.controller.syncError != null)
+                          Text(
+                            widget.controller.conflicts.isNotEmpty
+                                ? l10n.plantsConflict
+                                : l10n.plantsSyncError,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        if (widget.controller.localOnlyCount > 0) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.plantsLocalAvailable(
+                              widget.controller.localOnlyCount,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: _importLocal,
+                            icon: const Icon(Icons.cloud_upload_outlined),
+                            label: Text(l10n.plantsImport),
+                          ),
+                        ],
+                        for (final id in widget.controller.conflicts) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              TextButton(
+                                onPressed: () => _resolveConflict(id, true),
+                                child: Text(l10n.plantsUseServer),
+                              ),
+                              TextButton(
+                                onPressed: () => _resolveConflict(id, false),
+                                child: Text(l10n.plantsKeepMine),
+                              ),
+                            ],
+                          ),
+                        ],
+                        Text(l10n.plantsPhotosLocal),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               if (widget.controller.error != null)
                 Text(l10n.plantsLoadError)
               else if (plants.isEmpty)
@@ -256,7 +394,9 @@ class _PlantsPageState extends State<PlantsPage> {
                 ),
               const SizedBox(height: 14),
               Text(
-                l10n.plantsLocalOnly,
+                widget.controller.serverSynced
+                    ? l10n.plantsLocalAndShared
+                    : l10n.plantsLocalOnly,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -720,7 +860,11 @@ class _PlantEditorState extends State<_PlantEditor> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.plantsDelete),
-        content: Text(l10n.plantsDeleteConfirm),
+        content: Text(
+          widget.controller.isSharedPlant(original)
+              ? l10n.plantsDeleteSharedConfirm
+              : l10n.plantsDeleteConfirm,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -845,15 +989,15 @@ class _PlantEditorState extends State<_PlantEditor> {
                       child: Slider(
                         value: interval.toDouble(),
                         min: 1,
-                        max: 90,
-                        divisions: 89,
+                        max: 365,
+                        divisions: 364,
                         label: '$interval',
                         onChanged: (value) =>
                             setState(() => interval = value.round()),
                       ),
                     ),
                     IconButton(
-                      onPressed: interval < 90
+                      onPressed: interval < 365
                           ? () => setState(() => interval++)
                           : null,
                       icon: const Icon(Icons.add_circle_outline_rounded),

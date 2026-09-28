@@ -130,7 +130,7 @@ troubleshooting. Destructive or cross-device actions need explicit confirmation.
 | Area | Current mobile state | Next useful increment |
 | --- | --- | --- |
 | Connection and pairing | Implemented for supported Link v1 servers | Recheck recovery copy and real TLS/identity failures |
-| Plants | Local cards, photos, interval, watering and undo | Opt-in local watering alerts with native scheduling and permission checks |
+| Plants | Account-scoped Link sync with opt-in local import, offline retry and conflict controls; photos stay local | Opt-in local watering alerts with native scheduling and permission checks |
 | Ideas | Private local capture, categories, editing and reminder handoff | Connect to a canonical, account-scoped server API when it exists; plan conflict handling and migration before enabling sync |
 | Calendar and reminders | Server-backed viewing and editing | Refine day agenda and recurrence validation against current server |
 | Requests | Existing server-backed media actions | Improve per-request status and actionable failures |

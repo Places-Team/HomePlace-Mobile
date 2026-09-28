@@ -130,6 +130,69 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось загрузить карточки растений. Повторите попытку.';
 
   @override
+  String get plantsSynced =>
+      'Растения синхронизированы с вашим аккаунтом HomePlace.';
+
+  @override
+  String get plantsSyncNeedsAttention =>
+      'Синхронизация растений требует внимания.';
+
+  @override
+  String get plantsSyncError =>
+      'Не удалось синхронизировать растения. Проверьте соединение и разрешение устройства, затем повторите. Изменения сохранены на телефоне.';
+
+  @override
+  String plantsPending(int count) {
+    return 'Ожидают синхронизации: $count';
+  }
+
+  @override
+  String plantsLocalAvailable(int count) {
+    return 'Только на этом устройстве: $count';
+  }
+
+  @override
+  String get plantsImportTitle => 'Добавить местные растения в HomePlace?';
+
+  @override
+  String plantsImportConfirm(int count) {
+    return 'Отправить $count карточек растений в этот аккаунт HomePlace? Фото останутся на телефоне. Исходные местные карточки сохранятся на устройстве.';
+  }
+
+  @override
+  String get plantsImport => 'Добавить в HomePlace';
+
+  @override
+  String get plantsConflict =>
+      'Растение изменили на другом устройстве. Выберите, какую версию сохранить.';
+
+  @override
+  String get plantsUseServer => 'Версия сервера';
+
+  @override
+  String get plantsKeepMine => 'Мои изменения';
+
+  @override
+  String get plantsUseServerConfirm =>
+      'Отменить ожидающее изменение телефона и оставить версию сервера?';
+
+  @override
+  String get plantsKeepMineConfirm =>
+      'Повторить изменение телефона поверх последней версии сервера? Это может заменить правку другого устройства.';
+
+  @override
+  String get plantsPhotosLocal =>
+      'Фото остаются на этом устройстве и не отправляются на сервер.';
+
+  @override
+  String get plantsLocalAndShared =>
+      'Общие карточки синхронизируются с аккаунтом. Местные карточки отправляются только по вашему решению.';
+
+  @override
+  String get plantsDeleteSharedConfirm =>
+      'Удалить растение из аккаунта HomePlace? Фото на этом устройстве сохранятся.';
+
+  @override
   String get plantsSaveError =>
       'Не удалось сохранить растение. Повторите попытку.';
 

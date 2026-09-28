@@ -25,6 +25,7 @@ import 'home_controller.dart';
 import 'home_modules.dart';
 import '../plants/plant_controller.dart';
 import '../plants/plant_store.dart';
+import '../plants/synced_plant_repository.dart';
 import '../plants/plants_view.dart';
 
 const _violet = Color(0xff829eff);
@@ -56,7 +57,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late final bool ownsHome = widget.homeController == null;
   late final PlantController? plants = widget.connection.profile == null
       ? null
-      : PlantController(PlantStore(widget.connection.profile!));
+      : PlantController(
+          PlantStore(widget.connection.profile!),
+          repository: SyncedPlantRepository(
+            profile: widget.connection.profile!,
+            local: PlantStore(widget.connection.profile!),
+            sessionProvider: widget.connection.authenticatedSession,
+            canUseServer: () =>
+                home.overview?.permissions.contains('plants.manage') ?? false,
+          ),
+        );
   late final IdeaController? ideas =
       widget.ideaController ??
       (widget.connection.profile == null
@@ -76,6 +86,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ));
   late final bool ownsIdeas = widget.ideaController == null;
   int _seenIdeaOverviewRevision = 0;
+  int _seenPlantOverviewRevision = 0;
   final ValueNotifier<_PlanSection> planSection = ValueNotifier(
     _PlanSection.calendar,
   );
@@ -115,6 +126,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   void _refreshIdeasAccess() {
+    final plantController = plants;
+    if (plantController != null &&
+        home.overviewRevision != _seenPlantOverviewRevision) {
+      _seenPlantOverviewRevision = home.overviewRevision;
+      unawaited(plantController.sync());
+    }
     final controller = ideas;
     if (controller == null || controller.loading || controller.busy) return;
     final allowed =

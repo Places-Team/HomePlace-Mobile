@@ -129,6 +129,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get plantsLoadError => 'Plant cards could not be loaded. Try again.';
 
   @override
+  String get plantsSynced => 'Plants are synced with your HomePlace account.';
+
+  @override
+  String get plantsSyncNeedsAttention => 'Plant sync needs attention.';
+
+  @override
+  String get plantsSyncError =>
+      'Could not sync plants. Check the connection and device permission, then retry. Your changes are kept on this device.';
+
+  @override
+  String plantsPending(int count) {
+    return 'Waiting to sync: $count';
+  }
+
+  @override
+  String plantsLocalAvailable(int count) {
+    return 'Local-only plants: $count';
+  }
+
+  @override
+  String get plantsImportTitle => 'Add local plants to HomePlace?';
+
+  @override
+  String plantsImportConfirm(int count) {
+    return 'Upload $count local plant cards to this HomePlace account? Photos stay on this phone. The original local cards are preserved on this device.';
+  }
+
+  @override
+  String get plantsImport => 'Add to HomePlace';
+
+  @override
+  String get plantsConflict =>
+      'This plant changed on another device. Choose which version to keep.';
+
+  @override
+  String get plantsUseServer => 'Use server version';
+
+  @override
+  String get plantsKeepMine => 'Keep my changes';
+
+  @override
+  String get plantsUseServerConfirm =>
+      'Discard this phone\'s pending change and keep the server version?';
+
+  @override
+  String get plantsKeepMineConfirm =>
+      'Retry this phone\'s change over the latest server version? This may replace another device\'s edit.';
+
+  @override
+  String get plantsPhotosLocal =>
+      'Photos stay on this device and are not uploaded.';
+
+  @override
+  String get plantsLocalAndShared =>
+      'Shared cards sync with your account. Local-only cards are sent only if you choose to import them.';
+
+  @override
+  String get plantsDeleteSharedConfirm =>
+      'Delete this plant from your HomePlace account? Photos on this device are kept.';
+
+  @override
   String get plantsSaveError => 'Could not save the plant. Try again.';
 
   @override

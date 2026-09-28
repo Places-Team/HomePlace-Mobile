@@ -314,6 +314,102 @@ abstract class AppLocalizations {
   /// **'Plant cards could not be loaded. Try again.'**
   String get plantsLoadError;
 
+  /// No description provided for @plantsSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Plants are synced with your HomePlace account.'**
+  String get plantsSynced;
+
+  /// No description provided for @plantsSyncNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant sync needs attention.'**
+  String get plantsSyncNeedsAttention;
+
+  /// No description provided for @plantsSyncError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not sync plants. Check the connection and device permission, then retry. Your changes are kept on this device.'**
+  String get plantsSyncError;
+
+  /// No description provided for @plantsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to sync: {count}'**
+  String plantsPending(int count);
+
+  /// No description provided for @plantsLocalAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Local-only plants: {count}'**
+  String plantsLocalAvailable(int count);
+
+  /// No description provided for @plantsImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add local plants to HomePlace?'**
+  String get plantsImportTitle;
+
+  /// No description provided for @plantsImportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload {count} local plant cards to this HomePlace account? Photos stay on this phone. The original local cards are preserved on this device.'**
+  String plantsImportConfirm(int count);
+
+  /// No description provided for @plantsImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to HomePlace'**
+  String get plantsImport;
+
+  /// No description provided for @plantsConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This plant changed on another device. Choose which version to keep.'**
+  String get plantsConflict;
+
+  /// No description provided for @plantsUseServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Use server version'**
+  String get plantsUseServer;
+
+  /// No description provided for @plantsKeepMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my changes'**
+  String get plantsKeepMine;
+
+  /// No description provided for @plantsUseServerConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this phone\'s pending change and keep the server version?'**
+  String get plantsUseServerConfirm;
+
+  /// No description provided for @plantsKeepMineConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry this phone\'s change over the latest server version? This may replace another device\'s edit.'**
+  String get plantsKeepMineConfirm;
+
+  /// No description provided for @plantsPhotosLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos stay on this device and are not uploaded.'**
+  String get plantsPhotosLocal;
+
+  /// No description provided for @plantsLocalAndShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared cards sync with your account. Local-only cards are sent only if you choose to import them.'**
+  String get plantsLocalAndShared;
+
+  /// No description provided for @plantsDeleteSharedConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this plant from your HomePlace account? Photos on this device are kept.'**
+  String get plantsDeleteSharedConfirm;
+
   /// No description provided for @plantsSaveError.
   ///
   /// In en, this message translates to:
