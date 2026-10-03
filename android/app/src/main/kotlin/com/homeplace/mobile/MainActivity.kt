@@ -30,7 +30,7 @@ import java.io.FileOutputStream
 import java.net.URI
 import java.util.concurrent.Executors
 
-class MainActivity : FlutterActivity() {
+open class MainActivity : FlutterActivity() {
     private var shareChannel: MethodChannel? = null
     private var navigationChannel: MethodChannel? = null
     private var pendingShortcutDestination: String? = null

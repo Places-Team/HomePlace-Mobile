@@ -243,6 +243,8 @@
   "settings": "Настройки подключения",
   "loadingHome": "Собираем ваш HomePlace…",
   "preparingShare": "Готовим устройства для безопасной отправки…",
+  "quickShareTitle": "Поделиться через HomePlace",
+  "quickShareWaiting": "Выбранное готово. Подключаемся к HomePlace…",
   "tryAgain": "Повторить",
   "errorDetails": "Требуется внимание",
   "dismissError": "Скрыть",

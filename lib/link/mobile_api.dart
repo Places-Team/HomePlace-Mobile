@@ -27,6 +27,36 @@ final class MobileApi {
     );
   }
 
+  Future<LinkResult<List<MobileShareTarget>>> shareTargets(
+    AuthenticatedLinkSession session,
+  ) async {
+    final response = await _client.requestJson(
+      session.address,
+      'GET',
+      '/api/link/mobile/share',
+      credential: session.credential,
+      maxResponseBytes: 65536,
+    );
+    return _decode(response, (json) {
+      final raw = json['targets'];
+      if (raw is! List || raw.length > 100) {
+        throw const FormatException('Invalid share targets.');
+      }
+      return raw
+          .map((item) {
+            if (item is! Map<String, dynamic>) {
+              throw const FormatException('Invalid share target.');
+            }
+            final target = MobileShareTarget.fromJson(item);
+            if (target.id.isEmpty || target.name.isEmpty) {
+              throw const FormatException('Invalid share target.');
+            }
+            return target;
+          })
+          .toList(growable: false);
+    }, 'HomePlace returned invalid share targets.');
+  }
+
   Future<LinkResult<void>> createReminder(
     AuthenticatedLinkSession session, {
     required String title,

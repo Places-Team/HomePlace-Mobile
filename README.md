@@ -4,6 +4,8 @@ The Flutter application for connecting Android and iOS devices to a self-hosted 
 
 ## Current milestone
 
+On Android, choosing HomePlace from another app's Share Sheet opens a compact, translucent recipient picker over that app. The saved connection restores without first showing HomePlace's main screen. Sending still requires a recipient and explicit confirmation. Closing the picker returns to the source app. Incoming file acceptance and rejection are available from Android notifications; optional background checks follow Android's scheduling and are not instant delivery.
+
 Transfers include account-only temporary text links through the server's
 `/api/exchange` API. They can expire after 10 minutes, one hour, or one day,
 optionally disappear after the first open, and be revoked from the phone.

@@ -1454,6 +1454,18 @@ abstract class AppLocalizations {
   /// **'Preparing devices for secure sharing…'**
   String get preparingShare;
 
+  /// No description provided for @quickShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share with HomePlace'**
+  String get quickShareTitle;
+
+  /// No description provided for @quickShareWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Your selection is ready. Connecting to your HomePlace…'**
+  String get quickShareWaiting;
+
   /// No description provided for @tryAgain.
   ///
   /// In en, this message translates to:

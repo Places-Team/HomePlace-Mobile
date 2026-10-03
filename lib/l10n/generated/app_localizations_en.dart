@@ -756,6 +756,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get preparingShare => 'Preparing devices for secure sharing…';
 
   @override
+  String get quickShareTitle => 'Share with HomePlace';
+
+  @override
+  String get quickShareWaiting =>
+      'Your selection is ready. Connecting to your HomePlace…';
+
+  @override
   String get tryAgain => 'Try again';
 
   @override

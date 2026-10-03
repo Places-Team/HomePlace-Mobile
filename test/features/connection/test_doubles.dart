@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:homeplace/core/network/server_address.dart';
@@ -22,6 +23,7 @@ const testServerInfo = ServerInfo(
 );
 
 final class FakeLinkService implements LinkService {
+  Completer<void>? infoGate;
   LinkResult<ServerInfo> infoResult = const LinkSuccess(testServerInfo);
   String heartbeatServerId = testServerId;
   LinkResult<PairingSession>? pairingResult;
@@ -33,8 +35,10 @@ final class FakeLinkService implements LinkService {
   List<String> requestedPermissions = const [];
 
   @override
-  Future<LinkResult<ServerInfo>> fetchInfo(ServerAddress address) async =>
-      infoResult;
+  Future<LinkResult<ServerInfo>> fetchInfo(ServerAddress address) async {
+    await infoGate?.future;
+    return infoResult;
+  }
 
   @override
   Future<LinkResult<PairingSession>> startPairing(

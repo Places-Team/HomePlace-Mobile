@@ -243,6 +243,8 @@
   "settings": "Connection settings",
   "loadingHome": "Bringing your HomePlace together…",
   "preparingShare": "Preparing devices for secure sharing…",
+  "quickShareTitle": "Share with HomePlace",
+  "quickShareWaiting": "Your selection is ready. Connecting to your HomePlace…",
   "tryAgain": "Try again",
   "errorDetails": "Something needs attention",
   "dismissError": "Dismiss",

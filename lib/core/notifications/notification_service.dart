@@ -8,6 +8,9 @@ import '../background/background_tasks.dart';
 
 enum IncomingNotificationActionKind { accept, decline }
 
+bool incomingOfferActionOpensApp(String actionId, bool acceptInBackground) =>
+    actionId == 'accept_incoming' && !acceptInBackground;
+
 String? plantIdFromNotificationUrl(String? value) {
   final uri = Uri.tryParse(value ?? '');
   if (uri == null || uri.path != '/plants') return null;
@@ -307,13 +310,19 @@ final class LocalNotificationService implements NotificationService {
           AndroidNotificationAction(
             'accept_incoming',
             acceptLabel,
-            showsUserInterface: !acceptInBackground,
+            showsUserInterface: incomingOfferActionOpensApp(
+              'accept_incoming',
+              acceptInBackground,
+            ),
             cancelNotification: true,
           ),
           AndroidNotificationAction(
             'decline_incoming',
             declineLabel,
-            showsUserInterface: true,
+            showsUserInterface: incomingOfferActionOpensApp(
+              'decline_incoming',
+              acceptInBackground,
+            ),
             cancelNotification: true,
           ),
         ],

@@ -1,5 +1,7 @@
 # Android platform integration
 
+The Android Share Sheet opens a separate translucent activity over the source app. Its compact picker shows the shared content immediately, then loads eligible recipients through the paired server. No transfer starts before recipient selection and confirmation. The normal launcher activity remains opaque. Accepting or declining an incoming file from a notification does not require opening the main interface; automatic checks are opt-in and may be delayed by Android. Text and link offers still require in-app review.
+
 The Android application targets API 36 (Android 16). System integrations are
 implemented in Kotlin when Flutter cannot provide the same platform behavior.
 They do not add HomePlace Link capabilities or bypass account permissions.

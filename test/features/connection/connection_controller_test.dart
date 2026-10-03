@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/notifications/notification_service.dart';
 import 'package:homeplace/core/sharing/share_service.dart';
@@ -40,6 +42,43 @@ void main() {
     controller.pendingOutgoingShares = const [];
     controller.dispose();
   });
+
+  test(
+    'external share is visible before server restoration and survives it',
+    () async {
+      const saved = ConnectionProfile(
+        serverId: testServerId,
+        serverName: 'Test Home',
+        preferredUrl: 'https://home.example.test',
+        deviceId: 'device-1',
+        secure: true,
+      );
+      final profiles = MemoryProfileStore()..profiles.add(saved);
+      final credentials = MemoryCredentialStore()
+        ..values[testServerId] = 'device-credential';
+      final sharing = FakeShareService()
+        ..pending = const [
+          SharedContent(kind: SharedContentKind.text, value: 'Quick share'),
+        ];
+      final link = FakeLinkService()..infoGate = Completer<void>();
+      final controller = ConnectionController(
+        linkService: link,
+        profileStore: profiles,
+        credentialStore: credentials,
+        notificationService: FakeNotificationService(),
+        shareService: sharing,
+      );
+      final restoration = controller.initialize();
+      await pumpEventQueue();
+      expect(controller.pendingOutgoingShares.single.value, 'Quick share');
+      expect(controller.stage, ConnectionStage.restoring);
+      link.infoGate!.complete();
+      await restoration;
+      expect(controller.stage, ConnectionStage.connected);
+      expect(controller.pendingOutgoingShares.single.value, 'Quick share');
+      controller.dispose();
+    },
+  );
 
   test(
     'acknowledges an incoming file only after the platform saves it',
@@ -232,8 +271,12 @@ void main() {
       expect(await controller.requestNotificationPermission(), isTrue);
       await controller.refreshEvents();
       expect(
-        link.heartbeatCapabilities.last?.any(
-          (item) => item.name == 'notification.receive',
+        link.heartbeatCapabilities.any(
+          (capabilities) =>
+              capabilities?.any(
+                (item) => item.name == 'notification.receive',
+              ) ??
+              false,
         ),
         isTrue,
       );

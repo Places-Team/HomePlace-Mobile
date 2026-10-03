@@ -166,6 +166,7 @@ final class ConnectionController extends ChangeNotifier {
       pendingIncomingShares.firstOrNull;
   Timer? _heartbeatTimer;
   bool _heartbeating = false;
+  Completer<void>? _heartbeatCompletion;
   bool _notificationCapabilitySyncPending = false;
   bool _polling = false;
   bool _disposed = false;
@@ -175,6 +176,10 @@ final class ConnectionController extends ChangeNotifier {
 
   Future<void> initialize() async {
     try {
+      await _sharing.initialize((content) {
+        _enqueueOutgoingShare(content);
+        notifyListeners();
+      });
       await _notifications.initialize();
       _incomingNotificationActions = await _notifications.takeIncomingActions();
       profiles = await _profiles.readAll();
@@ -194,10 +199,6 @@ final class ConnectionController extends ChangeNotifier {
         stage = ConnectionStage.welcome;
         notifyListeners();
       }
-      await _sharing.initialize((content) {
-        _enqueueOutgoingShare(content);
-        notifyListeners();
-      });
     } on Object {
       error = 'Could not restore the saved HomePlace connection.';
       stage = ConnectionStage.reconnecting;
@@ -287,8 +288,10 @@ final class ConnectionController extends ChangeNotifier {
     lastNotification = null;
     pendingClipboard = null;
     pendingIncomingShares = const [];
-    _discardAllOutgoingFiles();
-    pendingOutgoingShares = const [];
+    if (persistSelection) {
+      _discardAllOutgoingFiles();
+      pendingOutgoingShares = const [];
+    }
     _clipboardTextToSuppress = null;
     _acknowledgedEventIds = const [];
     stage = ConnectionStage.connected;
@@ -508,6 +511,7 @@ final class ConnectionController extends ChangeNotifier {
     final granted = await _notifications.requestPermission();
     if (granted) {
       _notificationCapabilitySyncPending = true;
+      if (_heartbeating) await _heartbeatCompletion?.future;
       await _heartbeat();
     }
     return granted;
@@ -773,8 +777,12 @@ final class ConnectionController extends ChangeNotifier {
   }
 
   Future<void> _heartbeat() async {
-    if (_heartbeating) return;
+    if (_heartbeating) {
+      await _heartbeatCompletion?.future;
+      return;
+    }
     _heartbeating = true;
+    _heartbeatCompletion = Completer<void>();
     try {
       final connectedProfile = profile;
       final address = serverAddress;
@@ -958,6 +966,8 @@ final class ConnectionController extends ChangeNotifier {
       notifyListeners();
     } finally {
       _heartbeating = false;
+      _heartbeatCompletion?.complete();
+      _heartbeatCompletion = null;
     }
   }
 

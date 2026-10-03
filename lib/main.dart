@@ -9,6 +9,7 @@ import 'core/background/background_delivery.dart';
 import 'core/branding/brand_mark.dart';
 import 'core/settings/app_preferences.dart';
 import 'features/connection/connection_controller.dart';
+import 'features/exchange/quick_share_view.dart';
 import 'features/home/home_shell.dart';
 import 'features/plants/plant_controller.dart';
 import 'features/plants/plant_store.dart';
@@ -21,7 +22,6 @@ Future<void> main() async {
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   }
   const backgroundDelivery = AndroidBackgroundDeliveryScheduler();
-  await backgroundDelivery.initialize();
   final controller = ConnectionController();
   final preferences = AppPreferences(
     onBackgroundDeliveryChanged: backgroundDelivery.setEnabled,
@@ -32,8 +32,10 @@ Future<void> main() async {
         controller.setSeamlessOwnAccountTransfersEnabled,
   );
   runApp(HomePlaceApp(controller: controller, preferences: preferences));
+  final connectionRestoration = controller.initialize();
+  await backgroundDelivery.initialize();
   await preferences.initialize();
-  await controller.initialize();
+  await connectionRestoration;
 }
 
 class HomePlaceApp extends StatelessWidget {
@@ -93,6 +95,9 @@ class ConnectionShell extends StatelessWidget {
     listenable: controller,
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
+      if (controller.pendingOutgoingShares.isNotEmpty) {
+        return QuickShareView(connection: controller);
+      }
       if (controller.stage == ConnectionStage.connected) {
         return HomeShell(
           key: ValueKey(

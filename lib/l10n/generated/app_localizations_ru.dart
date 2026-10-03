@@ -759,6 +759,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get preparingShare => 'Готовим устройства для безопасной отправки…';
 
   @override
+  String get quickShareTitle => 'Поделиться через HomePlace';
+
+  @override
+  String get quickShareWaiting => 'Выбранное готово. Подключаемся к HomePlace…';
+
+  @override
   String get tryAgain => 'Повторить';
 
   @override
