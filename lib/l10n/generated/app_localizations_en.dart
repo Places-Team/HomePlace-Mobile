@@ -153,7 +153,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String plantsImportConfirm(int count) {
-    return 'Upload $count local plant cards to this HomePlace account? Photos stay on this phone. The original local cards are preserved on this device.';
+    return 'Add $count local plant cards to this HomePlace account? The original cards and photos stay on this device.';
   }
 
   @override
@@ -179,7 +179,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get plantsPhotosLocal =>
-      'Photos stay on this device and are not uploaded.';
+      'Photos of synced plants can be stored privately in this account. Local originals remain on this device.';
+
+  @override
+  String get plantsImportPhotos =>
+      'Also upload existing photos to this account';
+
+  @override
+  String get plantsReminderSettings => 'Watering alerts';
+
+  @override
+  String get plantsReminderSettingsHint =>
+      'HomePlace sends alerts for overdue plants. Telegram uses the chat configured on your server and may be visible to others there.';
+
+  @override
+  String get plantsRemindersEnabled => 'Enable watering alerts';
+
+  @override
+  String get plantsReminderApp => 'HomePlace notifications';
+
+  @override
+  String get plantsReminderTelegram => 'Telegram';
+
+  @override
+  String get plantsReminderTime => 'Time of day';
+
+  @override
+  String plantsReminderRepeatDays(int days) {
+    return 'Repeat while overdue, every $days days';
+  }
+
+  @override
+  String get plantsReminderOnce => 'Notify once per watering cycle';
+
+  @override
+  String get plantsReminderSave => 'Save alert settings';
+
+  @override
+  String get plantsPlantReminders => 'Remind me to water this plant';
+
+  @override
+  String get plantsReminderUnavailable =>
+      'Plant alerts need an updated HomePlace server and device permission.';
 
   @override
   String get plantsLocalAndShared =>

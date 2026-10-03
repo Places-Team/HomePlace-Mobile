@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// No description provided for @plantsImportConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Upload {count} local plant cards to this HomePlace account? Photos stay on this phone. The original local cards are preserved on this device.'**
+  /// **'Add {count} local plant cards to this HomePlace account? The original cards and photos stay on this device.'**
   String plantsImportConfirm(int count);
 
   /// No description provided for @plantsImport.
@@ -395,8 +395,80 @@ abstract class AppLocalizations {
   /// No description provided for @plantsPhotosLocal.
   ///
   /// In en, this message translates to:
-  /// **'Photos stay on this device and are not uploaded.'**
+  /// **'Photos of synced plants can be stored privately in this account. Local originals remain on this device.'**
   String get plantsPhotosLocal;
+
+  /// No description provided for @plantsImportPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Also upload existing photos to this account'**
+  String get plantsImportPhotos;
+
+  /// No description provided for @plantsReminderSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Watering alerts'**
+  String get plantsReminderSettings;
+
+  /// No description provided for @plantsReminderSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'HomePlace sends alerts for overdue plants. Telegram uses the chat configured on your server and may be visible to others there.'**
+  String get plantsReminderSettingsHint;
+
+  /// No description provided for @plantsRemindersEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable watering alerts'**
+  String get plantsRemindersEnabled;
+
+  /// No description provided for @plantsReminderApp.
+  ///
+  /// In en, this message translates to:
+  /// **'HomePlace notifications'**
+  String get plantsReminderApp;
+
+  /// No description provided for @plantsReminderTelegram.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram'**
+  String get plantsReminderTelegram;
+
+  /// No description provided for @plantsReminderTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time of day'**
+  String get plantsReminderTime;
+
+  /// No description provided for @plantsReminderRepeatDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat while overdue, every {days} days'**
+  String plantsReminderRepeatDays(int days);
+
+  /// No description provided for @plantsReminderOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify once per watering cycle'**
+  String get plantsReminderOnce;
+
+  /// No description provided for @plantsReminderSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save alert settings'**
+  String get plantsReminderSave;
+
+  /// No description provided for @plantsPlantReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me to water this plant'**
+  String get plantsPlantReminders;
+
+  /// No description provided for @plantsReminderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant alerts need an updated HomePlace server and device permission.'**
+  String get plantsReminderUnavailable;
 
   /// No description provided for @plantsLocalAndShared.
   ///

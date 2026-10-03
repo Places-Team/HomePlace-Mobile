@@ -1,7 +1,7 @@
 name: homeplace
 description: Flutter clients for connecting to a self-hosted HomePlace server.
 publish_to: 'none'
-version: 0.5.17+33
+version: 0.5.18+34
 
 environment:
   sdk: ^3.13.3
@@ -20,6 +20,7 @@ dependencies:
   homeplace_background_files:
     path: packages/homeplace_background_files
   image_picker: ^1.2.1
+  flutter_image_compress: ^2.4.0
   mime: ^2.0.0
   mobile_scanner: ^7.1.2
   package_info_plus: ^8.3.1

@@ -49,6 +49,9 @@ monitoring data source.
 
 Saved profiles restore on startup. A failed connection check enters a retry state that keeps the saved address and credentials. The client still checks `/api/link/info` and the server ID before using credentials. Entering a different address remains an explicit choice.
 
+Private plant photo transport, credential-scoped caching, opt-in legacy photo
+import, and reminder delivery are described in [plant-sync.md](plant-sync.md).
+
 ## Ideas
 
 The Transfers page offers temporary account-only text exchanges through the

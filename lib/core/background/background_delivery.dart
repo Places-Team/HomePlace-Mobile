@@ -377,6 +377,8 @@ final class BackgroundHeartbeatRunner {
         title,
         body,
         urgent: event.payload['urgent'] == true,
+        plantId: plantIdFromNotificationUrl(event.payload['url'] as String?),
+        serverId: profile.serverId,
       );
       try {
         await appendNotificationHistory(

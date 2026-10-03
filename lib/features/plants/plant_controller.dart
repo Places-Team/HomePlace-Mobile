@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'plant_store.dart';
 import 'synced_plant_repository.dart';
+import '../../link/plant_api.dart';
 
 final class PlantController extends ChangeNotifier {
   PlantController(this.store, {this.repository});
@@ -18,6 +21,11 @@ final class PlantController extends ChangeNotifier {
   int get pendingSyncCount => repository?.pendingCount ?? 0;
   int get localOnlyCount => repository?.localOnlyCount ?? 0;
   String? get syncError => repository?.syncError;
+  bool get plantPhotosAvailable => repository?.plantPhotosAvailable ?? false;
+  bool get plantRemindersAvailable =>
+      repository?.plantRemindersAvailable ?? false;
+  PlantNotificationSettings? get notificationSettings =>
+      repository?.notificationSettings;
   Set<String> get conflicts => repository?.conflicts ?? const {};
   bool isSharedPlant(HomePlant plant) =>
       repository?.isSharedPlant(plant) ?? false;
@@ -57,7 +65,13 @@ final class PlantController extends ChangeNotifier {
   }
 
   Future<void> water(HomePlant plant, DateTime at) async {
-    await save(plant.copyWith(lastWateredAt: at));
+    if (repository case final synced?) {
+      await synced.water(plant, at);
+      plants = synced.plants;
+      if (!_disposed) notifyListeners();
+    } else {
+      await save(plant.copyWith(lastWateredAt: at));
+    }
   }
 
   Future<void> delete(HomePlant plant) async {
@@ -85,10 +99,10 @@ final class PlantController extends ChangeNotifier {
     }
   }
 
-  Future<void> importLocal() async {
+  Future<void> importLocal({bool uploadPhotos = false}) async {
     final synced = repository;
     if (synced == null) return;
-    await synced.importLocal();
+    await synced.importLocal(uploadPhotos: uploadPhotos);
     plants = synced.plants;
     if (!_disposed) notifyListeners();
   }
@@ -104,4 +118,16 @@ final class PlantController extends ChangeNotifier {
   Future<String> savePhoto(XFile picked) => store.savePhoto(picked);
 
   Future<void> removePhoto(String? name) => store.removePhoto(name);
+
+  Future<File?> photoFile(HomePlant plant) =>
+      repository?.photoFile(plant) ?? store.photoFile(plant.photoName);
+
+  Future<void> updateNotificationSettings(
+    PlantNotificationSettings settings,
+  ) async {
+    final synced = repository;
+    if (synced == null) return;
+    await synced.updateNotificationSettings(settings);
+    if (!_disposed) notifyListeners();
+  }
 }

@@ -85,6 +85,11 @@ Saved connections reopen automatically. If a server is temporarily unavailable, 
 
 Foreground presence and clipboard relay operate while the application is open. Android can periodically check for notifications and incoming share offers in the background, but Android controls the timing and may defer the 15-minute schedule or an immediate queued task. Private notifications provide Accept and Decline actions; accepting a file queues a headless verified download and MediaStore save without opening the Flutter interface. The optional seamless mode applies only to files from another device with the same server-verified account; when background checks are enabled, those files can also be saved by the worker. Household files, links, text, and clipboard always require a specific action. Android does not permit ordinary applications to read the system clipboard while they are in the background. The Android activity requests the highest refresh mode available at the current resolution, while the operating system retains final control under adaptive refresh and power-saving policies. Instant server push, realtime presence, and an iOS Share Extension remain later native-integration milestones. iOS does not advertise clipboard or sharing capabilities in this milestone.
 
+Plant synchronization now supports private photos, opt-in import of existing
+photos, separate watering actions, and configurable HomePlace/Telegram reminder
+delivery. See [plant synchronization](docs/plant-sync.md) for privacy and
+conflict behavior.
+
 ## Repository layout
 
 - `lib/` — shared Flutter UI, state, networking, Link models, and application logic.

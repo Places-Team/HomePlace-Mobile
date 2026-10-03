@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'plant_controller.dart';
 import 'plant_store.dart';
+import '../../link/plant_api.dart';
 
 const _leaf = Color(0xff80d7a6);
 const _soil = Color(0xff2b3c37);
@@ -188,40 +189,168 @@ class PlantsPage extends StatefulWidget {
   const PlantsPage({
     required this.controller,
     this.addOnOpen = false,
+    this.initialPlantId,
     super.key,
   });
   final PlantController controller;
   final bool addOnOpen;
+  final String? initialPlantId;
 
   @override
   State<PlantsPage> createState() => _PlantsPageState();
 }
 
 class _PlantsPageState extends State<PlantsPage> {
+  Future<void> _editReminderSettings() async {
+    final initial = widget.controller.notificationSettings;
+    final l10n = AppLocalizations.of(context);
+    if (initial == null || !widget.controller.plantRemindersAvailable) return;
+    var enabled = initial.enabled;
+    var app = initial.app;
+    var telegram = initial.telegram;
+    var time = initial.time;
+    var repeatDays = initial.repeatDays;
+    final next = await showDialog<PlantNotificationSettings>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.plantsReminderSettings),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.plantsReminderSettingsHint),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.plantsRemindersEnabled),
+                  value: enabled,
+                  onChanged: (value) => setDialogState(() => enabled = value),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.plantsReminderApp),
+                  value: app,
+                  onChanged: enabled
+                      ? (value) => setDialogState(() => app = value)
+                      : null,
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.plantsReminderTelegram),
+                  value: telegram,
+                  onChanged: enabled
+                      ? (value) => setDialogState(() => telegram = value)
+                      : null,
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.plantsReminderTime),
+                  subtitle: Text('${initial.timeZone} · $time'),
+                  trailing: const Icon(Icons.schedule_rounded),
+                  onTap: () async {
+                    final parts = time.split(':').map(int.parse).toList();
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(hour: parts[0], minute: parts[1]),
+                    );
+                    if (picked != null) {
+                      setDialogState(
+                        () => time =
+                            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
+                      );
+                    }
+                  },
+                ),
+                Text(
+                  repeatDays == 0
+                      ? l10n.plantsReminderOnce
+                      : l10n.plantsReminderRepeatDays(repeatDays),
+                ),
+                Slider(
+                  value: repeatDays.toDouble(),
+                  min: 0,
+                  max: 30,
+                  divisions: 30,
+                  label: '$repeatDays',
+                  onChanged: (value) =>
+                      setDialogState(() => repeatDays = value.round()),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                initial.copyWith(
+                  enabled: enabled,
+                  app: app,
+                  telegram: telegram,
+                  time: time,
+                  repeatDays: repeatDays,
+                ),
+              ),
+              child: Text(l10n.plantsReminderSave),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (next == null) return;
+    try {
+      await widget.controller.updateNotificationSettings(next);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.plantsSyncError)));
+      }
+    }
+  }
+
   Future<void> _importLocal() async {
     final l10n = AppLocalizations.of(context);
+    var uploadPhotos = false;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.plantsImportTitle),
-        content: Text(
-          l10n.plantsImportConfirm(widget.controller.localOnlyCount),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.plantsImportTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.plantsImportConfirm(widget.controller.localOnlyCount)),
+              if (widget.controller.plantPhotosAvailable)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: uploadPhotos,
+                  onChanged: (value) =>
+                      setDialogState(() => uploadPhotos = value ?? false),
+                  title: Text(l10n.plantsImportPhotos),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.plantsImport),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.plantsImport),
-          ),
-        ],
       ),
     );
     if (confirmed != true) return;
     try {
-      await widget.controller.importLocal();
+      await widget.controller.importLocal(uploadPhotos: uploadPhotos);
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -265,6 +394,18 @@ class _PlantsPageState extends State<PlantsPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialPlantId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await widget.controller.load();
+        if (!mounted) return;
+        final plant = widget.controller.plants
+            .where((item) => item.id == widget.initialPlantId)
+            .firstOrNull;
+        if (plant != null) {
+          await _showPlant(context, widget.controller, plant);
+        }
+      });
+    }
     if (widget.addOnOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _editPlant(context, widget.controller);
@@ -283,7 +424,17 @@ class _PlantsPageState extends State<PlantsPage> {
           .where((item) => item.daysUntilWatering(now) <= 0)
           .length;
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.plantsTitle)),
+        appBar: AppBar(
+          title: Text(l10n.plantsTitle),
+          actions: [
+            if (widget.controller.plantRemindersAvailable)
+              IconButton(
+                tooltip: l10n.plantsReminderSettings,
+                onPressed: _editReminderSettings,
+                icon: const Icon(Icons.notifications_active_outlined),
+              ),
+          ],
+        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _editPlant(context, widget.controller),
           icon: const Icon(Icons.add_rounded),
@@ -627,15 +778,15 @@ class _PlantPhotoState extends State<_PlantPhoto> {
   @override
   void initState() {
     super.initState();
-    _photo = widget.controller.store.photoFile(widget.plant.photoName);
+    _photo = widget.controller.photoFile(widget.plant);
   }
 
   @override
   void didUpdateWidget(covariant _PlantPhoto oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.plant.photoName != widget.plant.photoName ||
+    if (!identical(oldWidget.plant, widget.plant) ||
         oldWidget.controller != widget.controller) {
-      _photo = widget.controller.store.photoFile(widget.plant.photoName);
+      _photo = widget.controller.photoFile(widget.plant);
     }
   }
 
@@ -783,6 +934,7 @@ class _PlantEditorState extends State<_PlantEditor> {
   );
   late final notes = TextEditingController(text: widget.original?.notes ?? '');
   late int interval = widget.original?.intervalDays ?? 7;
+  late bool remindersEnabled = widget.original?.remindersEnabled ?? true;
   late DateTime lastWatered = widget.original?.lastWateredAt ?? DateTime.now();
   XFile? pickedPhoto;
   bool saving = false;
@@ -833,15 +985,9 @@ class _PlantEditorState extends State<_PlantEditor> {
         lastWateredAt: lastWatered,
         createdAt: current?.createdAt ?? DateTime.now(),
         photoName: newPhoto ?? current?.photoName,
+        remindersEnabled: remindersEnabled,
       );
       await widget.controller.save(plant);
-      if (newPhoto != null) {
-        try {
-          await widget.controller.removePhoto(current?.photoName);
-        } on Object {
-          // Saving the plant must not fail when old photo cleanup fails.
-        }
-      }
       if (mounted) Navigator.pop(context);
     } on Object {
       if (newPhoto != null) await widget.controller.removePhoto(newPhoto);
@@ -985,6 +1131,14 @@ class _PlantEditorState extends State<_PlantEditor> {
                           : null,
                       icon: const Icon(Icons.remove_circle_outline_rounded),
                     ),
+                    if (widget.controller.plantRemindersAvailable)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: remindersEnabled,
+                        title: Text(l10n.plantsPlantReminders),
+                        onChanged: (value) =>
+                            setState(() => remindersEnabled = value),
+                      ),
                     Expanded(
                       child: Slider(
                         value: interval.toDouble(),

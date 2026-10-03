@@ -156,7 +156,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String plantsImportConfirm(int count) {
-    return 'Отправить $count карточек растений в этот аккаунт HomePlace? Фото останутся на телефоне. Исходные местные карточки сохранятся на устройстве.';
+    return 'Добавить $count карточек растений в этот аккаунт HomePlace? Исходные карточки и фото сохранятся на телефоне.';
   }
 
   @override
@@ -182,7 +182,48 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get plantsPhotosLocal =>
-      'Фото остаются на этом устройстве и не отправляются на сервер.';
+      'Фото синхронизированных растений могут храниться в этом аккаунте. Исходные фото останутся на телефоне.';
+
+  @override
+  String get plantsImportPhotos =>
+      'Также загрузить существующие фото в этот аккаунт';
+
+  @override
+  String get plantsReminderSettings => 'Напоминания о поливе';
+
+  @override
+  String get plantsReminderSettingsHint =>
+      'HomePlace напоминает о растениях, которые пора полить. Telegram использует чат, настроенный на сервере: сообщения могут видеть и другие участники чата.';
+
+  @override
+  String get plantsRemindersEnabled => 'Включить напоминания о поливе';
+
+  @override
+  String get plantsReminderApp => 'Уведомления HomePlace';
+
+  @override
+  String get plantsReminderTelegram => 'Telegram';
+
+  @override
+  String get plantsReminderTime => 'Время уведомления';
+
+  @override
+  String plantsReminderRepeatDays(int days) {
+    return 'Повторять при просрочке каждые $days дн.';
+  }
+
+  @override
+  String get plantsReminderOnce => 'Один раз за цикл полива';
+
+  @override
+  String get plantsReminderSave => 'Сохранить настройки';
+
+  @override
+  String get plantsPlantReminders => 'Напоминать о поливе этого растения';
+
+  @override
+  String get plantsReminderUnavailable =>
+      'Нужны обновлённый сервер HomePlace и разрешение устройства на уведомления.';
 
   @override
   String get plantsLocalAndShared =>

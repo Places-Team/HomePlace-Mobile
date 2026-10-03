@@ -218,5 +218,9 @@ void main() {
     expect(secondAccount.plants.single.id, 'legacy-1');
     expect(secondAccount.localOnlyCount, 1);
     expect(byAccount['account-b'], isEmpty);
+    await secondAccount.importLocal(uploadPhotos: true);
+    expect(secondAccount.localOnlyCount, 0);
+    expect(secondAccount.pendingCount, 1);
+    expect((await local.readAll()).single.photoName, '123.jpg');
   });
 }

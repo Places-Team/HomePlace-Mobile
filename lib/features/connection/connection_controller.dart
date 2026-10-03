@@ -766,6 +766,12 @@ final class ConnectionController extends ChangeNotifier {
 
   Future<void> refreshEvents() => _heartbeat();
 
+  Future<String?> takePlantNavigation() async {
+    final serverId = profile?.serverId;
+    if (serverId == null) return null;
+    return _notifications.takePlantNavigation(serverId);
+  }
+
   Future<void> _heartbeat() async {
     if (_heartbeating) return;
     _heartbeating = true;
@@ -940,6 +946,8 @@ final class ConnectionController extends ChangeNotifier {
           title,
           body,
           urgent: event.payload['urgent'] == true,
+          plantId: plantIdFromNotificationUrl(event.payload['url'] as String?),
+          serverId: profile?.serverId,
         );
         await _recordNotification(event.id, title, body);
         acknowledged.add(event.id);

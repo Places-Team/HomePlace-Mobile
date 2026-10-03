@@ -25,6 +25,12 @@ sealed class LinkResult<T> {
   const LinkResult();
 }
 
+final class LinkBinaryResponse {
+  const LinkBinaryResponse(this.bytes, this.mimeType);
+  final Uint8List bytes;
+  final String? mimeType;
+}
+
 final class LinkSuccess<T> extends LinkResult<T> {
   const LinkSuccess(this.value);
   final T value;
@@ -992,6 +998,106 @@ final class HttpLinkService implements LinkService {
       return const LinkFailure(
         LinkFailureKind.invalidResponse,
         'HomePlace returned invalid JSON.',
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<LinkResult<LinkBinaryResponse>> requestBinary(
+    ServerAddress address,
+    String method,
+    String path, {
+    required String credential,
+    Uint8List? body,
+    String? contentType,
+    int? ifMatch,
+    int maxResponseBytes = 12 * 1024 * 1024,
+  }) async {
+    final client = _clientFor(address);
+    try {
+      final request = await client
+          .openUrl(method, address.uri.resolve(path))
+          .timeout(const Duration(seconds: 10));
+      request.followRedirects = false;
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer $credential',
+      );
+      request.headers.set(
+        HttpHeaders.acceptHeader,
+        method == 'GET'
+            ? 'image/jpeg, image/png, image/webp'
+            : 'application/json',
+      );
+      if (ifMatch != null) {
+        request.headers.set(HttpHeaders.ifMatchHeader, '$ifMatch');
+      }
+      if (body != null) {
+        if (body.length > 12 * 1024 * 1024 || contentType == null) {
+          return const LinkFailure(
+            LinkFailureKind.invalidResponse,
+            'Invalid plant photo upload.',
+          );
+        }
+        request.headers.contentType = ContentType.parse(contentType);
+        request.contentLength = body.length;
+        request.add(body);
+      }
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
+      if (response.isRedirect) {
+        return const LinkFailure(
+          LinkFailureKind.invalidResponse,
+          'HomePlace redirected a private plant photo.',
+        );
+      }
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in response.timeout(const Duration(seconds: 30))) {
+        if (bytes.length + chunk.length > maxResponseBytes) {
+          return const LinkFailure(
+            LinkFailureKind.invalidResponse,
+            'Plant photo response is too large.',
+          );
+        }
+        bytes.add(chunk);
+      }
+      if (response.statusCode == HttpStatus.unauthorized ||
+          response.statusCode == HttpStatus.forbidden) {
+        return const LinkFailure(
+          LinkFailureKind.authentication,
+          'This device cannot access plant photos.',
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return LinkFailure(
+          LinkFailureKind.invalidResponse,
+          response.statusCode == HttpStatus.conflict
+              ? 'Plant photo conflict. Refresh before retrying.'
+              : 'Plant photo request failed (HTTP ${response.statusCode}).',
+        );
+      }
+      return LinkSuccess(
+        LinkBinaryResponse(
+          bytes.takeBytes(),
+          response.headers.contentType?.mimeType,
+        ),
+      );
+    } on HandshakeException {
+      return const LinkFailure(
+        LinkFailureKind.tls,
+        'The server certificate could not be verified.',
+      );
+    } on TimeoutException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'HomePlace did not respond in time.',
+      );
+    } on SocketException {
+      return const LinkFailure(
+        LinkFailureKind.network,
+        'HomePlace could not be reached.',
       );
     } finally {
       client.close(force: true);

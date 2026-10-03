@@ -22,13 +22,25 @@ final class LinkProtocolRange {
 }
 
 final class LinkFeatures {
-  const LinkFeatures({required this.pairing, required this.realtime});
+  const LinkFeatures({
+    required this.pairing,
+    required this.realtime,
+    this.plants = false,
+    this.plantPhotos = false,
+    this.plantReminders = false,
+  });
   factory LinkFeatures.fromJson(Map<String, dynamic> json) => LinkFeatures(
     pairing: json['pairing'] as bool? ?? false,
     realtime: json['realtime'] as bool? ?? false,
+    plants: json['plants'] as bool? ?? false,
+    plantPhotos: json['plantPhotos'] as bool? ?? false,
+    plantReminders: json['plantReminders'] as bool? ?? false,
   );
   final bool pairing;
   final bool realtime;
+  final bool plants;
+  final bool plantPhotos;
+  final bool plantReminders;
 }
 
 final class ServerInfo {
@@ -39,6 +51,7 @@ final class ServerInfo {
     required this.serverTime,
     required this.features,
     this.maxFileBytes,
+    this.maxPlantPhotoBytes,
   });
 
   factory ServerInfo.fromJson(Map<String, dynamic> json) => ServerInfo(
@@ -59,6 +72,12 @@ final class ServerInfo {
         value,
       _ => null,
     },
+    maxPlantPhotoBytes: switch (json['limits']) {
+      {'maxPlantPhotoBytes': final int value}
+          when value > 0 && value <= 12 * 1024 * 1024 =>
+        value,
+      _ => null,
+    },
   );
 
   final String product;
@@ -67,6 +86,7 @@ final class ServerInfo {
   final String serverTime;
   final LinkFeatures features;
   final int? maxFileBytes;
+  final int? maxPlantPhotoBytes;
 
   bool get supportsClient =>
       product == 'HomePlace' &&

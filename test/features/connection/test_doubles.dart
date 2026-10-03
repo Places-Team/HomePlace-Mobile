@@ -145,6 +145,9 @@ final class FakeNotificationService implements NotificationService {
   Future<void> initialize() async {}
 
   @override
+  Future<String?> takePlantNavigation(String serverId) async => null;
+
+  @override
   Future<List<IncomingNotificationAction>> takeIncomingActions() async {
     final actions = List<IncomingNotificationAction>.of(pendingActions);
     pendingActions.clear();
@@ -171,6 +174,8 @@ final class FakeNotificationService implements NotificationService {
     String title,
     String body, {
     bool urgent = false,
+    String? plantId,
+    String? serverId,
   }) async {
     delivered.add('$title:$body');
     if (urgent) urgentDelivered.add(id);

@@ -117,6 +117,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       ideas?.load();
     }
     plants?.load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_openPendingPlantNotification());
+    });
     if (Platform.isAndroid) {
       _shortcutChannel.setMethodCallHandler((call) async {
         if (call.method == 'shortcutOpened') await _takeShortcut();
@@ -195,9 +198,23 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     home.setForeground(state == AppLifecycleState.resumed);
     if (state == AppLifecycleState.resumed) {
+      unawaited(_openPendingPlantNotification());
       unawaited(widget.connection.refreshEvents());
       if (plants != null) unawaited(plants!.load());
     }
+  }
+
+  Future<void> _openPendingPlantNotification() async {
+    final plantController = plants;
+    if (plantController == null) return;
+    final id = await widget.connection.takePlantNavigation();
+    if (id == null || !mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) =>
+            PlantsPage(controller: plantController, initialPlantId: id),
+      ),
+    );
   }
 
   void _selectTab(int value) {

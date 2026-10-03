@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/storage/connection_profile.dart';
+import 'plant_photo_preparer.dart';
 
 final class HomePlant {
   const HomePlant({
@@ -19,6 +20,7 @@ final class HomePlant {
     required this.createdAt,
     this.photoName,
     this.notes = '',
+    this.remindersEnabled = true,
   });
 
   final String id;
@@ -30,6 +32,7 @@ final class HomePlant {
   final DateTime createdAt;
   final String? photoName;
   final String notes;
+  final bool remindersEnabled;
 
   DateTime get nextWateringAt => DateTime(
     lastWateredAt.year,
@@ -56,6 +59,7 @@ final class HomePlant {
     String? photoName,
     bool clearPhoto = false,
     String? notes,
+    bool? remindersEnabled,
   }) => HomePlant(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -66,6 +70,7 @@ final class HomePlant {
     createdAt: createdAt,
     photoName: clearPhoto ? null : photoName ?? this.photoName,
     notes: notes ?? this.notes,
+    remindersEnabled: remindersEnabled ?? this.remindersEnabled,
   );
 
   Map<String, Object?> toJson() => {
@@ -78,6 +83,7 @@ final class HomePlant {
     'createdAt': createdAt.toIso8601String(),
     'photoName': photoName,
     'notes': notes,
+    'remindersEnabled': remindersEnabled,
   };
 
   static HomePlant? fromJson(Object? value) {
@@ -110,17 +116,22 @@ final class HomePlant {
           ? value['photoName'] as String
           : null,
       notes: value['notes'] is String ? value['notes'] as String : '',
+      remindersEnabled: value['remindersEnabled'] is bool
+          ? value['remindersEnabled'] as bool
+          : true,
     );
   }
 }
 
 final class PlantStore {
-  PlantStore(ConnectionProfile profile)
+  PlantStore(ConnectionProfile profile, {PlantPhotoPreparer? photoPreparer})
     : scope = sha256
           .convert(utf8.encode('${profile.serverId}:${profile.deviceId}'))
-          .toString();
+          .toString(),
+      photoPreparer = photoPreparer ?? PlantPhotoPreparer();
 
   final String scope;
+  final PlantPhotoPreparer photoPreparer;
 
   String get _key => 'homeplace.plants.v1.$scope';
 
@@ -168,17 +179,26 @@ final class PlantStore {
   }
 
   Future<String> savePhoto(XFile picked) async {
-    if (await picked.length() > 12 * 1024 * 1024) {
-      throw const FileSystemException('Plant photo exceeds the size limit.');
-    }
     final extension = picked.path.split('.').last.toLowerCase();
+    final needsConversion =
+        !['jpg', 'jpeg', 'png', 'webp'].contains(extension) ||
+        await picked.length() > 12 * 1024 * 1024;
     final safeExtension = switch (extension) {
-      'png' || 'webp' || 'heic' || 'heif' => extension,
+      'png' || 'webp' when !needsConversion => extension,
       _ => 'jpg',
     };
     final name = '${DateTime.now().microsecondsSinceEpoch}.$safeExtension';
     final directory = await _photoDirectory();
-    await picked.saveTo('${directory.path}/$name');
+    if (needsConversion) {
+      final prepared = await photoPreparer.prepare(
+        File(picked.path),
+        maxBytes: 12 * 1024 * 1024,
+      );
+      await File('${directory.path}/$name')
+          .writeAsBytes(prepared.bytes, flush: true);
+    } else {
+      await picked.saveTo('${directory.path}/$name');
+    }
     return name;
   }
 
