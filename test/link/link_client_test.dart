@@ -11,6 +11,87 @@ import 'package:homeplace/link/mobile_api.dart';
 import 'package:homeplace/link/mobile_models.dart';
 
 void main() {
+  test(
+    'confirmed certificate pin applies even to a trusted certificate',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'homeplace-tls-test-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final certificate = File('${directory.path}/certificate.pem');
+      final key = File('${directory.path}/key.pem');
+      final generated = await Process.run('openssl', [
+        'req',
+        '-x509',
+        '-newkey',
+        'rsa:2048',
+        '-nodes',
+        '-keyout',
+        key.path,
+        '-out',
+        certificate.path,
+        '-days',
+        '1',
+        '-subj',
+        '/CN=localhost',
+        '-addext',
+        'subjectAltName=DNS:localhost,IP:127.0.0.1',
+      ]);
+      expect(generated.exitCode, 0);
+      final der = await Process.run('openssl', [
+        'x509',
+        '-in',
+        certificate.path,
+        '-outform',
+        'DER',
+      ], stdoutEncoding: null);
+      expect(der.exitCode, 0);
+      final fingerprint = sha256
+          .convert(der.stdout as List<int>)
+          .bytes
+          .map((byte) => byte.toRadixString(16).padLeft(2, '0').toUpperCase())
+          .join(':');
+      SecurityContext.defaultContext.setTrustedCertificates(certificate.path);
+      final context = SecurityContext()
+        ..useCertificateChain(certificate.path)
+        ..usePrivateKey(key.path);
+      final server = await HttpServer.bindSecure(
+        InternetAddress.loopbackIPv4,
+        0,
+        context,
+      );
+      addTearDown(() => server.close(force: true));
+      var requests = 0;
+      server.listen((request) async {
+        requests++;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write('{}');
+        await request.response.close();
+      });
+      final base = ServerAddress(
+        uri: Uri.parse('https://127.0.0.1:${server.port}'),
+        isLocal: true,
+        security: ConnectionSecurity.confirmedCertificate,
+        certificateFingerprint: '00:00:00',
+      );
+      final rejected = await const HttpLinkService().requestJson(
+        base,
+        'GET',
+        '/probe',
+        credential: 'test-credential',
+      );
+      expect(rejected, isA<LinkFailure>());
+      expect(requests, 0);
+      final accepted = await const HttpLinkService().requestJson(
+        base.trustFingerprint(fingerprint),
+        'GET',
+        '/probe',
+        credential: 'test-credential',
+      );
+      expect(accepted, isA<LinkSuccess>());
+      expect(requests, 1);
+    },
+  );
   test('validates Link info against a mock HomePlace server', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(server.close);

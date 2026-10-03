@@ -43,6 +43,28 @@ class HomeController extends ChangeNotifier {
   String? _lastAutoClipboardText;
   bool _autoClipboardBusy = false;
   bool autoClipboardEnabled = false;
+  String? _clipboardConsentScope;
+
+  String _clipboardScope(AuthenticatedLinkSession session) => sha256
+      .convert(utf8.encode('${session.serverId}:${session.credential}'))
+      .toString();
+
+  Future<void> _syncClipboardConsent() async {
+    final session = await sessionProvider();
+    final scope = session == null ? null : _clipboardScope(session);
+    if (_clipboardConsentScope == scope) return;
+    _clipboardConsentScope = scope;
+    autoClipboardEnabled = false;
+    _lastAutoClipboardText = null;
+    final preferences = await SharedPreferences.getInstance();
+    if (_clipboardConsentScope != scope) return;
+    autoClipboardEnabled =
+        scope != null &&
+        (preferences.getBool('clipboard.autoSend.$scope') ?? false);
+    notifyListeners();
+    _restartClipboardTimer();
+  }
+
   List<TransferActivity> transferActivity = const [];
   String? _activityScope;
   double? fileTransferProgress;
@@ -51,8 +73,7 @@ class HomeController extends ChangeNotifier {
   SavedSharedFile? lastSavedFile;
 
   Future<void> initialize() async {
-    final preferences = await SharedPreferences.getInstance();
-    autoClipboardEnabled = preferences.getBool('clipboard.autoSend') ?? false;
+    await _syncClipboardConsent();
     await _loadTransferActivity();
     await refresh(initial: true);
     _startForegroundTimers();
@@ -88,12 +109,18 @@ class HomeController extends ChangeNotifier {
   }
 
   Future<void> setAutoClipboardEnabled(bool value) async {
+    final requestedSession = await sessionProvider();
+    if (requestedSession == null) return;
+    final requestedScope = _clipboardScope(requestedSession);
+    await _syncClipboardConsent();
+    final scope = _clipboardConsentScope;
+    if (scope == null || scope != requestedScope) return;
     if (autoClipboardEnabled == value) return;
     autoClipboardEnabled = value;
     _lastAutoClipboardText = null;
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setBool('clipboard.autoSend', value);
+    await preferences.setBool('clipboard.autoSend.$scope', value);
     _restartClipboardTimer();
   }
 
@@ -116,11 +143,17 @@ class HomeController extends ChangeNotifier {
     if (reader == null) return;
     _autoClipboardBusy = true;
     try {
+      await _syncClipboardConsent();
+      final consentScope = _clipboardConsentScope;
+      if (!autoClipboardEnabled || consentScope == null) return;
       final text = (await reader())?.trim() ?? '';
+      final session = await sessionProvider();
+      if (session == null || _clipboardScope(session) != consentScope) {
+        await _syncClipboardConsent();
+        return;
+      }
       if (text.isEmpty || text == _lastAutoClipboardText) return;
       _lastAutoClipboardText = text;
-      final session = await sessionProvider();
-      if (session == null) return;
       final result = await _api.relayClipboard(session, text);
       if (result case LinkSuccess<int> success when success.value > 0) {
         error = null;

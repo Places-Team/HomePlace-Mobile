@@ -6,6 +6,7 @@ import '../../core/settings/module_visibility_preferences.dart';
 import '../../link/mobile_models.dart';
 import '../connection/connection_controller.dart';
 import 'home_controller.dart';
+import 'device_platform_icon.dart';
 
 const _moduleViolet = Color(0xff68789f);
 const _moduleCoral = Color(0xffbd765b);
@@ -617,9 +618,7 @@ class _DevicesModulePage extends StatelessWidget {
                       Row(
                         children: [
                           _IconTile(
-                            icon: device.platform == 'android'
-                                ? Icons.android_rounded
-                                : Icons.devices_rounded,
+                            icon: devicePlatformIconData(device.platform),
                             color: device.online ? _moduleMint : Colors.grey,
                           ),
                           const SizedBox(width: 12),

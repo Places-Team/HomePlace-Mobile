@@ -676,8 +676,11 @@ final class HttpLinkService implements LinkService {
   }
 
   HttpClient _clientFor(ServerAddress address) {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 10);
+    final client = HttpClient(
+      context: address.security == ConnectionSecurity.confirmedCertificate
+          ? SecurityContext(withTrustedRoots: false)
+          : null,
+    )..connectionTimeout = const Duration(seconds: 10);
     client.badCertificateCallback = (certificate, host, port) {
       final fingerprint = _fingerprint(certificate.der);
       return address.security == ConnectionSecurity.confirmedCertificate &&
@@ -903,8 +906,11 @@ final class HttpLinkService implements LinkService {
     String? credential,
     int maxResponseBytes = 65536,
   }) async {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 10);
+    final client = HttpClient(
+      context: address.security == ConnectionSecurity.confirmedCertificate
+          ? SecurityContext(withTrustedRoots: false)
+          : null,
+    )..connectionTimeout = const Duration(seconds: 10);
     String? rejectedFingerprint;
     client.badCertificateCallback = (certificate, host, port) {
       final fingerprint = _fingerprint(certificate.der);

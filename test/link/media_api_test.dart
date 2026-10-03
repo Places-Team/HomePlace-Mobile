@@ -9,6 +9,40 @@ import 'package:homeplace/link/media_api.dart';
 
 void main() {
   test(
+    'poster uses authenticated bounded transport and rejects invalid content',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        expect(
+          request.headers.value(HttpHeaders.authorizationHeader),
+          'Bearer secret',
+        );
+        request.response.headers.contentType = ContentType('image', 'png');
+        request.response.add([137, 80, 78, 71]);
+        await request.response.close();
+      });
+      final session = AuthenticatedLinkSession(
+        address: ServerAddress(
+          uri: Uri.parse('http://127.0.0.1:${server.port}'),
+          isLocal: true,
+          security: ConnectionSecurity.localHttp,
+        ),
+        credential: 'secret',
+        serverId: 'server-1',
+        serverName: 'Test',
+      );
+      const api = MediaApi();
+      expect(
+        await api.poster(session, 'https://other.example/steal'),
+        isA<LinkFailure>(),
+      );
+      final result = await api.poster(session, '/api/media/tmdb-image?path=x');
+      expect(result, isA<LinkSuccess>());
+      expect((result as LinkSuccess).value, [137, 80, 78, 71]);
+    },
+  );
+  test(
     'catalog, details and requests use paired server and credential',
     () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

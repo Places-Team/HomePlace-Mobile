@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
@@ -360,18 +362,10 @@ class _MediaCatalogViewState extends State<MediaCatalogView> {
                       ? const Icon(Icons.movie_outlined)
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            _session!.address.uri
-                                .resolve(title.poster!)
-                                .toString(),
-                            headers: {
-                              'Authorization': 'Bearer ${_session!.credential}',
-                            },
-                            width: 42,
-                            height: 62,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                const Icon(Icons.movie_outlined),
+                          child: _VerifiedPoster(
+                            session: _session!,
+                            path: title.poster!,
+                            gateway: widget.gateway,
                           ),
                         ),
                   title: Text(title.title),
@@ -418,4 +412,57 @@ class _MediaCatalogViewState extends State<MediaCatalogView> {
       ],
     );
   }
+}
+
+class _VerifiedPoster extends StatefulWidget {
+  const _VerifiedPoster({
+    required this.session,
+    required this.path,
+    required this.gateway,
+  });
+
+  final AuthenticatedLinkSession session;
+  final String path;
+  final MediaGateway gateway;
+
+  @override
+  State<_VerifiedPoster> createState() => _VerifiedPosterState();
+}
+
+class _VerifiedPosterState extends State<_VerifiedPoster> {
+  late Future<LinkResult<Uint8List>> _image;
+
+  @override
+  void initState() {
+    super.initState();
+    _image = widget.gateway.poster(widget.session, widget.path);
+  }
+
+  @override
+  void didUpdateWidget(_VerifiedPoster oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.path != oldWidget.path ||
+        widget.session.credential != oldWidget.session.credential ||
+        widget.gateway != oldWidget.gateway) {
+      _image = widget.gateway.poster(widget.session, widget.path);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<LinkResult<Uint8List>>(
+    future: _image,
+    builder: (context, snapshot) {
+      final result = snapshot.data;
+      if (result is! LinkSuccess<Uint8List>) {
+        return const Icon(Icons.movie_outlined);
+      }
+      return Image.memory(
+        result.value,
+        width: 42,
+        height: 62,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(Icons.movie_outlined),
+      );
+    },
+  );
 }

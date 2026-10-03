@@ -35,6 +35,7 @@ class MainActivity : FlutterActivity() {
     private var navigationChannel: MethodChannel? = null
     private var pendingShortcutDestination: String? = null
     private val pendingShares = ArrayDeque<Map<String, Any>>()
+    @Volatile private var shareActivityDestroyed = false
     private var shareReceiverReady = false
     private val shareExecutor = Executors.newSingleThreadExecutor()
 
@@ -240,11 +241,25 @@ class MainActivity : FlutterActivity() {
 
     private fun deliverShare(content: Map<String, Any>?) {
         if (content == null) return
+        if (shareActivityDestroyed) {
+            discardShare(content)
+            return
+        }
         if (shareReceiverReady) {
             shareChannel?.invokeMethod("shareReceived", content)
         } else {
+            val queuedBytes = pendingShares.sumOf { (it["size"] as? Long) ?: 0L }
+            val incomingBytes = (content["size"] as? Long) ?: 0L
+            if (pendingShares.size >= 32 || queuedBytes + incomingBytes > MAX_FILE_BYTES) {
+                discardShare(content)
+                return
+            }
             pendingShares.addLast(content)
         }
+    }
+
+    private fun discardShare(content: Map<String, Any>) {
+        (content["path"] as? String)?.let(::File)?.delete()
     }
 
     private fun captureText(incoming: Intent): Map<String, Any>? {
@@ -254,7 +269,10 @@ class MainActivity : FlutterActivity() {
         return mapOf("type" to type, "value" to text)
     }
 
-    private fun copyIncomingFile(uri: Uri, announcedType: String?): Map<String, Any>? = runCatching {
+    private fun copyIncomingFile(uri: Uri, announcedType: String?): Map<String, Any>? {
+        var target: File? = null
+        var completed = false
+        return try {
         var filename = "shared-file"
         var announcedSize = -1L
         contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)?.use { cursor ->
@@ -265,35 +283,41 @@ class MainActivity : FlutterActivity() {
         }
         if (announcedSize > MAX_FILE_BYTES) return null
         filename = filename.replace(Regex("[\\\\/\\x00-\\x1f\\x7f]"), "_")
-        val target = File.createTempFile("share-", ".bin", cacheDir)
+            val temporary = File.createTempFile("share-", ".bin", cacheDir)
+            target = temporary
         var total = 0L
         contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(target).use { output ->
+                FileOutputStream(temporary).use { output ->
                 val buffer = ByteArray(64 * 1024)
                 while (true) {
                     val count = input.read(buffer)
                     if (count < 0) break
                     total += count
                     if (total > MAX_FILE_BYTES) {
-                        target.delete()
-                        return null
+                            return null
                     }
                     output.write(buffer, 0, count)
                 }
             }
         } ?: return null
         if (total == 0L) {
-            target.delete()
-            return null
+                return null
         }
-        mapOf(
+            val content = mapOf(
             "type" to "file",
-            "path" to target.absolutePath,
+                "path" to temporary.absolutePath,
             "filename" to filename,
             "mimeType" to (announcedType ?: contentResolver.getType(uri) ?: "application/octet-stream"),
-            "size" to total,
-        )
-    }.getOrNull()
+                "size" to total,
+            )
+            completed = true
+            content
+        } catch (_: Exception) {
+            null
+        } finally {
+            if (!completed) target?.delete()
+        }
+    }
 
     private fun saveReceivedFilePath(arguments: Map<*, *>?, result: MethodChannel.Result) {
         val rawPath = arguments?.get("path") as? String
@@ -338,11 +362,16 @@ class MainActivity : FlutterActivity() {
                 }
             } else {
                 val directory = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "HomePlace").apply { mkdirs() }
-                val target = File(directory, filename)
-                safeSource.inputStream().use { input ->
-                    FileOutputStream(target).use { output -> input.copyTo(output, 64 * 1024) }
+                val target = reserveUniqueDownload(directory, filename)
+                try {
+                    safeSource.inputStream().use { input ->
+                        FileOutputStream(target).use { output -> input.copyTo(output, 64 * 1024) }
+                    }
+                    savedUri = FileProvider.getUriForFile(this, "$packageName.files", target)
+                } catch (error: Throwable) {
+                    target.delete()
+                    throw error
                 }
-                savedUri = FileProvider.getUriForFile(this, "$packageName.files", target)
             }
             savedUri.toString()
         }.onSuccess { location -> runOnUiThread { result.success(location) } }
@@ -350,6 +379,18 @@ class MainActivity : FlutterActivity() {
                 result.error("save_failed", error.message ?: "The file could not be saved.", null)
             } }
         }
+    }
+
+    private fun reserveUniqueDownload(directory: File, filename: String): File {
+        val dot = filename.lastIndexOf('.')
+        val stem = if (dot > 0) filename.substring(0, dot) else filename
+        val extension = if (dot > 0) filename.substring(dot) else ""
+        for (index in 0..999) {
+            val name = if (index == 0) filename else "$stem ($index)$extension"
+            val candidate = File(directory, name)
+            if (candidate.createNewFile()) return candidate
+        }
+        error("No free filename is available")
     }
 
     private fun openSavedFile(arguments: Map<*, *>?, result: MethodChannel.Result) {
@@ -377,9 +418,12 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        shareActivityDestroyed = true
         shareReceiverReady = false
         navigationChannel = null
         shareExecutor.shutdownNow()
+        pendingShares.forEach(::discardShare)
+        pendingShares.clear()
         super.onDestroy()
     }
 

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../features/connection/connection_controller.dart';
 import 'link_client.dart';
 
@@ -152,6 +154,10 @@ final class MediaDetails {
 }
 
 abstract interface class MediaGateway {
+  Future<LinkResult<Uint8List>> poster(
+    AuthenticatedLinkSession session,
+    String path,
+  );
   Future<LinkResult<MediaCatalog>> discover(
     AuthenticatedLinkSession session, {
     required String query,
@@ -176,6 +182,41 @@ abstract interface class MediaGateway {
 final class MediaApi implements MediaGateway {
   const MediaApi({this.client = const HttpLinkService()});
   final HttpLinkService client;
+
+  @override
+  Future<LinkResult<Uint8List>> poster(
+    AuthenticatedLinkSession session,
+    String path,
+  ) async {
+    if (safeMediaImagePath(path) == null) {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'Invalid media image path.',
+      );
+    }
+    final result = await client.requestBinary(
+      session.address,
+      'GET',
+      path,
+      credential: session.credential,
+      maxResponseBytes: 1024 * 1024,
+    );
+    if (result case LinkFailure<LinkBinaryResponse> failure) {
+      return LinkFailure(failure.kind, failure.message);
+    }
+    final response = (result as LinkSuccess<LinkBinaryResponse>).value;
+    if (!{
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    }.contains(response.mimeType?.split(';').first.toLowerCase())) {
+      return const LinkFailure(
+        LinkFailureKind.invalidResponse,
+        'HomePlace returned an invalid media image.',
+      );
+    }
+    return LinkSuccess(response.bytes);
+  }
 
   @override
   Future<LinkResult<MediaCatalog>> discover(

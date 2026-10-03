@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:homeplace/core/network/server_address.dart';
@@ -8,6 +10,14 @@ import 'package:homeplace/link/media_api.dart';
 import 'package:homeplace/l10n/generated/app_localizations.dart';
 
 final class _Gateway implements MediaGateway {
+  @override
+  Future<LinkResult<Uint8List>> poster(
+    AuthenticatedLinkSession session,
+    String path,
+  ) async => const LinkFailure(
+    LinkFailureKind.invalidResponse,
+    'No poster in fixture.',
+  );
   String? query;
   String? category;
   String? language;

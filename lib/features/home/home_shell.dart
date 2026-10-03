@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'device_platform_icon.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -851,11 +853,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               else
                 ...targets.map(
                   (target) => ListTile(
-                    leading: Icon(
-                      target.platform == 'android'
-                          ? Icons.android_rounded
-                          : Icons.phone_iphone_rounded,
-                    ),
+                    leading: DevicePlatformIcon(platform: target.platform),
                     title: Text(target.name),
                     subtitle: Text.rich(
                       TextSpan(
