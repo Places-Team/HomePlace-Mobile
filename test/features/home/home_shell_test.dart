@@ -46,36 +46,32 @@ void main() {
       ),
     );
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('module-row-notifications')),
+      find.byKey(const ValueKey('module-row-devices')),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(
-      find.byKey(const ValueKey('module-row-notifications')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('module-card-notifications')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('module-row-devices')), findsOneWidget);
+    expect(find.byKey(const ValueKey('module-card-devices')), findsNothing);
     expect(tester.takeException(), isNull);
 
     tester.view.physicalSize = const Size(800, 640);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('module-card-notifications')),
+      find.byKey(const ValueKey('module-card-devices')),
       -200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(
-      find.byKey(const ValueKey('module-card-notifications')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('module-card-devices')), findsOneWidget);
+    expect(find.byKey(const ValueKey('module-row-devices')), findsNothing);
+    expect(tester.takeException(), isNull);
     expect(
       find.byKey(const ValueKey('module-row-notifications')),
       findsNothing,
     );
-    expect(tester.takeException(), isNull);
+    expect(
+      find.byKey(const ValueKey('module-card-notifications')),
+      findsNothing,
+    );
 
     connection.dispose();
     home.dispose();
@@ -165,6 +161,8 @@ void main() {
     );
     expect(find.text('Completed · 1'), findsOneWidget);
     expect(find.text('Completed reminder'), findsNothing);
+    await tester.ensureVisible(find.text('Completed · 1'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Completed · 1'));
     await tester.pumpAndSettle();
     expect(find.text('Completed reminder'), findsOneWidget);
@@ -445,15 +443,13 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
-    await tester.tap(find.byTooltip('Transfers'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Notification history'));
+    await tester.tap(find.byTooltip('Notification history'));
     await tester.pumpAndSettle();
     expect(find.textContaining('The reminder is due.'), findsOneWidget);
     expect(find.textContaining('encrypted device storage'), findsOneWidget);
     await tester.tap(find.text('Clear').last);
     await tester.pumpAndSettle();
-    expect(find.text('Notification history'), findsNothing);
+    expect(find.text('No recent notifications.'), findsOneWidget);
     connection.dispose();
     home.dispose();
   });

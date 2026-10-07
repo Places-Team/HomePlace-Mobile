@@ -421,6 +421,7 @@
   "@backgroundCheckFailed": {"placeholders": {"time": {"type": "String"}}},
   "notificationHistory": "Notification history",
   "notificationHistoryPrivacy": "Stored in encrypted device storage for this HomePlace profile only.",
+  "noRecentNotifications": "No recent notifications.",
   "viewAll": "View all",
   "allSections": "All sections",
   "allSectionsBody": "The spaces beyond your main tabs. Keep only what you use.",

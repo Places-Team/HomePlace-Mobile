@@ -14,7 +14,6 @@ const _moduleMint = Color(0xff4f9b77);
 const _moduleGold = Color(0xffbd9547);
 
 enum _ModuleKind {
-  notifications,
   devices,
   telegram,
   smartHome,
@@ -43,7 +42,6 @@ final class HomeModulesPage extends StatefulWidget {
 
 class _HomeModulesPageState extends State<HomeModulesPage> {
   static const modules = [
-    _ModuleKind.notifications,
     _ModuleKind.devices,
     _ModuleKind.telegram,
     _ModuleKind.smartHome,
@@ -77,7 +75,6 @@ class _HomeModulesPageState extends State<HomeModulesPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final sections = <(String, List<_ModuleKind>)>[
-      (l10n.everydaySection, const [_ModuleKind.notifications]),
       (l10n.sharingSection, const [_ModuleKind.devices]),
       (
         l10n.servicesSection,
@@ -152,11 +149,14 @@ class _HomeModulesPageState extends State<HomeModulesPage> {
                             color: _spec(l10n, section.$2.first).color,
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            section.$1,
-                            style: Theme.of(context).textTheme.titleMedium,
+                          Expanded(
+                            child: Text(
+                              section.$1,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
-                          const Spacer(),
                           Text('${section.$2.length}'),
                         ],
                       ),
@@ -285,9 +285,6 @@ class _HomeModulesPageState extends State<HomeModulesPage> {
     }
     final page = switch (kind) {
       _ModuleKind.devices => _DevicesModulePage(overview: widget.overview),
-      _ModuleKind.notifications => _NotificationsModulePage(
-        connection: widget.connection,
-      ),
       _ModuleKind.telegram => _TelegramModulePage(
         overview: widget.overview,
         home: widget.home,
@@ -322,13 +319,6 @@ final class _ModuleSpec {
 }
 
 _ModuleSpec _spec(AppLocalizations l10n, _ModuleKind kind) => switch (kind) {
-  _ModuleKind.notifications => _ModuleSpec(
-    title: l10n.notificationHistory,
-    body: l10n.notificationsModuleBody,
-    icon: Icons.notifications_active_outlined,
-    color: _moduleCoral,
-    live: true,
-  ),
   _ModuleKind.devices => _ModuleSpec(
     title: l10n.devicesTitle,
     body: l10n.devicesBody,
@@ -679,69 +669,6 @@ class _DevicesModulePage extends StatelessWidget {
   }
 }
 
-class _NotificationsModulePage extends StatelessWidget {
-  const _NotificationsModulePage({required this.connection});
-  final ConnectionController connection;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return ListenableBuilder(
-      listenable: connection,
-      builder: (context, _) => _DetailScaffold(
-        title: l10n.notificationHistory,
-        subtitle: l10n.notificationsModuleBody,
-        icon: Icons.notifications_active_outlined,
-        color: _moduleCoral,
-        trailing: connection.notificationHistory.isEmpty
-            ? null
-            : TextButton(
-                onPressed: connection.clearNotificationHistory,
-                child: Text(l10n.clearHistory),
-              ),
-        children: [
-          _InfoPanel(
-            icon: Icons.lock_outline_rounded,
-            text: l10n.notificationHistoryPrivacy,
-          ),
-          const SizedBox(height: 14),
-          if (connection.notificationHistory.isEmpty)
-            _InfoPanel(
-              icon: Icons.notifications_none_rounded,
-              text: l10n.noRecentEvents,
-            )
-          else
-            ...connection.notificationHistory.map(
-              (item) => Card(
-                margin: const EdgeInsets.only(bottom: 9),
-                child: ListTile(
-                  leading: const _IconTile(
-                    icon: Icons.notifications_rounded,
-                    color: _moduleCoral,
-                  ),
-                  title: Text(
-                    item.title,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: Text(
-                    item.body,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Text(
-                    MaterialLocalizations.of(context).formatTimeOfDay(
-                      TimeOfDay.fromDateTime(item.receivedAt.toLocal()),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _AutomationsModulePage extends StatelessWidget {
   const _AutomationsModulePage();
 
@@ -937,7 +864,6 @@ class _DetailScaffold extends StatelessWidget {
     required this.color,
     required this.children,
     this.badge,
-    this.trailing,
   });
   final String title;
   final String subtitle;
@@ -945,7 +871,6 @@ class _DetailScaffold extends StatelessWidget {
   final Color color;
   final List<Widget> children;
   final String? badge;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -953,7 +878,6 @@ class _DetailScaffold extends StatelessWidget {
       systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
           ? SystemUiOverlayStyle.light
           : SystemUiOverlayStyle.dark,
-      actions: [?trailing],
     ),
     body: ListView(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 36),

@@ -1300,6 +1300,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Stored in encrypted device storage for this HomePlace profile only.';
 
   @override
+  String get noRecentNotifications => 'No recent notifications.';
+
+  @override
   String get viewAll => 'View all';
 
   @override

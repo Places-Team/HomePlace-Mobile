@@ -1304,6 +1304,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'Хранится в зашифрованном хранилище устройства только для этого профиля HomePlace.';
 
   @override
+  String get noRecentNotifications => 'Недавних уведомлений нет.';
+
+  @override
   String get viewAll => 'Показать все';
 
   @override

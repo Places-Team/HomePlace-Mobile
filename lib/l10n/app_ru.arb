@@ -421,6 +421,7 @@
   "@backgroundCheckFailed": {"placeholders": {"time": {"type": "String"}}},
   "notificationHistory": "История уведомлений",
   "notificationHistoryPrivacy": "Хранится в зашифрованном хранилище устройства только для этого профиля HomePlace.",
+  "noRecentNotifications": "Недавних уведомлений нет.",
   "viewAll": "Показать все",
   "allSections": "Все разделы",
   "allSectionsBody": "То, что не вошло в основные вкладки. Оставьте только нужное.",

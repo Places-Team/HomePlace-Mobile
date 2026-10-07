@@ -2382,6 +2382,12 @@ abstract class AppLocalizations {
   /// **'Stored in encrypted device storage for this HomePlace profile only.'**
   String get notificationHistoryPrivacy;
 
+  /// No description provided for @noRecentNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent notifications.'**
+  String get noRecentNotifications;
+
   /// No description provided for @viewAll.
   ///
   /// In en, this message translates to:

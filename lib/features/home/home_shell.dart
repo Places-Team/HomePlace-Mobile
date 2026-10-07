@@ -21,11 +21,13 @@ import '../exchange/file_exchange_card.dart';
 import '../exchange/device_file_selection.dart';
 import '../exchange/transfer_compose_bar.dart';
 import '../media/media_catalog_view.dart';
+import '../notifications/notification_history_page.dart';
 import '../ideas/idea_controller.dart';
 import '../ideas/idea_store.dart';
 import '../ideas/server_idea_store.dart';
 import '../ideas/ideas_view.dart';
 import 'home_controller.dart';
+import 'home_chrome.dart';
 import 'home_modules.dart';
 import '../plants/plant_controller.dart';
 import '../plants/plant_store.dart';
@@ -295,19 +297,29 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 children: [
                   ValueListenableBuilder<int>(
                     valueListenable: selectedTab,
-                    builder: (context, currentTab, _) => _TopBar(
+                    builder: (context, currentTab, _) => HomeAtlasHeader(
+                      destinationTitle: switch (currentTab) {
+                        0 => l10n.homeTab,
+                        1 => l10n.calendarTab,
+                        2 => l10n.requestsTab,
+                        3 => l10n.transfersTab,
+                        _ => l10n.monitorTab,
+                      },
                       serverName:
                           widget.connection.profile?.serverName ?? l10n.appName,
-                      planTitle: currentTab == 1 ? l10n.calendarTab : null,
-                      planDescription: currentTab == 1
-                          ? l10n.calendarModuleBody
-                          : null,
                       refreshing: home.refreshing,
                       hasError: home.error != null,
                       onRefresh: home.refresh,
                       onError: home.error == null
                           ? null
                           : () => _showCurrentError(context, l10n),
+                      onNotifications: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => NotificationHistoryPage(
+                            connection: widget.connection,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   if (home.notice case final notice?)
@@ -1063,145 +1075,6 @@ class _OutgoingShareBanner extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.serverName,
-    required this.planTitle,
-    required this.planDescription,
-    required this.refreshing,
-    required this.hasError,
-    required this.onRefresh,
-    required this.onError,
-  });
-  final String serverName;
-  final String? planTitle;
-  final String? planDescription;
-  final bool refreshing;
-  final bool hasError;
-  final VoidCallback onRefresh;
-  final VoidCallback? onError;
-
-  Widget _logo(BuildContext context) => Container(
-    width: 42,
-    height: 42,
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.inverseSurface,
-      borderRadius: BorderRadius.circular(15),
-    ),
-    child: HomePlaceMark(
-      size: 28,
-      lightOnDark: Theme.of(context).brightness == Brightness.light,
-    ),
-  );
-
-  List<Widget> _actions(BuildContext context) => [
-    if (hasError)
-      IconButton.filledTonal(
-        tooltip: AppLocalizations.of(context).errorDetails,
-        onPressed: onError,
-        style: IconButton.styleFrom(
-          foregroundColor: _coral,
-          backgroundColor: _coral.withValues(alpha: .14),
-        ),
-        icon: const Icon(Icons.error_outline_rounded),
-      ),
-    IconButton(
-      tooltip: AppLocalizations.of(context).refresh,
-      onPressed: refreshing ? null : onRefresh,
-      icon: refreshing
-          ? const SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.refresh_rounded),
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final title = planTitle;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 14, 8),
-      child: title == null
-          ? Row(
-              children: [
-                _logo(context),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    serverName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                ..._actions(context),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 82,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _logo(context),
-                      const SizedBox(height: 8),
-                      Tooltip(
-                        message: serverName,
-                        child: Text(
-                          serverName,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                          ..._actions(context),
-                        ],
-                      ),
-                      if (planDescription case final description?)
-                        Text(
-                          description,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                                height: 1.25,
-                              ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
 class _OverviewPage extends StatelessWidget {
   const _OverviewPage({
     required this.overview,
@@ -1443,10 +1316,6 @@ class _TransfersPage extends StatelessWidget {
           const SizedBox(height: 12),
           _TransferActivityCard(home: home, limit: 20),
         ],
-        if (connection.notificationHistory.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _NotificationHistoryCard(connection: connection),
-        ],
         const SizedBox(height: 12),
         TextExchangeCard(
           key: ValueKey(
@@ -1588,102 +1457,6 @@ class _OutgoingQueueCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _NotificationHistoryCard extends StatelessWidget {
-  const _NotificationHistoryCard({required this.connection});
-  final ConnectionController connection;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return _Surface(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.notificationHistory,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-              if (connection.notificationHistory.length > 5)
-                TextButton(
-                  onPressed: () => _showAll(context),
-                  child: Text(l10n.viewAll),
-                ),
-              TextButton(
-                onPressed: connection.clearNotificationHistory,
-                child: Text(l10n.clearHistory),
-              ),
-            ],
-          ),
-          Text(
-            l10n.notificationHistoryPrivacy,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...connection.notificationHistory
-              .take(5)
-              .map(
-                (item) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  leading: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: _violet,
-                  ),
-                  title: Text(item.title),
-                  subtitle: Text(
-                    '${item.body}\n${_formatWhen(context, item.receivedAt)}',
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showAll(BuildContext context) => showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (context) => SafeArea(
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: .7,
-        maxChildSize: .92,
-        builder: (context, controller) => ListView(
-          controller: controller,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          children: [
-            Text(
-              AppLocalizations.of(context).notificationHistory,
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 8),
-            ...connection.notificationHistory.map(
-              (item) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.notifications_none_rounded),
-                title: Text(item.title),
-                subtitle: Text(
-                  '${item.body}\n${_formatWhen(context, item.receivedAt)}',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _TransferActivityCard extends StatelessWidget {
