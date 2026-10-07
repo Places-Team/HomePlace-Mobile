@@ -38,6 +38,13 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  fonts:
+    - family: Onest
+      fonts:
+        - asset: assets/fonts/Onest-Variable.ttf
+    - family: Literata
+      fonts:
+        - asset: assets/fonts/Literata-Variable.ttf
   assets:
     - docs/fixtures/link-info-v1.json
     - assets/branding/catbox_black.png

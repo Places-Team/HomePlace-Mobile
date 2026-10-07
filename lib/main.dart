@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'core/network/server_address.dart';
 import 'core/background/background_delivery.dart';
 import 'core/branding/brand_mark.dart';
+import 'core/design/home_atlas_theme.dart';
 import 'core/settings/app_preferences.dart';
 import 'features/connection/connection_controller.dart';
 import 'features/exchange/quick_share_view.dart';
@@ -67,8 +68,8 @@ class HomePlaceApp extends StatelessWidget {
             statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
             statusBarBrightness: dark ? Brightness.dark : Brightness.light,
             systemNavigationBarColor: dark
-                ? const Color(0xff0b0d14)
-                : const Color(0xfff7f3e9),
+                ? HomeAtlasColors.darkCanvas
+                : HomeAtlasColors.lightCanvas,
             systemNavigationBarIconBrightness: dark
                 ? Brightness.light
                 : Brightness.dark,
@@ -189,82 +190,7 @@ class ConnectionShell extends StatelessWidget {
   );
 }
 
-ThemeData _theme(Brightness brightness) {
-  final dark = brightness == Brightness.dark;
-  final typography = ThemeData(
-    brightness: brightness,
-    useMaterial3: true,
-  ).textTheme;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: dark ? const Color(0xff829eff) : const Color(0xff4d6955),
-    brightness: brightness,
-    surface: dark ? const Color(0xff0b0d14) : const Color(0xfffffcf5),
-  );
-  return ThemeData(
-    brightness: brightness,
-    colorScheme: scheme,
-    textTheme: typography.copyWith(
-      displaySmall: typography.displaySmall?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -1.4,
-        height: 1.04,
-      ),
-      headlineMedium: typography.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.9,
-        height: 1.08,
-      ),
-      headlineSmall: typography.headlineSmall?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.6,
-      ),
-      titleLarge: typography.titleLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.35,
-      ),
-    ),
-    scaffoldBackgroundColor: dark
-        ? const Color(0xff0b0d14)
-        : const Color(0xfff7f3e9),
-    useMaterial3: true,
-    appBarTheme: const AppBarTheme(
-      centerTitle: false,
-      scrolledUnderElevation: 0,
-      backgroundColor: Colors.transparent,
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: scheme.surfaceContainerLow,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(
-          color: scheme.outlineVariant.withValues(alpha: .5),
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        shape: const StadiumBorder(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        shape: const StadiumBorder(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      ),
-    ),
-    cardTheme: CardThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      elevation: 0,
-    ),
-  );
-}
+ThemeData _theme(Brightness brightness) => buildHomeAtlasTheme(brightness);
 
 class _SavedConnection extends StatefulWidget {
   const _SavedConnection({
