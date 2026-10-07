@@ -1,7 +1,7 @@
 # Mobile navigation and transfer experience
 
 Date: 2026-10-07
-Status: Proposed for review
+Status: Approved
 
 ## Intent and scope
 

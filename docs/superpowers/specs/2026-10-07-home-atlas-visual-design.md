@@ -1,7 +1,7 @@
 # Home Atlas visual and interaction design
 
 Date: 2026-10-07
-Status: Proposed for review
+Status: Approved
 Companion: [Mobile navigation and transfer experience](2026-10-07-mobile-navigation-and-transfer-design.md)
 
 ## Design intent
