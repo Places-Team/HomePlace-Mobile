@@ -117,6 +117,10 @@ it is implemented and validated on iOS.
 
 ## Visual and motion rules
 
+The detailed visual language, screen compositions, gestures, and plant-care
+interaction are defined in the companion
+[Home Atlas visual and interaction design](2026-10-07-home-atlas-visual-design.md).
+
 Use one compact shared header with app identity, connection/error state, bell,
 and Refresh. Section titles are concise and descriptive; avoid repeating
 HomePlace or using metaphorical health labels in place of actual data. Maintain
@@ -149,9 +153,10 @@ active transfer state remains readable without animation.
 
 ## Delivery and validation
 
-Implement as reviewable increments: (1) shell/header/return navigation,
-(2) Transfers and Exchange links separation, (3) receipt/acknowledgement
-recovery, (4) visual and motion polish. Keep existing native and Flutter
+Implement as reviewable increments: (1) visual tokens, compact shell/header,
+and return navigation, (2) Home/Plan plant-care interaction, (3) Transfers
+and Exchange links separation, (4) receipt/acknowledgement recovery, and
+(5) remaining screen and motion polish. Keep existing native and Flutter
 functionality available during each increment.
 
 Automated checks cover navigation destinations and Back, transfer action
