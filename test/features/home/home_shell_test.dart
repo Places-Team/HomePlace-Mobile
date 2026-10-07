@@ -16,6 +16,72 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../connection/test_doubles.dart';
 
 void main() {
+  testWidgets('root tabs change by pill but not by horizontal content swipe', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+
+    expect(find.text('Everything in its place'), findsOneWidget);
+    await tester.drag(find.byType(PageView), const Offset(-360, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Everything in its place'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Plan'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Calendar'), findsOneWidget);
+    connection.dispose();
+    home.dispose();
+  });
+
+  testWidgets('bottom pill fits narrow display with doubled text size', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final connection = ConnectionController();
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: HomeShell(connection: connection, homeController: home),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('All sections'), findsOneWidget);
+    expect(find.byTooltip('Transfers'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    connection.dispose();
+    home.dispose();
+  });
+
   testWidgets('module directory adapts to narrow and wide windows', (
     tester,
   ) async {

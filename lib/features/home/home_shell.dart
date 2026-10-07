@@ -365,6 +365,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   Expanded(
                     child: PageView(
                       controller: pages,
+                      physics: const NeverScrollableScrollPhysics(),
                       onPageChanged: _selectTab,
                       children: [
                         _OverviewPage(
