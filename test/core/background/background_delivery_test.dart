@@ -35,6 +35,7 @@ void main() {
                   'title': 'HomePlace',
                   'body': 'Test delivered',
                   'urgent': true,
+                  'tag': 'plant-care-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
                 },
               ),
               DeviceEvent(
@@ -69,6 +70,9 @@ void main() {
 
     expect(successfulProfiles, 1);
     expect(notifications.delivered, ['HomePlace:Test delivered']);
+    expect(notifications.notificationTags, [
+      'plant-care-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    ]);
     expect(notifications.urgentDelivered, ['notification-1']);
     expect(link.heartbeatAcknowledgements, [
       <String>[],

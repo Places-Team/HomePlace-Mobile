@@ -956,6 +956,9 @@ final class ConnectionController extends ChangeNotifier {
           urgent: event.payload['urgent'] == true,
           plantId: plantIdFromNotificationUrl(event.payload['url'] as String?),
           serverId: profile?.serverId,
+          tag: event.payload['tag'] is String
+              ? event.payload['tag'] as String
+              : null,
         );
         await _recordNotification(event.id, title, body);
         acknowledged.add(event.id);

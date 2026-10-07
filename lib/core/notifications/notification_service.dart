@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +16,7 @@ bool incomingOfferActionOpensApp(String actionId, bool acceptInBackground) =>
 String? plantIdFromNotificationUrl(String? value) {
   final uri = Uri.tryParse(value ?? '');
   if (uri == null || uri.path != '/plants') return null;
+  if (uri.queryParameters.isEmpty) return '';
   final id = uri.queryParameters['plant'];
   if (id == null ||
       !RegExp(
@@ -22,6 +25,18 @@ String? plantIdFromNotificationUrl(String? value) {
     return null;
   }
   return id;
+}
+
+int notificationIdForEvent(String id, {String? serverId, String? tag}) {
+  if (serverId == null ||
+      serverId.isEmpty ||
+      tag == null ||
+      !RegExp(r'^plant-care-[a-f0-9]{64}$').hasMatch(tag)) {
+    return id.hashCode & 0x7fffffff;
+  }
+  final bytes = sha256.convert(utf8.encode('$serverId|$tag')).bytes;
+  return ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) &
+      0x7fffffff;
 }
 
 final class IncomingNotificationAction {
@@ -50,6 +65,7 @@ abstract interface class NotificationService {
     bool urgent = false,
     String? plantId,
     String? serverId,
+    String? tag,
   });
   Future<void> showIncomingOffer(
     String id,
@@ -81,7 +97,10 @@ final class _PlantNavigationStore {
     if (parts.length != 3 ||
         parts[0] != 'plant' ||
         parts[1].isEmpty ||
-        plantIdFromNotificationUrl('/plants?plant=${parts[2]}') == null) {
+        plantIdFromNotificationUrl(
+              parts[2].isEmpty ? '/plants' : '/plants?plant=${parts[2]}',
+            ) ==
+            null) {
       return;
     }
     final preferences = await SharedPreferences.getInstance();
@@ -260,8 +279,9 @@ final class LocalNotificationService implements NotificationService {
     bool urgent = false,
     String? plantId,
     String? serverId,
+    String? tag,
   }) => _plugin.show(
-    id.hashCode & 0x7fffffff,
+    notificationIdForEvent(id, serverId: serverId, tag: tag),
     title,
     body,
     NotificationDetails(

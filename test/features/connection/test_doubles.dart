@@ -140,6 +140,7 @@ final class FakeNotificationService implements NotificationService {
   FakeNotificationService({this.permissionGranted = true});
   bool permissionGranted;
   final List<String> delivered = [];
+  final List<String?> notificationTags = [];
   final List<String> urgentDelivered = [];
   final List<String> incomingOffers = [];
   final List<IncomingNotificationAction> pendingActions = [];
@@ -180,8 +181,10 @@ final class FakeNotificationService implements NotificationService {
     bool urgent = false,
     String? plantId,
     String? serverId,
+    String? tag,
   }) async {
     delivered.add('$title:$body');
+    notificationTags.add(tag);
     if (urgent) urgentDelivered.add(id);
   }
 

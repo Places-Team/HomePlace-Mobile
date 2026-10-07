@@ -213,8 +213,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (id == null || !mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) =>
-            PlantsPage(controller: plantController, initialPlantId: id),
+        builder: (_) => PlantsPage(
+          controller: plantController,
+          initialPlantId: id.isEmpty ? null : id,
+        ),
       ),
     );
   }

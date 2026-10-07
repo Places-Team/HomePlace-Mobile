@@ -16,6 +16,9 @@ version is a generated image filename, not an integer counter. Neither account
 changes nor re-pairing reuse another credential's photo cache.
 
 Reminder channels, time, and repeat interval can be configured when the server
-advertises `plantReminders`. Telegram delivery is opt-in. Notification taps can
-open the corresponding plant card. Android and iOS notification delivery still
-depends on their respective platform permissions and background restrictions.
+advertises `plantReminders`. Telegram delivery is opt-in. Server-managed watering
+digests open the plant list; older notifications naming one plant still open its
+card. On Android, a newer digest with the same server-scoped tag replaces the
+previous displayed digest. HomePlace Mobile does not schedule an additional
+local watering alert. Android and iOS notification delivery still depends on
+their respective platform permissions and background restrictions.
