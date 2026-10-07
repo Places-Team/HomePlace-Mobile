@@ -29,6 +29,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get plantsTitle => 'Your plants';
 
   @override
+  String get carePlants => 'Care plants';
+
+  @override
+  String get needsWatering => 'Needs watering';
+
+  @override
+  String get nextWatering => 'Next watering';
+
+  @override
   String get plantsSubtitle => 'A calmer way to care for what grows at home.';
 
   @override

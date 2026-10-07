@@ -38,10 +38,10 @@ void main() {
       ),
     );
 
-    expect(find.text('Everything in its place'), findsOneWidget);
+    expect(find.text('Next up'), findsOneWidget);
     await tester.drag(find.byType(PageView), const Offset(-360, 0));
     await tester.pumpAndSettle();
-    expect(find.text('Everything in its place'), findsOneWidget);
+    expect(find.text('Next up'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Plan'));
     await tester.pumpAndSettle();
@@ -185,7 +185,7 @@ void main() {
         home: HomeShell(connection: connection, homeController: home),
       ),
     );
-    expect(find.text('Everything in its place'), findsOneWidget);
+    expect(find.text('Next up'), findsOneWidget);
     expect(find.byType(RefreshIndicator).hitTestable(), findsOneWidget);
     await tester.tap(find.byTooltip('Plan'));
     await tester.pumpAndSettle();
@@ -338,7 +338,7 @@ void main() {
     expect(find.text('All sections'), findsWidgets);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('Everything in its place'), findsOneWidget);
+    expect(find.text('Next up'), findsOneWidget);
     expect(tester.takeException(), isNull);
     connection.dispose();
     home.dispose();

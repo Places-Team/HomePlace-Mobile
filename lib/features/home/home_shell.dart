@@ -29,6 +29,7 @@ import '../ideas/ideas_view.dart';
 import 'home_controller.dart';
 import 'home_chrome.dart';
 import 'home_modules.dart';
+import 'home_today_page.dart';
 import '../plants/plant_controller.dart';
 import '../plants/plant_store.dart';
 import '../plants/synced_plant_repository.dart';
@@ -37,7 +38,6 @@ import '../plants/plants_view.dart';
 const _violet = Color(0xff829eff);
 const _coral = Color(0xffff746c);
 const _mint = Color(0xff70e1b4);
-const _ink = Color(0xff11111b);
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -368,7 +368,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                       physics: const NeverScrollableScrollPhysics(),
                       onPageChanged: _selectTab,
                       children: [
-                        _OverviewPage(
+                        HomeTodayPage(
                           overview: overview,
                           home: home,
                           connection: widget.connection,
@@ -1072,93 +1072,6 @@ class _OutgoingShareBanner extends StatelessWidget {
           FilledButton(onPressed: onChoose, child: Text(l10n.choose)),
         ],
       ),
-    );
-  }
-}
-
-class _OverviewPage extends StatelessWidget {
-  const _OverviewPage({
-    required this.overview,
-    required this.home,
-    required this.connection,
-    required this.plants,
-    required this.onOpenPlan,
-  });
-  final MobileOverview overview;
-  final HomeController home;
-  final ConnectionController connection;
-  final PlantController? plants;
-  final VoidCallback onOpenPlan;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final next = _nextItem(overview);
-    final missingPermissions = !overview.permissions.contains('dashboard.read');
-    return _ScrollPage(
-      onRefresh: home.refresh,
-      children: [
-        _PageHeading(
-          title: l10n.everythingInPlace,
-          subtitle: l10n.homeOverviewBody,
-        ),
-        const SizedBox(height: 22),
-        if (plants != null) PlantsHomeSection(controller: plants!),
-        if (missingPermissions) ...[
-          const SizedBox(height: 16),
-          _Surface(
-            color: _coral.withValues(alpha: .15),
-            child: Text(l10n.permissionsRequired),
-          ),
-        ],
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.nextUp,
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: onOpenPlan,
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: Text(l10n.calendarTab),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        _Surface(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _DateGlyph(date: next?.$2 ?? DateTime.now()),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      next?.$1 ?? l10n.nothingPlanned,
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    if (next != null)
-                      Text(
-                        _formatWhen(context, next.$2, allDay: next.$3),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 110),
-      ],
     );
   }
 }
@@ -3302,47 +3215,6 @@ class _RoundIcon extends StatelessWidget {
   );
 }
 
-class _DateGlyph extends StatelessWidget {
-  const _DateGlyph({required this.date});
-  final DateTime date;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 58,
-    height: 66,
-    decoration: BoxDecoration(
-      color: _coral,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          '${date.day}',
-          style: const TextStyle(
-            color: _ink,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            height: 1,
-          ),
-        ),
-        Text(
-          MaterialLocalizations.of(context)
-              .formatShortMonthDay(date)
-              .replaceAll(RegExp(r'\d+'), '')
-              .replaceAll(RegExp(r'[,\.]'), '')
-              .trim()
-              .toUpperCase(),
-          style: const TextStyle(
-            color: _ink,
-            fontSize: 10,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
 class _AgendaRow extends StatelessWidget {
   const _AgendaRow({
     required this.color,
@@ -4059,18 +3931,6 @@ DateTime _rangeStart(DateTime month) =>
 
 DateTime _rangeEnd(DateTime month) =>
     DateTime(month.year, month.month + 2, 1).add(const Duration(days: 7));
-
-(String, DateTime, bool)? _nextItem(MobileOverview overview) {
-  final candidates = <(String, DateTime, bool)>[
-    ...overview.reminders
-        .where((item) => !item.done && !item.at.isBefore(DateTime.now()))
-        .map((item) => (item.title, item.at, false)),
-    ...overview.calendar.events.map(
-      (item) => (item.summary, item.start, item.allDay),
-    ),
-  ]..sort((a, b) => a.$2.compareTo(b.$2));
-  return candidates.firstOrNull;
-}
 
 String _formatWhen(BuildContext context, DateTime raw, {bool allDay = false}) {
   final date = raw.toLocal();

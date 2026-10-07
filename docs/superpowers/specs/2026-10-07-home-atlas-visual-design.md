@@ -87,9 +87,13 @@ Start with a small date and a concise `Home` title, not a slogan. The first
 viewport has one asymmetric plant-care feature: a real photo or illustrated
 placeholder, the number due, and a clear `Care for plants` action. A horizontal
 strip of at most three due plants follows; each tile states the next watering
-date. The next household action is a short agenda row below. If nothing is
-due, the surface becomes a calm next-watering preview rather than a large
-empty card. Telegram, clipboard, and infrastructure counts never appear here.
+date. The next household action is a short agenda row below. The priority
+area is modular, not permanently reserved for plants: when none need water,
+the nearest household action leads and plant care becomes a compact
+next-watering preview. With no plants, offer setup without a false due state.
+Future home controls enter this area only when backed by implemented server
+actions and user permissions. Telegram, clipboard, and infrastructure counts
+never appear here.
 
 ### Plan
 

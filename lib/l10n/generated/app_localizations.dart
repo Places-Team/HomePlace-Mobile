@@ -134,6 +134,24 @@ abstract class AppLocalizations {
   /// **'Your plants'**
   String get plantsTitle;
 
+  /// No description provided for @carePlants.
+  ///
+  /// In en, this message translates to:
+  /// **'Care plants'**
+  String get carePlants;
+
+  /// No description provided for @needsWatering.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs watering'**
+  String get needsWatering;
+
+  /// No description provided for @nextWatering.
+  ///
+  /// In en, this message translates to:
+  /// **'Next watering'**
+  String get nextWatering;
+
   /// No description provided for @plantsSubtitle.
   ///
   /// In en, this message translates to:

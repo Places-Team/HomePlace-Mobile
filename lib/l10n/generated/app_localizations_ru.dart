@@ -29,6 +29,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get plantsTitle => 'Мои растения';
 
   @override
+  String get carePlants => 'Уход за растениями';
+
+  @override
+  String get needsWatering => 'Нуждаются в поливе';
+
+  @override
+  String get nextWatering => 'Следующий полив';
+
+  @override
   String get plantsSubtitle => 'Спокойный уход за тем, что растёт дома.';
 
   @override

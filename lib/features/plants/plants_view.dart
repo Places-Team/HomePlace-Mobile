@@ -659,7 +659,7 @@ class _PlantTile extends StatelessWidget {
             ? Stack(
                 fit: StackFit.expand,
                 children: [
-                  _PlantPhoto(plant: plant, controller: controller),
+                  PlantPhoto(plant: plant, controller: controller),
                   const Positioned(
                     left: 0,
                     right: 0,
@@ -701,7 +701,7 @@ class _PlantTile extends StatelessWidget {
                 children: [
                   SizedBox(
                     height: 205,
-                    child: _PlantPhoto(plant: plant, controller: controller),
+                    child: PlantPhoto(plant: plant, controller: controller),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
@@ -729,22 +729,28 @@ class _PlantTile extends StatelessWidget {
                             ].where((item) => item.isNotEmpty).join(' · '),
                           ),
                         const SizedBox(height: 12),
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.water_drop_rounded,
-                              size: 18,
-                              color: dueColor,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.water_drop_rounded,
+                                  size: 18,
+                                  color: dueColor,
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    _dueLabel(l10n, plant, DateTime.now()),
+                                    style: TextStyle(
+                                      color: dueColor,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _dueLabel(l10n, plant, DateTime.now()),
-                              style: TextStyle(
-                                color: dueColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const Spacer(),
                             Text(
                               plant.intervalDays == 1
                                   ? l10n.plantsEveryDay
@@ -763,16 +769,16 @@ class _PlantTile extends StatelessWidget {
   }
 }
 
-class _PlantPhoto extends StatefulWidget {
-  const _PlantPhoto({required this.plant, required this.controller});
+class PlantPhoto extends StatefulWidget {
+  const PlantPhoto({required this.plant, required this.controller, super.key});
   final HomePlant plant;
   final PlantController controller;
 
   @override
-  State<_PlantPhoto> createState() => _PlantPhotoState();
+  State<PlantPhoto> createState() => _PlantPhotoState();
 }
 
-class _PlantPhotoState extends State<_PlantPhoto> {
+class _PlantPhotoState extends State<PlantPhoto> {
   late Future<File?> _photo;
 
   @override
@@ -782,7 +788,7 @@ class _PlantPhotoState extends State<_PlantPhoto> {
   }
 
   @override
-  void didUpdateWidget(covariant _PlantPhoto oldWidget) {
+  void didUpdateWidget(covariant PlantPhoto oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.plant, widget.plant) ||
         oldWidget.controller != widget.controller) {
@@ -1061,7 +1067,7 @@ class _PlantEditorState extends State<_PlantEditor> {
                     borderRadius: BorderRadius.circular(22),
                     child: pickedPhoto != null
                         ? Image.file(File(pickedPhoto!.path), fit: BoxFit.cover)
-                        : _PlantPhoto(
+                        : PlantPhoto(
                             plant:
                                 widget.original ??
                                 HomePlant(
