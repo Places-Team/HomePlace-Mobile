@@ -95,17 +95,25 @@ class ConnectionShell extends StatelessWidget {
     listenable: controller,
     builder: (context, _) {
       final l10n = AppLocalizations.of(context);
-      if (controller.pendingOutgoingShares.isNotEmpty) {
-        return QuickShareView(connection: controller);
-      }
       if (controller.stage == ConnectionStage.connected) {
-        return HomeShell(
-          key: ValueKey(
-            '${controller.profile?.serverId}:${controller.profile?.deviceId}',
-          ),
-          connection: controller,
-          preferences: preferences,
+        return Stack(
+          children: [
+            HomeShell(
+              key: ValueKey(
+                '${controller.profile?.serverId}:${controller.profile?.deviceId}',
+              ),
+              connection: controller,
+              preferences: preferences,
+            ),
+            if (controller.quickShareRequested &&
+                controller.pendingOutgoingShares.isNotEmpty)
+              Positioned.fill(child: QuickShareView(connection: controller)),
+          ],
         );
+      }
+      if (controller.quickShareRequested &&
+          controller.pendingOutgoingShares.isNotEmpty) {
+        return QuickShareView(connection: controller);
       }
       return Scaffold(
         appBar: controller.stage == ConnectionStage.welcome

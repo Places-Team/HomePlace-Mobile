@@ -1442,12 +1442,6 @@ abstract class AppLocalizations {
   /// **'Connection settings'**
   String get settings;
 
-  /// No description provided for @loadingHome.
-  ///
-  /// In en, this message translates to:
-  /// **'Bringing your HomePlace together…'**
-  String get loadingHome;
-
   /// No description provided for @preparingShare.
   ///
   /// In en, this message translates to:
@@ -1763,6 +1757,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transfers'**
   String get transfersTitle;
+
+  /// No description provided for @sendFromPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Send from this phone'**
+  String get sendFromPhone;
+
+  /// No description provided for @sendFromPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose files, then pick a device and confirm. Nothing is sent automatically.'**
+  String get sendFromPhoneHint;
+
+  /// No description provided for @choosePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get choosePhotos;
+
+  /// No description provided for @chooseFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get chooseFiles;
+
+  /// No description provided for @preparingFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing files on this device…'**
+  String get preparingFiles;
 
   /// No description provided for @transfersSubtitle.
   ///
@@ -2165,6 +2189,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved {filename} to Downloads/HomePlace.'**
   String fileSaved(String filename);
+
+  /// No description provided for @savedFileReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready in Downloads'**
+  String get savedFileReady;
+
+  /// No description provided for @savedFileActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded {filename}. Tap to open; hold to open its folder.'**
+  String savedFileActions(String filename);
+
+  /// No description provided for @openDownloadsFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get openDownloadsFolder;
+
+  /// No description provided for @downloadsFolderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Android could not open Downloads/HomePlace. Find it in your Files app.'**
+  String get downloadsFolderUnavailable;
 
   /// No description provided for @upcomingReminders.
   ///

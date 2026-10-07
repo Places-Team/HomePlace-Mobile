@@ -18,6 +18,8 @@ import '../../core/sharing/share_service.dart';
 import '../connection/connection_controller.dart';
 import '../exchange/text_exchange_card.dart';
 import '../exchange/file_exchange_card.dart';
+import '../exchange/device_file_selection.dart';
+import '../exchange/transfer_compose_bar.dart';
 import '../media/media_catalog_view.dart';
 import '../ideas/idea_controller.dart';
 import '../ideas/idea_store.dart';
@@ -100,6 +102,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   final Set<String> _automaticIncoming = {};
   bool _sendingShareBatch = false;
   bool _shareTargetSheetOpen = false;
+  bool _preparingDirectFiles = false;
+  String? _directFileError;
   String? _presentedOutgoingBatch;
   late int tab;
   late final ValueNotifier<int> selectedTab;
@@ -249,9 +253,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         });
       }
       if (home.loading && home.overview == null) {
-        return _Loading(
-          label: outgoing.isEmpty ? l10n.loadingHome : l10n.preparingShare,
-        );
+        return _Loading(label: outgoing.isEmpty ? null : l10n.preparingShare);
       }
       if (home.overview == null) {
         return _LoadError(
@@ -378,6 +380,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                         _TransfersPage(
                           home: home,
                           connection: widget.connection,
+                          preparingFiles: _preparingDirectFiles,
+                          fileError: _directFileError,
+                          onPickPhotos: () =>
+                              _pickDirectFiles(context, photosOnly: true),
+                          onPickFiles: () =>
+                              _pickDirectFiles(context, photosOnly: false),
+                          onOpenFolder: _openDownloadsFolder,
                           onChooseOutgoing: () => _showShareTargets(
                             context,
                             overview,
@@ -800,6 +809,49 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       ),
     ),
   );
+
+  Future<void> _openDownloadsFolder() async {
+    final opened = await const AndroidSystemActions().openDownloadsFolder();
+    if (!opened && mounted) {
+      setState(
+        () =>
+            _directFileError = AppLocalizations.of(context)
+                .downloadsFolderUnavailable,
+      );
+    }
+  }
+
+  Future<void> _pickDirectFiles(
+    BuildContext context, {
+    required bool photosOnly,
+  }) async {
+    if (_preparingDirectFiles) return;
+    final serverId = widget.connection.profile?.serverId;
+    setState(() {
+      _preparingDirectFiles = true;
+      _directFileError = null;
+    });
+    try {
+      final files = await pickDeviceFiles(photosOnly: photosOnly);
+      if (!mounted || files.isEmpty) return;
+      if (widget.connection.profile?.serverId != serverId) {
+        for (final content in files) {
+          final path = content.path;
+          if (path != null) await File(path).delete();
+        }
+        return;
+      }
+      widget.connection.queueOutgoingShares(files);
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _directFileError = AppLocalizations.of(context).fileExchangePickError;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _preparingDirectFiles = false);
+    }
+  }
 
   Future<void> _showShareTargets(
     BuildContext context,
@@ -1241,11 +1293,21 @@ class _TransfersPage extends StatelessWidget {
   const _TransfersPage({
     required this.home,
     required this.connection,
+    required this.preparingFiles,
+    required this.fileError,
+    required this.onPickPhotos,
+    required this.onPickFiles,
+    required this.onOpenFolder,
     required this.onChooseOutgoing,
   });
 
   final HomeController home;
   final ConnectionController connection;
+  final bool preparingFiles;
+  final String? fileError;
+  final VoidCallback onPickPhotos;
+  final VoidCallback onPickFiles;
+  final VoidCallback onOpenFolder;
   final VoidCallback onChooseOutgoing;
 
   @override
@@ -1268,6 +1330,29 @@ class _TransfersPage extends StatelessWidget {
           accentColor: const Color(0xffaf843b),
         ),
         const SizedBox(height: 22),
+        if (Platform.isAndroid) ...[
+          TransferComposeBar(
+            preparing: preparingFiles,
+            onPhotos: onPickPhotos,
+            onFiles: onPickFiles,
+          ),
+          if (fileError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              fileError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: 22),
+        ],
+        if (home.lastSavedFile case final saved?) ...[
+          _SavedFileCard(
+            file: saved,
+            onOpen: () => home.openLastSavedFile(connection),
+            onOpenFolder: onOpenFolder,
+          ),
+          const SizedBox(height: 18),
+        ],
         if (empty)
           _EmptyCard(
             icon: Icons.swap_vert_circle_outlined,
@@ -1373,6 +1458,84 @@ class _TransfersPage extends StatelessWidget {
         ),
         const SizedBox(height: 110),
       ],
+    );
+  }
+}
+
+class _SavedFileCard extends StatelessWidget {
+  const _SavedFileCard({
+    required this.file,
+    required this.onOpen,
+    required this.onOpenFolder,
+  });
+
+  final SavedSharedFile file;
+  final VoidCallback onOpen;
+  final VoidCallback onOpenFolder;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Semantics(
+      label: l10n.savedFileActions(file.filename),
+      child: Material(
+        color: theme.colorScheme.secondaryContainer.withValues(alpha: .55),
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onOpen,
+          onLongPress: onOpenFolder,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.download_done_rounded),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.savedFileReady,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            file.filename,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    TextButton.icon(
+                      onPressed: onOpen,
+                      icon: const Icon(Icons.open_in_new_rounded),
+                      label: Text(l10n.open),
+                    ),
+                    TextButton.icon(
+                      onPressed: onOpenFolder,
+                      icon: const Icon(Icons.folder_open_rounded),
+                      label: Text(l10n.openDownloadsFolder),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1637,7 +1800,7 @@ class _IncomingShareCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               progress == null
-                  ? l10n.loadingHome
+                  ? l10n.preparingFiles
                   : '${(progress! * 100).round()}%',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall,
@@ -3595,7 +3758,7 @@ class _MessageBanner extends StatelessWidget {
 
 class _Loading extends StatelessWidget {
   const _Loading({required this.label});
-  final String label;
+  final String? label;
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Center(
@@ -3606,7 +3769,7 @@ class _Loading extends StatelessWidget {
           const SizedBox(height: 18),
           const CircularProgressIndicator(),
           const SizedBox(height: 18),
-          Text(label),
+          if (label != null) Text(label!),
         ],
       ),
     ),

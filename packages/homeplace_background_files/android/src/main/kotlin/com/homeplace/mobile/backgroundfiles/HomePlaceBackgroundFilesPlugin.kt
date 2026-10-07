@@ -1,7 +1,13 @@
 package com.homeplace.mobile.backgroundfiles
 
 import android.content.ContentValues
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -38,8 +44,49 @@ class HomePlaceBackgroundFilesPlugin : FlutterPlugin, MethodChannel.MethodCallHa
                 result.error("temporary_file_unavailable", "A protected temporary file could not be created.", null)
             }
             "saveFilePath" -> saveFile(call.arguments as? Map<*, *>, result)
+            "notifySavedFile" -> result.success(notifySavedFile(call.arguments as? Map<*, *>))
             else -> result.notImplemented()
         }
+    }
+
+    private fun notifySavedFile(arguments: Map<*, *>?): Boolean {
+        val location = arguments?.get("location") as? String ?: return false
+        val uri = Uri.parse(location)
+        if (uri.scheme != "content") return false
+        val mimeType = (arguments["mimeType"] as? String)
+            ?.takeIf { SAFE_MIME_TYPE.matches(it) } ?: "application/octet-stream"
+        val title = (arguments["title"] as? String)?.take(100) ?: return false
+        val body = (arguments["body"] as? String)?.take(220) ?: return false
+        val openLabel = (arguments["openLabel"] as? String)?.take(40) ?: return false
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (!manager.areNotificationsEnabled()) return false
+        val channelId = "homeplace_downloads"
+        manager.createNotificationChannel(
+            NotificationChannel(channelId, "HomePlace downloads", NotificationManager.IMPORTANCE_HIGH),
+        )
+        val view = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            clipData = ClipData.newRawUri("HomePlace download", uri)
+        }
+        val notificationId = location.hashCode() and 0x7fffffff
+        val pending = PendingIntent.getActivity(
+            context,
+            notificationId,
+            view,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = Notification.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+            .setContentIntent(pending)
+            .addAction(Notification.Action.Builder(null, openLabel, pending).build())
+            .setAutoCancel(true)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .build()
+        return runCatching { manager.notify(notificationId, notification); true }.getOrDefault(false)
     }
 
     private fun saveFile(arguments: Map<*, *>?, result: MethodChannel.Result) {

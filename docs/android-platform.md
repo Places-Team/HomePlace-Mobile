@@ -6,6 +6,8 @@ The Android application targets API 36 (Android 16). System integrations are
 implemented in Kotlin when Flutter cannot provide the same platform behavior.
 They do not add HomePlace Link capabilities or bypass account permissions.
 
+The Transfers screen can select photos or arbitrary files directly. Selected originals are copied to private temporary storage before queueing, and sending still requires a named recipient and confirmation. Accepted files appear in `Downloads/HomePlace`; the in-app completion card opens the file on tap and opens the folder on long press or through its visible folder button. A background download completion notification opens the verified saved file directly. Android may delay incoming-offer discovery while the app is closed; notification actions become available when the scheduled check receives the offer. Guaranteed instant push is not implemented.
+
 | Integration | Current behavior | User control |
 | --- | --- | --- |
 | One UI / Android Quick Settings | An optional Transfers tile opens the existing transfer screen after the normal connection restoration. | Add it from in-app settings on Android 13+, or manually in the Quick Settings editor on older devices. Sending still requires recipient selection and confirmation. |

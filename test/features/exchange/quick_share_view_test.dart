@@ -4,6 +4,7 @@ import 'package:homeplace/core/sharing/share_service.dart';
 import 'package:homeplace/core/settings/app_preferences.dart';
 import 'package:homeplace/features/connection/connection_controller.dart';
 import 'package:homeplace/features/exchange/quick_share_view.dart';
+import 'package:homeplace/features/home/home_shell.dart';
 import 'package:homeplace/main.dart';
 import 'package:homeplace/l10n/generated/app_localizations.dart';
 import 'package:homeplace/link/mobile_models.dart';
@@ -13,6 +14,7 @@ void main() {
     tester,
   ) async {
     final controller = ConnectionController()
+      ..quickShareRequested = true
       ..pendingOutgoingShares = const [
         SharedContent(kind: SharedContentKind.text, value: 'Share right now'),
       ];
@@ -29,6 +31,32 @@ void main() {
     expect(find.byType(QuickShareView), findsOneWidget);
     expect(find.text('Share right now'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
+    controller.dispose();
+  });
+
+  testWidgets('external share keeps connected home mounted', (tester) async {
+    final controller = ConnectionController()
+      ..stage = ConnectionStage.connected
+      ..quickShareRequested = true
+      ..pendingOutgoingShares = const [
+        SharedContent(kind: SharedContentKind.text, value: 'A note'),
+      ];
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ConnectionShell(
+          controller: controller,
+          preferences: AppPreferences(),
+        ),
+      ),
+    );
+    expect(find.byType(HomeShell), findsOneWidget);
+    expect(find.byType(QuickShareView), findsOneWidget);
+    controller.clearAllOutgoingShares();
+    await tester.pump();
+    expect(find.byType(HomeShell), findsOneWidget);
+    expect(find.byType(QuickShareView), findsNothing);
     controller.dispose();
   });
 

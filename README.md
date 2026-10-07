@@ -92,6 +92,8 @@ photos, separate watering actions, and configurable HomePlace/Telegram reminder
 delivery. See [plant synchronization](docs/plant-sync.md) for privacy and
 conflict behavior.
 
+The Android Transfers screen now offers direct photo and file selection, explicit recipient review, and quick access to a freshly downloaded file or its folder. A completed background download posts an Open action. A saved connection still validates server identity on reconnect; the normal HomePlace loading phrase is no longer shown on each launch.
+
 ## Repository layout
 
 - `lib/` — shared Flutter UI, state, networking, Link models, and application logic.

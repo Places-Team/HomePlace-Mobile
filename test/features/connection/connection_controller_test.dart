@@ -11,6 +11,24 @@ import 'package:homeplace/link/models.dart';
 import 'test_doubles.dart';
 
 void main() {
+  test('in-app selection queues files for recipient confirmation', () {
+    final controller = ConnectionController();
+    const selected = SharedContent(
+      kind: SharedContentKind.file,
+      path: '/tmp/staged-picture',
+      filename: 'picture.jpg',
+      mimeType: 'image/jpeg',
+      size: 4,
+    );
+
+    controller.queueOutgoingShares(const [selected]);
+
+    expect(controller.pendingOutgoingShares, [selected]);
+    expect(controller.quickShareRequested, isFalse);
+    controller.pendingOutgoingShares = const [];
+    controller.dispose();
+  });
+
   test('queues multiple Android share items for explicit review', () async {
     final sharing = FakeShareService()
       ..pending = const [
@@ -39,6 +57,7 @@ void main() {
       'one.txt',
       'two.txt',
     ]);
+    expect(controller.quickShareRequested, isTrue);
     controller.pendingOutgoingShares = const [];
     controller.dispose();
   });

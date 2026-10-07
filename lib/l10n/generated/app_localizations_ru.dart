@@ -753,9 +753,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings => 'Настройки подключения';
 
   @override
-  String get loadingHome => 'Собираем ваш HomePlace…';
-
-  @override
   String get preparingShare => 'Готовим устройства для безопасной отправки…';
 
   @override
@@ -941,6 +938,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get transfersTitle => 'Передачи';
+
+  @override
+  String get sendFromPhone => 'Отправить с телефона';
+
+  @override
+  String get sendFromPhoneHint =>
+      'Выберите файлы, затем устройство и подтвердите. Ничего не отправится автоматически.';
+
+  @override
+  String get choosePhotos => 'Фото';
+
+  @override
+  String get chooseFiles => 'Файлы';
+
+  @override
+  String get preparingFiles => 'Подготавливаем файлы на устройстве…';
 
   @override
   String get transfersSubtitle =>
@@ -1178,6 +1191,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String fileSaved(String filename) {
     return 'Файл $filename сохранён в Downloads/HomePlace.';
   }
+
+  @override
+  String get savedFileReady => 'Готово в загрузках';
+
+  @override
+  String savedFileActions(String filename) {
+    return 'Файл $filename загружен. Нажмите, чтобы открыть; удерживайте, чтобы перейти в папку.';
+  }
+
+  @override
+  String get openDownloadsFolder => 'Открыть папку';
+
+  @override
+  String get downloadsFolderUnavailable =>
+      'Android не открыл Downloads/HomePlace. Найдите эту папку в приложении «Файлы».';
 
   @override
   String get upcomingReminders => 'Ближайшие';

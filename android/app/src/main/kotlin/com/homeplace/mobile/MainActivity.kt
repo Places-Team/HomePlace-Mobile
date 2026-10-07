@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
@@ -113,6 +114,7 @@ open class MainActivity : FlutterActivity() {
                     }
                     result.success(runCatching { startActivity(settings); true }.getOrDefault(false))
                 }
+                "openDownloadsFolder" -> result.success(openDownloadsFolder())
                 else -> result.notImplemented()
             }
         }
@@ -391,6 +393,27 @@ open class MainActivity : FlutterActivity() {
             if (candidate.createNewFile()) return candidate
         }
         error("No free filename is available")
+    }
+
+    private fun openDownloadsFolder(): Boolean {
+        val directory = DocumentsContract.buildDocumentUri(
+            "com.android.externalstorage.documents",
+            "primary:Download/HomePlace",
+        )
+        val view = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(directory, "vnd.android.document/directory")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        if (runCatching { startActivity(view) }.isSuccess) return true
+
+        val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            type = "*/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                putExtra(DocumentsContract.EXTRA_INITIAL_URI, directory)
+            }
+        }
+        return runCatching { startActivity(picker); true }.getOrDefault(false)
     }
 
     private fun openSavedFile(arguments: Map<*, *>?, result: MethodChannel.Result) {

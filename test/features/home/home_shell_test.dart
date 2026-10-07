@@ -568,6 +568,43 @@ void main() {
     home.dispose();
     ideas.dispose();
   });
+  testWidgets('downloaded file offers open and folder actions', (tester) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final share = FakeShareService();
+    final connection = ConnectionController(shareService: share);
+    final file = SavedSharedFile(
+      location: 'content://downloads/public_downloads/31',
+      filename: 'family-photo.jpg',
+      mimeType: 'image/jpeg',
+    );
+    final home = HomeController(sessionProvider: () async => null)
+      ..loading = false
+      ..overview = _overview()
+      ..lastSavedFile = file;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeShell(connection: connection, homeController: home),
+      ),
+    );
+    await tester.tap(find.byTooltip('Transfers'));
+    await tester.pumpAndSettle();
+    expect(find.text('family-photo.jpg'), findsOneWidget);
+    await tester.ensureVisible(find.text('Open').last);
+    await tester.tap(find.text('Open').last);
+    await tester.pump();
+    expect(share.openedFile, file);
+    expect(find.text('Open folder'), findsOneWidget);
+
+    connection.dispose();
+    home.dispose();
+  });
 }
 
 final class _ExternalIdeaStore implements IdeaStore {

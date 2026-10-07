@@ -9,6 +9,16 @@ final class AndroidSystemActions {
 
   final MethodChannel channel;
 
+  Future<bool> openDownloadsFolder() async {
+    try {
+      return await channel.invokeMethod<bool>('openDownloadsFolder') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   Future<TransferTileResult> requestTransferTile() async {
     try {
       final result = await channel.invokeMethod<String>('requestTransferTile');

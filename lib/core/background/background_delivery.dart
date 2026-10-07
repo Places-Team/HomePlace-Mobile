@@ -83,6 +83,29 @@ final class PlatformBackgroundFileStore implements BackgroundFileStore {
     'com.homeplace.mobile/background_files',
   );
 
+  Future<bool> notifySavedFile({
+    required String location,
+    required String mimeType,
+    required String title,
+    required String body,
+    required String openLabel,
+  }) async {
+    try {
+      return await _channel.invokeMethod<bool>('notifySavedFile', {
+            'location': location,
+            'mimeType': mimeType,
+            'title': title,
+            'body': body,
+            'openLabel': openLabel,
+          }) ??
+          false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   @override
   Future<String> createTemporaryFilePath() async {
     final path = await _channel.invokeMethod<String>('createTemporaryFile');
@@ -542,18 +565,32 @@ final class BackgroundHeartbeatRunner {
         temporaryPath,
       );
       if (result is! LinkSuccess<DownloadedLinkFile>) return false;
-      await fileStore.saveFilePath(
+      final location = await fileStore.saveFilePath(
         result.value.file.path,
         offer.filename,
         offer.mimeType,
       );
-      await notifications.show(
-        'saved:$eventId',
-        useRussianLabels ? 'Файл загружен' : 'File downloaded',
-        useRussianLabels
-            ? '${offer.filename} сохранён в Downloads/HomePlace'
-            : '${offer.filename} was saved to Downloads/HomePlace',
-      );
+      final title = useRussianLabels ? 'Файл загружен' : 'File downloaded';
+      final body = useRussianLabels
+          ? '${offer.filename} сохранён в Downloads/HomePlace'
+          : '${offer.filename} was saved to Downloads/HomePlace';
+      final platformStore = fileStore;
+      final nativeNotification =
+          platformStore is PlatformBackgroundFileStore &&
+          await platformStore.notifySavedFile(
+            location: location,
+            mimeType: offer.mimeType,
+            title: title,
+            body: body,
+            openLabel: useRussianLabels ? 'Открыть' : 'Open',
+          );
+      if (!nativeNotification) {
+        try {
+          await notifications.show('saved:$eventId', title, body);
+        } on Object {
+          // A completed save must not be retried because alerts are disabled.
+        }
+      }
       return true;
     } on Object {
       return false;

@@ -161,6 +161,7 @@ final class ConnectionController extends ChangeNotifier {
   PendingClipboard? pendingClipboard;
   String? _clipboardTextToSuppress;
   List<SharedContent> pendingOutgoingShares = const [];
+  bool quickShareRequested = false;
   List<PendingShareOffer> pendingIncomingShares = const [];
   PendingShareOffer? get pendingIncomingShare =>
       pendingIncomingShares.firstOrNull;
@@ -178,6 +179,7 @@ final class ConnectionController extends ChangeNotifier {
     try {
       await _sharing.initialize((content) {
         _enqueueOutgoingShare(content);
+        quickShareRequested = true;
         notifyListeners();
       });
       await _notifications.initialize();
@@ -587,13 +589,22 @@ final class ConnectionController extends ChangeNotifier {
     pendingOutgoingShares = pendingOutgoingShares
         .where((candidate) => !identical(candidate, removed))
         .toList(growable: false);
+    if (pendingOutgoingShares.isEmpty) quickShareRequested = false;
     notifyListeners();
   }
 
   void clearAllOutgoingShares() {
     _discardAllOutgoingFiles();
     pendingOutgoingShares = const [];
+    quickShareRequested = false;
     notifyListeners();
+  }
+
+  void queueOutgoingShares(List<SharedContent> contents) {
+    for (final content in contents) {
+      _enqueueOutgoingShare(content);
+    }
+    if (contents.isNotEmpty) notifyListeners();
   }
 
   void _enqueueOutgoingShare(SharedContent content) {

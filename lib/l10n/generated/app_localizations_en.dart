@@ -750,9 +750,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Connection settings';
 
   @override
-  String get loadingHome => 'Bringing your HomePlace together…';
-
-  @override
   String get preparingShare => 'Preparing devices for secure sharing…';
 
   @override
@@ -938,6 +935,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transfersTitle => 'Transfers';
+
+  @override
+  String get sendFromPhone => 'Send from this phone';
+
+  @override
+  String get sendFromPhoneHint =>
+      'Choose files, then pick a device and confirm. Nothing is sent automatically.';
+
+  @override
+  String get choosePhotos => 'Photos';
+
+  @override
+  String get chooseFiles => 'Files';
+
+  @override
+  String get preparingFiles => 'Preparing files on this device…';
 
   @override
   String get transfersSubtitle =>
@@ -1173,6 +1186,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String fileSaved(String filename) {
     return 'Saved $filename to Downloads/HomePlace.';
   }
+
+  @override
+  String get savedFileReady => 'Ready in Downloads';
+
+  @override
+  String savedFileActions(String filename) {
+    return 'Downloaded $filename. Tap to open; hold to open its folder.';
+  }
+
+  @override
+  String get openDownloadsFolder => 'Open folder';
+
+  @override
+  String get downloadsFolderUnavailable =>
+      'Android could not open Downloads/HomePlace. Find it in your Files app.';
 
   @override
   String get upcomingReminders => 'Upcoming';
